@@ -1,6 +1,6 @@
 /* ============================================================
    Brew Library — personal coffee brewing recipe library
-   Vanilla JS · no build step · data in localStorage
+   Vanilla JS · no build step · Google sign-in, synced per-user via Firestore
    ============================================================ */
 (function () {
 'use strict';
@@ -9,13 +9,21 @@
    1. Storage
    --------------------------------------------------------- */
 
-var KEY = 'brewlibrary.v1';
 var state = null;
 
 // Bump whenever the built-in starter library below changes. A stored library
 // that is still untouched starter data picks the new version up automatically;
 // once you edit anything, your data is yours and is never replaced.
 var SEED_VERSION = 5;
+
+// The one account that starts with the full 101-recipe starter library.
+// Everyone else invited to the app starts blank — your personal coffee list
+// shouldn't land in a friend's account just because they signed in.
+var OWNER_EMAIL = 'axvitor@gmail.com';
+
+var currentUser = null;      // Firebase user object once signed in, else null
+var authPhase = 'loading';   // 'loading' | 'signedOut' | 'notAllowed' | 'ready' | 'error'
+var unsubscribeLibrary = null;
 
 function uid(prefix) {
   return (prefix || 'x') + '-' + Math.random().toString(36).slice(2, 9);
@@ -24,27 +32,27 @@ function uid(prefix) {
 // Any save that isn't the initial seed marks the library as user-owned.
 function save(opts) {
   if (!opts || !opts.keepPristine) state.pristine = false;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch (e) {
-    toast('Could not save — storage is full or blocked.');
+  if (currentUser && window.Brew) {
+    window.Brew.saveLibrary(currentUser.uid, state).catch(function () {
+      toast('Could not sync — check your connection.');
+    });
   }
 }
 
-function load() {
-  var raw = null;
-  try { raw = localStorage.getItem(KEY); } catch (e) { /* private mode */ }
-  if (raw) {
-    try {
-      var parsed = JSON.parse(raw);
-      if (parsed && parsed.recipes) {
-        // Untouched starter data + newer starter library = refresh it.
-        if (parsed.pristine && parsed.seedVersion !== SEED_VERSION) return seed();
-        return parsed;
-      }
-    } catch (e) { /* corrupt — fall through to seed */ }
-  }
-  return seed();
+// Reuses the built-in grinders/methods/styles (generic, reusable across
+// anyone) but starts with no coffees or recipes — those are personal.
+function emptyLibrary() {
+  var base = seed();
+  return {
+    version: 1, seedVersion: SEED_VERSION, pristine: true,
+    coffees: [], recipes: [],
+    grinders: base.grinders, methods: base.methods, styles: base.styles
+  };
+}
+
+function initialLibraryFor(user) {
+  var isOwner = user && user.email && user.email.toLowerCase() === OWNER_EMAIL;
+  return isOwner ? seed() : emptyLibrary();
 }
 
 /* ---------------------------------------------------------
@@ -513,7 +521,69 @@ function visibleRecipes() {
 
 var view = document.getElementById('view');
 
+// Standard Google "G" mark for the sign-in button, per Google's brand guidelines.
+var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
+  '<path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.5 0 24 0 14.6 0 6.5 5.4 2.5 13.2l7.9 6.1C12.3 13 17.6 9.5 24 9.5z"/>' +
+  '<path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.6c-.5 3-2.2 5.5-4.7 7.2l7.4 5.7C43.7 37.6 46.5 31.6 46.5 24.5z"/>' +
+  '<path fill="#FBBC05" d="M10.4 19.3c-.5 1.4-.8 3-.8 4.7s.3 3.3.8 4.7l-7.9 6.1C.9 31.6 0 28.1 0 24s.9-7.6 2.5-10.8z"/>' +
+  '<path fill="#34A853" d="M24 48c6.5 0 12-2.1 15.9-5.9l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.4 0-11.7-3.5-13.6-8.7l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/>' +
+  '</svg>';
+
+function updateAccountChip() {
+  var chip = document.getElementById('accountChip');
+  var actions = document.getElementById('appActions');
+  if (!chip) return;
+  if (currentUser) {
+    chip.hidden = false;
+    var avatar = document.getElementById('accountAvatar');
+    var emailEl = document.getElementById('accountEmail');
+    if (avatar) {
+      avatar.src = currentUser.photoURL || '';
+      avatar.style.visibility = currentUser.photoURL ? 'visible' : 'hidden';
+    }
+    if (emailEl) emailEl.textContent = currentUser.email || '';
+  } else {
+    chip.hidden = true;
+  }
+  if (actions) actions.hidden = authPhase !== 'ready';
+}
+
+function renderGate(title, message, footHTML) {
+  view.innerHTML = '<div class="gate"><div class="gate-card">' +
+    ICON.bean +
+    '<h1>' + esc(title) + '</h1>' +
+    '<p class="gate-msg">' + message + '</p>' +
+    (footHTML || '') +
+  '</div></div>';
+}
+
+function renderLoading() {
+  renderGate('Brew Library', 'Loading your library…', '');
+}
+
+function renderSignIn() {
+  renderGate('Brew Library', 'Sign in to see your recipes — synced across every device.',
+    '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON + '<span>Continue with Google</span></button>');
+}
+
+function renderNotAllowed() {
+  var email = currentUser ? esc(currentUser.email) : 'This account';
+  renderGate('Not on the list', email + ' isn’t invited to this library yet. Ask the owner to add your email.',
+    '<button class="btn btn-ghost" data-action="sign-out">Sign out</button>');
+}
+
+function renderFirebaseError() {
+  renderGate('Can’t connect', 'The sync service didn’t load — check your connection and reload the page.', '');
+}
+
 function render() {
+  updateAccountChip();
+
+  if (authPhase === 'loading') { renderLoading(); return; }
+  if (authPhase === 'signedOut') { renderSignIn(); return; }
+  if (authPhase === 'notAllowed') { renderNotAllowed(); return; }
+  if (authPhase === 'error') { renderFirebaseError(); return; }
+
   var hash = location.hash || '#/';
   var m = hash.match(/^#\/r\/(.+)$/);
   if (m) renderDetail(decodeURIComponent(m[1]));
@@ -1178,7 +1248,7 @@ function importData(file) {
 
 function resetAll() {
   if (!confirm('Reset the library back to the starter data?\n\nEvery recipe and coffee you added will be deleted.')) return;
-  state = seed();
+  state = initialLibraryFor(currentUser);
   save({ keepPristine: true });
   location.hash = '#/';
   render();
@@ -1272,6 +1342,17 @@ document.addEventListener('click', function (ev) {
       render();
       return;
 
+    case 'sign-in':
+      ev.preventDefault();
+      window.Brew.signIn().catch(function () { toast('Could not start sign-in.'); });
+      return;
+
+    case 'sign-out':
+      ev.preventDefault();
+      if (unsubscribeLibrary) { unsubscribeLibrary(); unsubscribeLibrary = null; }
+      window.Brew.signOutUser();
+      return;
+
     /* --- modal actions --- */
     case 'close-modal': ev.preventDefault(); closeModal(); return;
 
@@ -1352,11 +1433,58 @@ document.getElementById('importFile').addEventListener('change', function (ev) {
 window.addEventListener('hashchange', render);
 
 /* ---------------------------------------------------------
-   14. Boot
+   14. Boot — wait for Firebase auth before showing anything.
    --------------------------------------------------------- */
 
-state = load();
-save({ keepPristine: state.pristine === true });
-render();
+function boot() {
+  if (!window.Brew) {
+    authPhase = 'error';
+    render();
+    return;
+  }
+
+  window.Brew.onAuthChange(function (user) {
+    if (unsubscribeLibrary) { unsubscribeLibrary(); unsubscribeLibrary = null; }
+
+    if (!user) {
+      currentUser = null;
+      state = null;
+      authPhase = 'signedOut';
+      render();
+      return;
+    }
+
+    currentUser = user;
+    window.Brew.checkAllowlist(user.email).then(function (allowed) {
+      if (!allowed) {
+        authPhase = 'notAllowed';
+        render();
+        return;
+      }
+
+      authPhase = 'ready';
+      window.Brew.loadLibrary(user.uid).then(function (data) {
+        if (!data || (data.pristine && data.seedVersion !== SEED_VERSION)) {
+          state = initialLibraryFor(user);
+          window.Brew.saveLibrary(user.uid, state);
+        } else {
+          state = data;
+        }
+        render();
+
+        // Live sync: any change (from this device or another) re-renders.
+        unsubscribeLibrary = window.Brew.subscribeLibrary(user.uid, function (remote) {
+          state = remote;
+          render();
+        });
+      });
+    }).catch(function () {
+      authPhase = 'notAllowed';
+      render();
+    });
+  });
+}
+
+boot();
 
 })();

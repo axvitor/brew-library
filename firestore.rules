@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// Paste this into: Firebase console → Firestore Database → Rules tab → Publish.
+//
+// Two collections:
+//   config/allowlist   { emails: [ "you@gmail.com", "friend@gmail.com", ... ] }
+//     — the guest list. Edited only by hand in the console (Data tab);
+//       no client can ever write to it.
+//   libraries/{uid}     — one document per signed-in user, holding their
+//       entire recipe library. A user can only read/write their own.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // True only if the signed-in email appears in config/allowlist.
+    // get() calls inside a rule are not themselves subject to security
+    // rules, so this works even though direct reads of config/allowlist
+    // are locked down below.
+    function isAllowed() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/config/allowlist)
+        && request.auth.token.email.lower() in
+           get(/databases/$(database)/documents/config/allowlist).data.emails;
+    }
+
+    match /config/allowlist {
+      // A signed-in user may only fetch this doc if their own email is
+      // already in it — so someone who isn't invited gets a flat denial,
+      // not a peek at who else is on the list.
+      allow get: if request.auth != null
+        && request.auth.token.email.lower() in resource.data.emails;
+      allow write: if false;
+    }
+
+    match /libraries/{uid} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && isAllowed();
+    }
+  }
+}

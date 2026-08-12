@@ -390,6 +390,30 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 
 .foot{padding:34px 24px 44px;color:var(--faint);font-size:12.5px;text-align:center}
 
+/* ---------- account chip ---------- */
+.app-actions{display:flex;align-items:center;gap:8px}
+.app-actions[hidden]{display:none}
+.account-chip{display:flex;align-items:center;gap:9px;padding:4px 6px 4px 4px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
+.account-chip[hidden]{display:none}
+.account-avatar{width:26px;height:26px;border-radius:50%;background:var(--paper-2);flex:none;object-fit:cover}
+.account-email{font-size:13px;color:var(--ink-2);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:720px){ .account-email{display:none} }
+@media(max-width:560px){ .account-chip{padding:4px} }
+
+/* ---------- sign-in / gate screens ---------- */
+.gate{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 66px - 90px);padding:40px 20px}
+.gate-card{max-width:380px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+.gate-card .bean{width:40px;height:40px;stroke:var(--accent);fill:none;stroke-width:1.2;margin-bottom:10px}
+.gate-card h1{font-family:var(--serif);font-size:26px;font-weight:400;letter-spacing:-.01em}
+.gate-msg{color:var(--muted);font-size:15px;line-height:1.55;margin:6px 0 22px}
+.btn-google{
+  height:44px;padding:0 20px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-size:15px;font-weight:500;
+  display:inline-flex;align-items:center;gap:10px;box-shadow:var(--shadow-sm);
+}
+.btn-google:hover{border-color:var(--muted);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.btn-google .ico{width:19px;height:19px}
+
 ::selection{background:var(--accent-wash);color:var(--accent-ink)}
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;transition-duration:.01ms !important}

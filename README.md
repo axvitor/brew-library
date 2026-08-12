@@ -1,20 +1,50 @@
 # Brew Library
 
-A personal coffee brewing recipe library. No build step, no dependencies, no account —
-three files and your recipes in the browser's `localStorage`.
+A personal coffee brewing recipe library. No build step, no bundler — plain HTML/CSS/JS,
+with Google sign-in and your recipes synced in real time across every device via Firebase.
 
 ## Running it
 
-Double-click `index.html`, or drag it into a browser tab. That's it.
+Because it now signs you in with Google, it needs to be served over `http://` or
+`https://` — opening `index.html` directly (`file://`) won't work for sign-in.
 
-If you'd rather serve it over HTTP (recommended if you want to open it on your phone
-over the local network):
+Locally:
 
 ```bash
 python3 .claude/serve.py
 ```
 
 Then open <http://localhost:4173>.
+
+Deployed, it's a static site — see **Hosting** below.
+
+## Access — invite-only
+
+There's no public sign-up. Only Google accounts whose email is in the Firestore
+`config/allowlist` document can get past the sign-in screen — everyone else sees
+"Not on the list." Add or remove people directly in the Firebase console
+(Firestore Database → Data → `config/allowlist` → edit the `emails` array), no code
+changes needed. Each person's recipes live in their own private Firestore document
+(`libraries/{their-uid}`) — nobody can read or write anyone else's, enforced by the
+rules in `firestore.rules`.
+
+The one exception: the account matching `OWNER_EMAIL` in `app.js` starts with the
+101-recipe starter library baked into the app; everyone else invited starts blank
+(with the same reusable grinders/methods/styles, just no coffees or recipes of
+their own).
+
+## Firebase setup (one-time)
+
+1. Create a project at [console.firebase.google.com](https://console.firebase.google.com)
+2. **Build → Authentication → Sign-in method** → enable **Google**
+3. **Build → Firestore Database** → create it (production mode)
+4. **Firestore Database → Rules** → paste in `firestore.rules` → Publish
+5. **Firestore Database → Data** → create a `config` collection → document ID
+   `allowlist` → field `emails` (array) → add the lowercase email of everyone allowed in
+6. **Project settings → Your apps → `</>`** → register a web app → copy the
+   `firebaseConfig` object into `firebase-init.js`
+7. **Authentication → Settings → Authorized domains** → add whatever domain you deploy
+   to (e.g. `your-username.github.io`) — `localhost` is already included by default
 
 ## How it's organised
 
@@ -59,14 +89,17 @@ instead — write the pour schedule by hand for those.
 
 ## Your data
 
-Everything is stored under the `brewlibrary.v1` key in `localStorage`, on this device
-and this browser only. The `⋮` menu has **Export** (JSON backup), **Import**, and
-**Reset** (back to the starter data). Export before resetting or importing — both
+Signed-in users' libraries live in Firestore and sync in real time — add a recipe on
+your phone, it appears on your desktop within a second or two, no refresh needed. The
+`⋮` menu still has **Export** (JSON backup), **Import**, and **Reset** (back to your
+starting library) for local backups. Export before resetting or importing — both
 overwrite what's there.
 
 ## Files
 
 - `index.html` — shell and markup
 - `styles.css` — all styling, including dark mode (follows your OS setting)
-- `app.js` — data model, rendering, and every interaction
-- `.claude/serve.py` — optional local static server
+- `app.js` — data model, rendering, auth-gated boot, and every interaction
+- `firebase-init.js` — Firebase config + the `window.Brew` bridge (auth, Firestore reads/writes)
+- `firestore.rules` — security rules to paste into the Firebase console
+- `.claude/serve.py` — local static server (required now, since sign-in needs http/https)
