@@ -1344,7 +1344,15 @@ document.addEventListener('click', function (ev) {
 
     case 'sign-in':
       ev.preventDefault();
-      window.Brew.signIn().catch(function () { toast('Could not start sign-in.'); });
+      window.Brew.signIn().catch(function (err) {
+        if (err && err.code === 'auth/popup-blocked') {
+          toast('Your browser blocked the sign-in popup — allow popups for this site and try again.');
+        } else if (err && err.code === 'auth/popup-closed-by-user') {
+          // They closed it themselves — no need to show an error.
+        } else {
+          toast('Could not sign in' + (err && err.code ? ' (' + err.code + ')' : '') + '.');
+        }
+      });
       return;
 
     case 'sign-out':

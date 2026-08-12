@@ -45,8 +45,14 @@
   }
 
   window.Brew = {
+    // Popup rather than redirect: a redirect round-trips through
+    // brew-library.firebaseapp.com, a different domain than wherever this
+    // app is hosted, and Chrome/Safari increasingly block the storage
+    // access that hand-off needs — sign-in silently fails and bounces back
+    // to the login screen. Popup avoids that by messaging the opener window
+    // directly instead of relying on cross-domain storage.
     signIn: function () {
-      return auth.signInWithRedirect(provider);
+      return auth.signInWithPopup(provider);
     },
     signOutUser: function () {
       return auth.signOut();
@@ -88,9 +94,4 @@
     }
   };
 
-  // Surfaces errors from the post-redirect return trip (e.g. popup closed,
-  // network failure). Successful sign-in is handled by onAuthChange above.
-  auth.getRedirectResult().catch(function (err) {
-    console.error('Sign-in error', err);
-  });
 })();
