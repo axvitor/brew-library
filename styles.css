@@ -408,6 +408,22 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 
 .foot{padding:34px 24px 44px;color:var(--faint);font-size:12.5px;text-align:center}
 
+/* ---------- back to top ---------- */
+.back-to-top{
+  position:fixed;right:20px;bottom:24px;z-index:90;
+  width:46px;height:46px;border-radius:50%;
+  background:var(--card);border:1px solid var(--line);color:var(--ink-2);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow-md);
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, color .18s ease;
+}
+.back-to-top[hidden]{display:none}
+.back-to-top:hover{border-color:var(--accent);color:var(--accent-ink);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.back-to-top .ico{width:20px;height:20px}
+@media(max-width:640px){
+  .back-to-top{right:16px;bottom:calc(16px + env(safe-area-inset-bottom))}
+}
+
 /* ---------- account chip ---------- */
 /* Just the avatar in the topbar — email + Sign out live in the ⋮ menu
    (see .menu-account below) so the header stays narrow on phones. */

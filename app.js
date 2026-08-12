@@ -1408,6 +1408,10 @@ document.addEventListener('click', function (ev) {
     case 'export': exportData(); return;
     case 'import': document.getElementById('importFile').click(); return;
     case 'reset': resetAll(); return;
+
+    case 'back-to-top':
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
   }
 });
 
@@ -1444,6 +1448,22 @@ document.getElementById('importFile').addEventListener('change', function (ev) {
 });
 
 window.addEventListener('hashchange', render);
+
+// Floating back-to-top button — appears once you've scrolled past roughly
+// one screen's worth of content.
+(function () {
+  var btn = document.getElementById('backToTop');
+  if (!btn) return;
+  var visible = false;
+  function sync() {
+    var shouldShow = window.scrollY > window.innerHeight * 0.6;
+    if (shouldShow === visible) return;
+    visible = shouldShow;
+    btn.hidden = !shouldShow;
+  }
+  window.addEventListener('scroll', sync, { passive: true });
+  sync();
+})();
 
 /* ---------------------------------------------------------
    14. Boot — wait for Firebase auth before showing anything.
