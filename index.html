@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Brew Library — Coffee Recipes</title>
+<meta name="description" content="A personal library of coffee brewing recipes." />
+<meta name="theme-color" content="#faf7f2" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#/" data-action="home">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <g transform="rotate(-28 12 12)">
+          <ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>
+          <path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/>
+        </g>
+      </svg>
+      <span class="brand-text">Brew<em>Library</em></span>
+    </a>
+
+    <nav class="topbar-actions">
+      <button class="btn btn-ghost btn-icon-label" data-action="open-library" title="Coffees, grinders, methods, styles">
+        <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+        <span>Library</span>
+      </button>
+      <div class="menu-holder">
+        <button class="btn btn-ghost btn-icon" data-action="toggle-menu" aria-label="More options">
+          <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg>
+        </button>
+        <div class="menu" id="appMenu" hidden>
+          <button data-action="export">Export data (.json)</button>
+          <button data-action="import">Import data…</button>
+          <div class="menu-sep"></div>
+          <button data-action="reset" class="danger">Reset library…</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" data-action="new-recipe">
+        <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Add recipe</span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="view" class="wrap"></main>
+
+<footer class="foot wrap">
+  <span>Stored locally on this device.</span>
+</footer>
+
+<div id="modalRoot"></div>
+<div id="toast" class="toast" hidden></div>
+<input type="file" id="importFile" accept="application/json" hidden />
+
+<script src="app.js"></script>
+</body>
+</html>
