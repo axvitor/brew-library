@@ -77,9 +77,9 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 /* ---------- top bar ---------- */
 .topbar{
   position:sticky;top:0;z-index:60;
-  background:color-mix(in srgb, var(--paper) 82%, transparent);
-  backdrop-filter:saturate(1.6) blur(14px);
-  -webkit-backdrop-filter:saturate(1.6) blur(14px);
+  background:color-mix(in srgb, var(--paper) 64%, transparent);
+  backdrop-filter:saturate(1.8) blur(20px);
+  -webkit-backdrop-filter:saturate(1.8) blur(20px);
   border-bottom:1px solid var(--line-2);
 }
 .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:66px}
@@ -130,13 +130,13 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 }
 
 /* ---------- menu ---------- */
-@keyframes menuPop{from{opacity:0;transform:scale(.94) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes menuPop{from{opacity:0;transform:scale(.9) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .menu-holder{position:relative}
 .menu{
   position:absolute;right:0;top:46px;min-width:210px;z-index:70;
   background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
   box-shadow:var(--shadow-lg);padding:6px;
-  transform-origin:top right;animation:menuPop .16s cubic-bezier(.2,.8,.3,1) both;
+  transform-origin:top right;animation:menuPop .32s cubic-bezier(.2,.8,.3,1) both;
 }
 .menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px;color:var(--ink-2)}
 .menu button:hover{background:var(--paper-2);color:var(--ink)}
@@ -202,7 +202,7 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:18px;padding-bottom:8px}
 @media(max-width:640px){ .grid{grid-template-columns:1fr;gap:14px} }
 
-@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card{
   position:relative;display:flex;flex-direction:column;gap:14px;
   background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
@@ -211,7 +211,7 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
   /* Uniform (no stagger) and quick: the grid re-renders on every search
      keystroke, so anything slower or staggered would feel laggy rather
      than lively. */
-  animation:cardIn .2s ease both;
+  animation:cardIn .45s ease both;
 }
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--accent) 32%,var(--line))}
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
@@ -245,7 +245,7 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .empty{
   text-align:center;padding:76px 24px;border:1px dashed var(--line);
   border-radius:var(--r-lg);background:color-mix(in srgb,var(--card) 55%,transparent);
-  animation:cardIn .2s ease both;
+  animation:cardIn .45s ease both;
 }
 .empty .bean{width:40px;height:40px;stroke:var(--faint);fill:none;stroke-width:1.2;margin-bottom:14px}
 .empty h3{font-family:var(--serif);font-weight:400;font-size:22px}
@@ -277,29 +277,29 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .spec dd{margin:0;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
 
 .bigstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}
-.bigstat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:15px 16px;box-shadow:var(--shadow-sm);animation:cardIn .3s ease both}
+.bigstat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:15px 16px;box-shadow:var(--shadow-sm);animation:cardIn .5s ease both}
 .bigstat:nth-child(1){animation-delay:0s}
-.bigstat:nth-child(2){animation-delay:.04s}
-.bigstat:nth-child(3){animation-delay:.08s}
-.bigstat:nth-child(4){animation-delay:.12s}
-.bigstat:nth-child(5){animation-delay:.16s}
-.bigstat:nth-child(6){animation-delay:.2s}
+.bigstat:nth-child(2){animation-delay:.07s}
+.bigstat:nth-child(3){animation-delay:.14s}
+.bigstat:nth-child(4){animation-delay:.21s}
+.bigstat:nth-child(5){animation-delay:.28s}
+.bigstat:nth-child(6){animation-delay:.35s}
 .bigstat .k{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint)}
 .bigstat .v{font-family:var(--serif);font-size:26px;line-height:1.2;margin-top:4px;font-variant-numeric:tabular-nums}
 .bigstat .v small{font-size:14px;color:var(--muted);font-family:var(--sans);margin-left:2px}
 @media(max-width:520px){ .bigstats{grid-template-columns:repeat(2,1fr)} }
 
 .timeline{position:relative;margin:0;padding:0 0 0 4px;list-style:none}
-@keyframes stepIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
-.step{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:16px;padding-bottom:22px;animation:stepIn .32s ease both}
+@keyframes stepIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
+.step{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:16px;padding-bottom:22px;animation:stepIn .55s ease both}
 /* Pours reveal one after another, like the schedule itself — capped at six
    steps of delay so a long AeroPress/4:6 list doesn't take forever to settle. */
-.step:nth-child(1){animation-delay:.05s}
-.step:nth-child(2){animation-delay:.12s}
-.step:nth-child(3){animation-delay:.19s}
-.step:nth-child(4){animation-delay:.26s}
-.step:nth-child(5){animation-delay:.33s}
-.step:nth-child(n+6){animation-delay:.4s}
+.step:nth-child(1){animation-delay:.1s}
+.step:nth-child(2){animation-delay:.24s}
+.step:nth-child(3){animation-delay:.38s}
+.step:nth-child(4){animation-delay:.52s}
+.step:nth-child(5){animation-delay:.66s}
+.step:nth-child(n+6){animation-delay:.8s}
 .step:last-child{padding-bottom:0}
 .step::before{content:"";position:absolute;left:5px;top:16px;bottom:-6px;width:1px;background:var(--line)}
 .step:last-child::before{display:none}
@@ -443,7 +443,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 
 /* ---------- back to top ---------- */
 @keyframes backToTopIn{
-  from{opacity:0;transform:translateY(18px) scale(.92)}
+  from{opacity:0;transform:translateY(30px) scale(.8)}
   to{opacity:1;transform:translateY(0) scale(1)}
 }
 .back-to-top{
@@ -455,7 +455,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, color .18s ease;
   /* Replays automatically every time the button goes from [hidden] (display:
      none) to shown — no JS needed, CSS animations restart on display change. */
-  animation:backToTopIn .3s cubic-bezier(.2,.8,.3,1) both;
+  animation:backToTopIn .65s cubic-bezier(.2,.8,.3,1) both;
 }
 .back-to-top[hidden]{display:none}
 .back-to-top:hover{border-color:var(--accent);color:var(--accent-ink);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
