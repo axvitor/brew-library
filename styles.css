@@ -120,17 +120,23 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .btn-icon{width:38px;padding:0}
 .btn-sm{height:32px;font-size:13px;padding:0 12px}
 .btn:disabled{opacity:.45;pointer-events:none}
+/* Placed after the :hover rules above so equal-specificity cascade order
+   lets the press-down feedback win over hover's lift when a button is
+   actually being clicked, not just hovered. */
+.btn:active{transform:scale(.96)}
 @media(max-width:720px){
   .btn-icon-label span{display:none}
   .btn-icon-label{width:38px;padding:0}
 }
 
 /* ---------- menu ---------- */
+@keyframes menuPop{from{opacity:0;transform:scale(.94) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .menu-holder{position:relative}
 .menu{
   position:absolute;right:0;top:46px;min-width:210px;z-index:70;
   background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
   box-shadow:var(--shadow-lg);padding:6px;
+  transform-origin:top right;animation:menuPop .16s cubic-bezier(.2,.8,.3,1) both;
 }
 .menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px;color:var(--ink-2)}
 .menu button:hover{background:var(--paper-2);color:var(--ink)}
@@ -167,6 +173,7 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
   border:1px solid var(--line);background:var(--paper);
   font-size:14px;color:var(--ink-2);outline:none;max-width:190px;
   text-overflow:ellipsis;
+  transition:background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 .sel::after{
   content:"";position:absolute;right:14px;top:50%;width:7px;height:7px;
@@ -179,8 +186,10 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .pill-toggle{
   height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line);
   background:var(--paper);font-size:14px;color:var(--ink-2);display:inline-flex;align-items:center;gap:7px;
+  transition:background-color .15s ease, border-color .15s ease, color .15s ease, transform .12s ease;
 }
 .pill-toggle.on{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink);font-weight:500}
+.pill-toggle:active{transform:scale(.96)}
 .pill-toggle .ico{width:15px;height:15px}
 .filters .spacer{flex:1}
 @media(max-width:640px){
@@ -193,21 +202,27 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:18px;padding-bottom:8px}
 @media(max-width:640px){ .grid{grid-template-columns:1fr;gap:14px} }
 
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .card{
   position:relative;display:flex;flex-direction:column;gap:14px;
   background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
   padding:20px;text-align:left;width:100%;
   box-shadow:var(--shadow-sm);transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  /* Uniform (no stagger) and quick: the grid re-renders on every search
+     keystroke, so anything slower or staggered would feel laggy rather
+     than lively. */
+  animation:cardIn .2s ease both;
 }
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--accent) 32%,var(--line))}
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .card-title{font-family:var(--serif);font-size:20px;font-weight:400;line-height:1.25;letter-spacing:-.01em}
 .card-sub{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .dot{width:3px;height:3px;border-radius:50%;background:var(--faint);flex:none}
-.fav{color:var(--faint);padding:2px;line-height:0;border-radius:6px;flex:none}
+.fav{color:var(--faint);padding:2px;line-height:0;border-radius:6px;flex:none;transition:color .15s ease, transform .12s ease}
 .fav:hover{color:var(--accent)}
+.fav:active{transform:scale(.82)}
 .fav.on{color:var(--accent)}
-.fav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.fav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;transition:fill .15s ease}
 .fav.on svg{fill:currentColor}
 
 .stats{display:flex;gap:0;border-top:1px solid var(--line-2);padding-top:13px;margin-top:auto}
@@ -230,6 +245,7 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .empty{
   text-align:center;padding:76px 24px;border:1px dashed var(--line);
   border-radius:var(--r-lg);background:color-mix(in srgb,var(--card) 55%,transparent);
+  animation:cardIn .2s ease both;
 }
 .empty .bean{width:40px;height:40px;stroke:var(--faint);fill:none;stroke-width:1.2;margin-bottom:14px}
 .empty h3{font-family:var(--serif);font-weight:400;font-size:22px}
@@ -261,14 +277,29 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .spec dd{margin:0;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
 
 .bigstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}
-.bigstat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:15px 16px;box-shadow:var(--shadow-sm)}
+.bigstat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:15px 16px;box-shadow:var(--shadow-sm);animation:cardIn .3s ease both}
+.bigstat:nth-child(1){animation-delay:0s}
+.bigstat:nth-child(2){animation-delay:.04s}
+.bigstat:nth-child(3){animation-delay:.08s}
+.bigstat:nth-child(4){animation-delay:.12s}
+.bigstat:nth-child(5){animation-delay:.16s}
+.bigstat:nth-child(6){animation-delay:.2s}
 .bigstat .k{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint)}
 .bigstat .v{font-family:var(--serif);font-size:26px;line-height:1.2;margin-top:4px;font-variant-numeric:tabular-nums}
 .bigstat .v small{font-size:14px;color:var(--muted);font-family:var(--sans);margin-left:2px}
 @media(max-width:520px){ .bigstats{grid-template-columns:repeat(2,1fr)} }
 
 .timeline{position:relative;margin:0;padding:0 0 0 4px;list-style:none}
-.step{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:16px;padding-bottom:22px}
+@keyframes stepIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.step{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:16px;padding-bottom:22px;animation:stepIn .32s ease both}
+/* Pours reveal one after another, like the schedule itself — capped at six
+   steps of delay so a long AeroPress/4:6 list doesn't take forever to settle. */
+.step:nth-child(1){animation-delay:.05s}
+.step:nth-child(2){animation-delay:.12s}
+.step:nth-child(3){animation-delay:.19s}
+.step:nth-child(4){animation-delay:.26s}
+.step:nth-child(5){animation-delay:.33s}
+.step:nth-child(n+6){animation-delay:.4s}
 .step:last-child{padding-bottom:0}
 .step::before{content:"";position:absolute;left:5px;top:16px;bottom:-6px;width:1px;background:var(--line)}
 .step:last-child::before{display:none}
@@ -376,10 +407,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 
 /* rating input */
 .rate{display:inline-flex;gap:4px}
-.rate button{color:var(--line);padding:3px;line-height:0}
+.rate button{color:var(--line);padding:3px;line-height:0;transition:color .15s ease, transform .12s ease}
 .rate button svg{width:22px;height:22px;fill:currentColor}
 .rate button.on{color:var(--accent)}
-.rate button:hover{transform:scale(1.08)}
+.rate button:hover{transform:scale(1.15)}
+.rate button:active{transform:scale(.88)}
 
 /* ---------- library manager ---------- */
 .tabs{display:flex;gap:4px;padding:4px;background:var(--paper-2);border-radius:999px;margin-bottom:20px;overflow-x:auto}
@@ -394,8 +426,9 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .list-item .nm{font-size:15px}
 .list-item .mt{font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .list-item .cnt{font-size:12px;color:var(--faint);white-space:nowrap}
-.iconbtn{width:30px;height:30px;border-radius:7px;color:var(--faint);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.iconbtn{width:30px;height:30px;border-radius:7px;color:var(--faint);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background-color .15s ease, color .15s ease, transform .12s ease}
 .iconbtn:hover{background:var(--paper-2);color:var(--ink)}
+.iconbtn:active{transform:scale(.9)}
 .iconbtn.danger:hover{color:var(--danger);background:color-mix(in srgb,var(--danger) 9%,transparent)}
 
 /* ---------- toast ---------- */
@@ -409,6 +442,10 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .foot{padding:34px 24px 44px;color:var(--faint);font-size:12.5px;text-align:center}
 
 /* ---------- back to top ---------- */
+@keyframes backToTopIn{
+  from{opacity:0;transform:translateY(18px) scale(.92)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
 .back-to-top{
   position:fixed;right:20px;bottom:24px;z-index:90;
   width:46px;height:46px;border-radius:50%;
@@ -416,6 +453,9 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   display:flex;align-items:center;justify-content:center;
   box-shadow:var(--shadow-md);
   transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, color .18s ease;
+  /* Replays automatically every time the button goes from [hidden] (display:
+     none) to shown — no JS needed, CSS animations restart on display change. */
+  animation:backToTopIn .3s cubic-bezier(.2,.8,.3,1) both;
 }
 .back-to-top[hidden]{display:none}
 .back-to-top:hover{border-color:var(--accent);color:var(--accent-ink);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
