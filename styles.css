@@ -314,8 +314,18 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .sheet-body{padding:22px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
 .sheet-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line);flex:none;background:var(--card);border-radius:0 0 var(--r-lg) var(--r-lg)}
 @media(max-width:640px){
-  .overlay{padding:0;align-items:flex-end}
-  .sheet{max-width:none;border-radius:var(--r-lg) var(--r-lg) 0 0;max-height:94vh;max-height:94dvh;margin:auto 0 0;border-bottom:none;animation:up .26s cubic-bezier(.2,.8,.3,1) both}
+  /* The 50px reserved here (on top of the dvh sizing below) is a flat,
+     unconditional safety margin: mobile browser chrome height varies by
+     browser/OS and isn't fully reflected by dvh in every case we saw in
+     testing, so leave a fixed gap that holds regardless. Applies to every
+     modal — recipe form, coffee/grinder/method/style forms, library
+     manager — since they all share .overlay/.sheet. */
+  .overlay{padding:0 0 50px;align-items:flex-end}
+  .sheet{
+    max-width:none;border-radius:var(--r-lg) var(--r-lg) 0 0;margin:0;border-bottom:none;
+    max-height:calc(94vh - 50px);max-height:calc(94dvh - 50px);
+    animation:up .26s cubic-bezier(.2,.8,.3,1) both;
+  }
   .sheet-foot{border-radius:0;padding-bottom:max(16px,env(safe-area-inset-bottom))}
   @keyframes up{from{transform:translateY(26px);opacity:.6}to{transform:none;opacity:1}}
 }
