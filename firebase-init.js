@@ -4,9 +4,9 @@
    API on window.Brew that app.js's storage layer calls into.
 
    The config below is not a secret — it only tells the browser
-   which Firebase project to talk to. Real access control lives
-   in the Firestore security rules and the allowlist document,
-   both configured in the Firebase console, never in this file.
+   which Firebase project to talk to. Access control (each user
+   can only read/write their own library) lives entirely in
+   firestore.rules, configured in the Firebase console.
    ============================================================ */
 (function () {
   'use strict';
@@ -61,20 +61,6 @@
     // every sign-in/sign-out.
     onAuthChange: function (callback) {
       return auth.onAuthStateChanged(callback);
-    },
-    // Resolves true/false. A denied read (email not on the list) resolves
-    // to false rather than throwing — callers treat both the same way.
-    checkAllowlist: function (email) {
-      return db.collection('config').doc('allowlist').get()
-        .then(function (snap) {
-          if (!snap.exists) return false;
-          var emails = (snap.data().emails || []).map(function (e) { return String(e).toLowerCase(); });
-          return emails.indexOf(String(email).toLowerCase()) > -1;
-        })
-        .catch(function (err) {
-          if (err && err.code === 'permission-denied') return false;
-          throw err;
-        });
     },
     loadLibrary: function (userId) {
       return libraryRef(userId).get().then(function (snap) {

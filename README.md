@@ -18,20 +18,20 @@ Then open <http://localhost:4173>.
 
 Deployed, it's a static site — see **Hosting** below.
 
-## Access — invite-only
+## Access — open to anyone with a Google account
 
-There's no public sign-up. Only Google accounts whose email is in the Firestore
-`config/allowlist` document can get past the sign-in screen — everyone else sees
-"Not on the list." Add or remove people directly in the Firebase console
-(Firestore Database → Data → `config/allowlist` → edit the `emails` array), no code
-changes needed. Each person's recipes live in their own private Firestore document
-(`libraries/{their-uid}`) — nobody can read or write anyone else's, enforced by the
-rules in `firestore.rules`.
+There's no allowlist and no invite step — anyone who clicks "Continue with Google"
+gets in and gets their own private library. Each person's recipes live in their own
+Firestore document (`libraries/{their-uid}`); nobody can read or write anyone else's,
+enforced by the rules in `firestore.rules`.
 
 The one exception: the account matching `OWNER_EMAIL` in `app.js` starts with the
-101-recipe starter library baked into the app; everyone else invited starts blank
-(with the same reusable grinders/methods/styles, just no coffees or recipes of
-their own).
+101-recipe starter library baked into the app; everyone else starts blank (with the
+same reusable grinders/methods/styles, just no coffees or recipes of their own).
+
+Since sign-up is open, keep an eye on Firestore usage in the Firebase console
+(Usage tab) if you ever share the link widely — the free tier is generous for a
+small group, but unbounded sign-ups aren't rate-limited by anything in this app.
 
 ## Firebase setup (one-time)
 
@@ -39,11 +39,9 @@ their own).
 2. **Build → Authentication → Sign-in method** → enable **Google**
 3. **Build → Firestore Database** → create it (production mode)
 4. **Firestore Database → Rules** → paste in `firestore.rules` → Publish
-5. **Firestore Database → Data** → create a `config` collection → document ID
-   `allowlist` → field `emails` (array) → add the lowercase email of everyone allowed in
-6. **Project settings → Your apps → `</>`** → register a web app → copy the
+5. **Project settings → Your apps → `</>`** → register a web app → copy the
    `firebaseConfig` object into `firebase-init.js`
-7. **Authentication → Settings → Authorized domains** → add whatever domain you deploy
+6. **Authentication → Settings → Authorized domains** → add whatever domain you deploy
    to (e.g. `your-username.github.io`) — `localhost` is already included by default
 
 ## How it's organised

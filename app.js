@@ -22,7 +22,7 @@ var SEED_VERSION = 5;
 var OWNER_EMAIL = 'axvitor@gmail.com';
 
 var currentUser = null;      // Firebase user object once signed in, else null
-var authPhase = 'loading';   // 'loading' | 'signedOut' | 'notAllowed' | 'ready' | 'error'
+var authPhase = 'loading';   // 'loading' | 'signedOut' | 'ready' | 'error'
 var unsubscribeLibrary = null;
 
 function uid(prefix) {
@@ -566,12 +566,6 @@ function renderSignIn() {
     '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON + '<span>Continue with Google</span></button>');
 }
 
-function renderNotAllowed() {
-  var email = currentUser ? esc(currentUser.email) : 'This account';
-  renderGate('Not on the list', email + ' isn’t invited to this library yet. Ask the owner to add your email.',
-    '<button class="btn btn-ghost" data-action="sign-out">Sign out</button>');
-}
-
 function renderFirebaseError() {
   renderGate('Can’t connect', 'The sync service didn’t load — check your connection and reload the page.', '');
 }
@@ -581,7 +575,6 @@ function render() {
 
   if (authPhase === 'loading') { renderLoading(); return; }
   if (authPhase === 'signedOut') { renderSignIn(); return; }
-  if (authPhase === 'notAllowed') { renderNotAllowed(); return; }
   if (authPhase === 'error') { renderFirebaseError(); return; }
 
   var hash = location.hash || '#/';
@@ -1463,32 +1456,21 @@ function boot() {
     }
 
     currentUser = user;
-    window.Brew.checkAllowlist(user.email).then(function (allowed) {
-      if (!allowed) {
-        authPhase = 'notAllowed';
-        render();
-        return;
+    authPhase = 'ready';
+    window.Brew.loadLibrary(user.uid).then(function (data) {
+      if (!data || (data.pristine && data.seedVersion !== SEED_VERSION)) {
+        state = initialLibraryFor(user);
+        window.Brew.saveLibrary(user.uid, state);
+      } else {
+        state = data;
       }
-
-      authPhase = 'ready';
-      window.Brew.loadLibrary(user.uid).then(function (data) {
-        if (!data || (data.pristine && data.seedVersion !== SEED_VERSION)) {
-          state = initialLibraryFor(user);
-          window.Brew.saveLibrary(user.uid, state);
-        } else {
-          state = data;
-        }
-        render();
-
-        // Live sync: any change (from this device or another) re-renders.
-        unsubscribeLibrary = window.Brew.subscribeLibrary(user.uid, function (remote) {
-          state = remote;
-          render();
-        });
-      });
-    }).catch(function () {
-      authPhase = 'notAllowed';
       render();
+
+      // Live sync: any change (from this device or another) re-renders.
+      unsubscribeLibrary = window.Brew.subscribeLibrary(user.uid, function (remote) {
+        state = remote;
+        render();
+      });
     });
   });
 }
