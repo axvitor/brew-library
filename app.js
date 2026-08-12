@@ -370,13 +370,16 @@ function preset(styleId, dose, water, methodName) {
       ];
     }
     if (m.indexOf('espresso') > -1 || m.indexOf('moka') > -1) return [];
-    // James Hoffmann's "Ultimate V60": 2× bloom, up to 60% by 1:15, rest by 1:45, stir, drawdown.
+    // James Hoffmann's V60: five equal pours (each a fifth of the total
+    // water) at 0:00, 0:45, 1:10, 1:30 and 1:50, then let it draw down —
+    // no stirring needed.
+    var fifth = g(water / 5);
     return [
-      { t: '0:00', label: 'Bloom — pour twice the coffee weight, wetting every ground.', water: g(dose * 2) },
-      { t: '0:10', label: 'Swirl gently until the bed is flat and no dry grounds remain.', water: 0 },
-      { t: '0:45', label: 'Pour steadily up to 60% of the total water, finishing by 1:15.', water: g(water * 0.6 - dose * 2) },
-      { t: '1:15', label: 'Pour the remaining 40% more gently, in circles, by 1:45.', water: g(water * 0.4) },
-      { t: '1:45', label: 'Stir once clockwise and once anti-clockwise, then let it draw down.', water: 0 }
+      { t: '0:00', label: 'Bloom — pour the first fifth of the water.', water: fifth },
+      { t: '0:45', label: 'Pour the second fifth.', water: fifth },
+      { t: '1:10', label: 'Pour the third fifth.', water: fifth },
+      { t: '1:30', label: 'Pour the fourth fifth.', water: fifth },
+      { t: '1:50', label: 'Pour the final fifth, then let it draw down — no stirring needed.', water: g(water) - fifth * 4 }
     ];
   }
 
@@ -529,21 +532,30 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
   '<path fill="#34A853" d="M24 48c6.5 0 12-2.1 15.9-5.9l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.4 0-11.7-3.5-13.6-8.7l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/>' +
   '</svg>';
 
+// The avatar chip and the "Signed in as…" line inside the ⋮ menu both
+// just reflect currentUser — Sign out itself now lives as a menu item
+// (see index.html), so the topbar doesn't need a dedicated button for it.
 function updateAccountChip() {
   var chip = document.getElementById('accountChip');
   var actions = document.getElementById('appActions');
+  var menuAccount = document.getElementById('menuAccount');
   if (!chip) return;
+
   if (currentUser) {
     chip.hidden = false;
     var avatar = document.getElementById('accountAvatar');
-    var emailEl = document.getElementById('accountEmail');
     if (avatar) {
       avatar.src = currentUser.photoURL || '';
       avatar.style.visibility = currentUser.photoURL ? 'visible' : 'hidden';
     }
-    if (emailEl) emailEl.textContent = currentUser.email || '';
+    if (menuAccount) {
+      menuAccount.hidden = false;
+      var emailEl = document.getElementById('menuAccountEmail');
+      if (emailEl) emailEl.textContent = currentUser.email || '';
+    }
   } else {
     chip.hidden = true;
+    if (menuAccount) menuAccount.hidden = true;
   }
   if (actions) actions.hidden = authPhase !== 'ready';
 }
@@ -715,15 +727,15 @@ function noStepsMessage(r) {
 // when no dose is recorded the schedule falls back to 15 g — say so rather than
 // quietly showing numbers the recipe's own Dose tile doesn't support.
 function stepsCaption(r) {
-  var base = 'Follows the ' + nameOf('style', r.styleId) + ' formula, scaled to this dose and water.';
-  var me = findIn('method', r.methodId);
-  var mName = (me ? me.name : '').toLowerCase();
-  var doseDrivesSteps = r.styleId === 'st-hoffmann' && mName.indexOf('aeropress') === -1;
-  if (doseDrivesSteps && !Number(r.dose)) {
-    return 'Follows the ' + nameOf('style', r.styleId) + ' formula. No dose recorded, so the bloom assumes 15 g ' +
-      '(this style’s ratio at 250 g) — set a dose to make it exact.';
+  var styleName = nameOf('style', r.styleId);
+  // Every formula (Hoffmann, Tetsu) is scaled purely off the water amount —
+  // if none is recorded, say so rather than quietly assuming one.
+  if (!Number(r.water)) {
+    var assumedDose = Number(r.dose) || 15;
+    return 'Follows the ' + styleName + ' formula. No water recorded, so it assumes ' +
+      (assumedDose * 16) + ' g (1:16 at ' + assumedDose + ' g dose) — set a water amount to make it exact.';
   }
-  return base;
+  return 'Follows the ' + styleName + ' formula, scaled to this dose and water.';
 }
 
 // Pouring steps are always derived from the recipe style's formula (scaled to

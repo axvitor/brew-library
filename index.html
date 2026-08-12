@@ -26,8 +26,6 @@
     <nav class="topbar-actions">
       <div class="account-chip" id="accountChip" hidden>
         <img class="account-avatar" id="accountAvatar" alt="" />
-        <span class="account-email" id="accountEmail"></span>
-        <button class="btn btn-quiet btn-sm" data-action="sign-out">Sign out</button>
       </div>
       <div class="app-actions" id="appActions" hidden>
         <button class="btn btn-ghost btn-icon-label" data-action="open-library" title="Coffees, grinders, methods, styles">
@@ -39,13 +37,18 @@
             <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg>
           </button>
           <div class="menu" id="appMenu" hidden>
+            <div class="menu-account" id="menuAccount" hidden>
+              <span class="menu-account-email" id="menuAccountEmail"></span>
+            </div>
             <button data-action="export">Export data (.json)</button>
             <button data-action="import">Import data…</button>
+            <div class="menu-sep"></div>
+            <button data-action="sign-out">Sign out</button>
             <div class="menu-sep"></div>
             <button data-action="reset" class="danger">Reset library…</button>
           </div>
         </div>
-        <button class="btn btn-primary" data-action="new-recipe">
+        <button class="btn btn-primary hdr-cta" data-action="new-recipe">
           <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           <span>Add recipe</span>
         </button>

@@ -69,10 +69,10 @@ Pouring steps aren't stored per recipe — they're always attached to the recipe
 dose, water and method. Change the dose or water later and the steps rescale
 automatically; there's nothing to keep in sync by hand.
 
-- **James Hoffmann** (Ultimate V60) — bloom at 2× dose, swirl flat, pour steadily to
-  60% of total by 1:15, the remaining 40% gently by 1:45, stir clockwise then
-  anti-clockwise, drawdown. Selecting the AeroPress method swaps in his Ultimate
-  AeroPress technique instead (pour all, seal, swirl at 2:00, press from 2:30).
+- **James Hoffmann** — five equal pours (each a fifth of the total water) at 0:00,
+  0:45, 1:10, 1:30 and 1:50, then let it draw down — no stirring needed. Selecting
+  the AeroPress method swaps in his Ultimate AeroPress technique instead (pour all,
+  seal, swirl at 2:00, press from 2:30).
 - **Tetsu Kasuya — Sweet** — 4:6 method with a smaller first pour (5/12 : 7/12 of the
   first 40%).
 - **Tetsu Kasuya — Acid** — 4:6 with a larger first pour (7/12 : 5/12).
