@@ -473,8 +473,10 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    (see .menu-account below) so the header stays narrow on phones. */
 .app-actions{display:flex;align-items:center;gap:8px;flex:none}
 .app-actions[hidden]{display:none}
-.account-chip{display:flex;align-items:center;flex:none}
+.account-chip{display:flex;align-items:center;flex:none;border-radius:50%;transition:box-shadow .15s ease, transform .12s ease}
 .account-chip[hidden]{display:none}
+.account-chip:hover{box-shadow:0 0 0 3px var(--accent-wash)}
+.account-chip:active{transform:scale(.92)}
 .account-avatar{width:30px;height:30px;border-radius:50%;background:var(--paper-2);flex:none;object-fit:cover;border:1px solid var(--line)}
 .menu-account{padding:6px 12px 10px;margin-bottom:4px;border-bottom:1px solid var(--line-2)}
 .menu-account[hidden]{display:none}
