@@ -421,7 +421,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .back-to-top:hover{border-color:var(--accent);color:var(--accent-ink);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 .back-to-top .ico{width:20px;height:20px}
 @media(max-width:640px){
-  .back-to-top{right:16px;bottom:calc(16px + env(safe-area-inset-bottom))}
+  /* Same fixed-clearance approach as the modal footer fix: mobile browser
+     chrome (address/tab bar) can sit right over a fixed bottom:16px
+     button, making it visible in the DOM but covered on screen. 50px
+     holds clear regardless of which browser/OS is showing it. */
+  .back-to-top{right:16px;bottom:calc(50px + env(safe-area-inset-bottom))}
 }
 
 /* ---------- account chip ---------- */
