@@ -19,7 +19,21 @@ var SEED_VERSION = 5;
 // The one account that starts with the full 101-recipe starter library.
 // Everyone else invited to the app starts blank — your personal coffee list
 // shouldn't land in a friend's account just because they signed in.
-var OWNER_EMAIL = 'axvitor@gmail.com';
+//
+// Stored as a SHA-256 hash rather than the plain address, since this file
+// is public (deployed as-is, no build step) — this keeps the email out of
+// anyone reading the source while the check itself still works the same.
+// Recompute with: crypto.subtle.digest('SHA-256', new TextEncoder().encode(email))
+var OWNER_EMAIL_HASH = 'b4b829003004fb5d96cf13da1c211429f519bbcfd703c46b3d8e540c01c9781a';
+
+function sha256Hex(text) {
+  if (!(window.crypto && window.crypto.subtle)) return Promise.resolve('');
+  return window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (buf) {
+    return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+      return b.toString(16).padStart(2, '0');
+    }).join('');
+  });
+}
 
 var currentUser = null;      // Firebase user object once signed in, else null
 var authPhase = 'loading';   // 'loading' | 'signedOut' | 'ready' | 'error'
@@ -50,9 +64,14 @@ function emptyLibrary() {
   };
 }
 
+// Returns a Promise<library> — resolving the hash check is async, so this
+// is too. Falls back to a blank library for anyone if hashing isn't
+// available (window.crypto.subtle needs a secure context: https/localhost).
 function initialLibraryFor(user) {
-  var isOwner = user && user.email && user.email.toLowerCase() === OWNER_EMAIL;
-  return isOwner ? seed() : emptyLibrary();
+  if (!user || !user.email) return Promise.resolve(emptyLibrary());
+  return sha256Hex(user.email.toLowerCase()).then(function (hash) {
+    return hash === OWNER_EMAIL_HASH ? seed() : emptyLibrary();
+  });
 }
 
 /* ---------------------------------------------------------
@@ -1253,11 +1272,13 @@ function importData(file) {
 
 function resetAll() {
   if (!confirm('Reset the library back to the starter data?\n\nEvery recipe and coffee you added will be deleted.')) return;
-  state = initialLibraryFor(currentUser);
-  save({ keepPristine: true });
-  location.hash = '#/';
-  render();
-  toast('Library reset.');
+  initialLibraryFor(currentUser).then(function (fresh) {
+    state = fresh;
+    save({ keepPristine: true });
+    location.hash = '#/';
+    render();
+    toast('Library reset.');
+  });
 }
 
 /* ---------------------------------------------------------
@@ -1490,14 +1511,14 @@ function boot() {
     currentUser = user;
     authPhase = 'ready';
     window.Brew.loadLibrary(user.uid).then(function (data) {
-      if (!data || (data.pristine && data.seedVersion !== SEED_VERSION)) {
-        state = initialLibraryFor(user);
-        window.Brew.saveLibrary(user.uid, state);
-      } else {
-        state = data;
-      }
-      render();
-
+      var needsSeed = !data || (data.pristine && data.seedVersion !== SEED_VERSION);
+      var ready = needsSeed ? initialLibraryFor(user) : Promise.resolve(data);
+      return ready.then(function (lib) {
+        state = lib;
+        if (needsSeed) window.Brew.saveLibrary(user.uid, state);
+        render();
+      });
+    }).then(function () {
       // Live sync: any change (from this device or another) re-renders.
       unsubscribeLibrary = window.Brew.subscribeLibrary(user.uid, function (remote) {
         state = remote;
