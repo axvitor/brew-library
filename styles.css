@@ -245,7 +245,7 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 @keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .card{
   position:relative;display:flex;flex-direction:column;gap:14px;
-  background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+  background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
   padding:20px;text-align:left;width:100%;
   box-shadow:var(--shadow-sm);transition:transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
   /* Uniform (no stagger) and quick: the grid re-renders on every search
@@ -255,6 +255,12 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
   animation:cardIn var(--dur-slow) var(--ease-out) both;
 }
 .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--accent) 32%,var(--line))}
+@media (prefers-color-scheme: dark){
+  /* Recipe cards are forced pure white in light mode above — that would be
+     a jarring light square in dark mode, so keep them on the normal
+     dark surface token instead. */
+  .card{ background:var(--card); }
+}
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .card-title{font-family:var(--serif);font-size:20px;font-weight:400;line-height:1.25;letter-spacing:-.01em}
 .card-sub{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
