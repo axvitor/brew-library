@@ -1490,7 +1490,26 @@ window.addEventListener('hashchange', render);
    14. Boot — wait for Firebase auth before showing anything.
    --------------------------------------------------------- */
 
+// Local design/layout preview, no Google sign-in, no Firestore involved.
+// Gated on BOTH conditions so it can never fire on the deployed site even
+// if someone appends ?preview there: must be localhost/127.0.0.1 AND the
+// query flag must be present. Edits work (favouriting, adding recipes,
+// etc.) but save() no-ops since currentUser stays null — nothing persists,
+// a reload always comes back to the clean starter library.
+function isLocalPreview() {
+  var host = location.hostname;
+  var isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '';
+  return isLocalHost && new URLSearchParams(location.search).has('preview');
+}
+
 function boot() {
+  if (isLocalPreview()) {
+    state = seed();
+    authPhase = 'ready';
+    render();
+    return;
+  }
+
   if (!window.Brew) {
     authPhase = 'error';
     render();
