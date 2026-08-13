@@ -38,9 +38,9 @@
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
   --ease-out:cubic-bezier(.22,1,.36,1);
   --ease-in-out:cubic-bezier(.65,0,.35,1);
-  --dur-fast:120ms;
-  --dur-base:220ms;
-  --dur-slow:420ms;
+  --dur-fast:150ms;
+  --dur-base:320ms;
+  --dur-slow:650ms;
   --glass-bg:rgba(251,252,247,.64);
   --glass-bg-strong:rgba(251,252,247,.8);
   --glass-blur:blur(20px) saturate(150%);
@@ -328,11 +328,11 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .bigstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}
 .bigstat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:15px 16px;box-shadow:var(--shadow-sm);animation:cardIn var(--dur-slow) var(--ease-out) both}
 .bigstat:nth-child(1){animation-delay:0s}
-.bigstat:nth-child(2){animation-delay:.05s}
-.bigstat:nth-child(3){animation-delay:.1s}
-.bigstat:nth-child(4){animation-delay:.15s}
-.bigstat:nth-child(5){animation-delay:.2s}
-.bigstat:nth-child(6){animation-delay:.25s}
+.bigstat:nth-child(2){animation-delay:.08s}
+.bigstat:nth-child(3){animation-delay:.16s}
+.bigstat:nth-child(4){animation-delay:.24s}
+.bigstat:nth-child(5){animation-delay:.32s}
+.bigstat:nth-child(6){animation-delay:.4s}
 .bigstat .k{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint)}
 .bigstat .v{font-family:var(--serif);font-size:26px;line-height:1.2;margin-top:4px;font-variant-numeric:tabular-nums}
 .bigstat .v small{font-size:14px;color:var(--muted);font-family:var(--sans);margin-left:2px}
@@ -343,12 +343,12 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .step{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:16px;padding-bottom:22px;animation:stepIn var(--dur-slow) var(--ease-out) both}
 /* Pours reveal one after another, like the schedule itself — capped at six
    steps of delay so a long AeroPress/4:6 list doesn't take forever to settle. */
-.step:nth-child(1){animation-delay:.08s}
-.step:nth-child(2){animation-delay:.18s}
-.step:nth-child(3){animation-delay:.28s}
-.step:nth-child(4){animation-delay:.38s}
-.step:nth-child(5){animation-delay:.48s}
-.step:nth-child(n+6){animation-delay:.58s}
+.step:nth-child(1){animation-delay:.12s}
+.step:nth-child(2){animation-delay:.27s}
+.step:nth-child(3){animation-delay:.42s}
+.step:nth-child(4){animation-delay:.57s}
+.step:nth-child(5){animation-delay:.72s}
+.step:nth-child(n+6){animation-delay:.87s}
 .step:last-child{padding-bottom:0}
 .step::before{content:"";position:absolute;left:5px;top:16px;bottom:-6px;width:1px;background:var(--line)}
 .step:last-child::before{display:none}
@@ -493,10 +493,17 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .foot{padding:34px 24px 44px;color:var(--faint);font-size:12.5px;text-align:center}
 
 /* ---------- back to top ---------- */
-@keyframes backToTopIn{
-  from{opacity:0;transform:translateY(12px)}
-  to{opacity:1;transform:translateY(0)}
-}
+/* Shown/hidden via a .show class toggled in JS, transitioning opacity +
+   transform + visibility — deliberately NOT display:none plus a restarting
+   keyframe animation. That pattern depends on the browser reliably
+   re-running a CSS animation every single time an element goes from
+   display:none back to visible, which is inconsistent enough across mobile
+   browsers that the button could end up stuck invisible. A transition
+   between two persistent, always-in-the-DOM states doesn't have that
+   failure mode. visibility (not display) is what actually removes it from
+   layout/hit-testing while hidden; its own transition is delayed so it
+   only flips to hidden after the fade-out finishes, and flips to visible
+   immediately when showing. */
 .back-to-top{
   position:fixed;right:20px;bottom:24px;z-index:90;
   width:46px;height:46px;border-radius:50%;
@@ -504,15 +511,28 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   border:1px solid var(--glass-border);color:var(--ink-2);
   display:flex;align-items:center;justify-content:center;
   box-shadow:var(--shadow-md);
-  transition:transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
-  /* Replays automatically every time the button goes from [hidden] (display:
-     none) to shown — no JS needed, CSS animations restart on display change.
-     Fade + drift only, no scale, per the design system's motion guideline. */
-  animation:backToTopIn var(--dur-slow) var(--ease-out) both;
+  opacity:0;visibility:hidden;transform:translateY(14px);pointer-events:none;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out),
+    visibility 0s linear var(--dur-slow),
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
-.back-to-top[hidden]{display:none}
+.back-to-top.show{
+  opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out),
+    visibility 0s linear 0s,
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
 .back-to-top:hover{border-color:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow-lg)}
 .back-to-top:active{transform:translateY(1px)}
+.back-to-top.show:active{transform:translateY(1px)}
 .back-to-top .ico{width:20px;height:20px}
 @media(max-width:640px){
   /* Same fixed-clearance approach as the modal footer fix: mobile browser

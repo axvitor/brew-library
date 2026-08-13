@@ -1480,7 +1480,7 @@ window.addEventListener('hashchange', render);
     var shouldShow = window.scrollY > window.innerHeight * 0.6;
     if (shouldShow === visible) return;
     visible = shouldShow;
-    btn.hidden = !shouldShow;
+    btn.classList.toggle('show', shouldShow);
   }
   window.addEventListener('scroll', sync, { passive: true });
   sync();
