@@ -837,6 +837,10 @@ function renderDetail(id) {
         '</div>' +
       '</div>' +
       '<div class="detail-actions">' +
+        (timerPlan(r)
+          ? '<button class="btn btn-ghost btn-sm action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
+            ICON.play + '<span>Start timer</span></button>'
+          : '') +
         '<button class="btn btn-ghost btn-sm fav-desktop" data-action="fav" data-id="' + esc(r.id) + '">' +
           ICON.star + '<span>' + (r.fav ? 'Favourited' : 'Favourite') + '</span></button>' +
         '<button class="btn btn-ghost btn-sm action-dup" data-action="duplicate" data-id="' + esc(r.id) + '">' + ICON.copy + '<span>Duplicate</span></button>' +
@@ -1014,8 +1018,10 @@ function openTimer(id) {
     render: function () { return timer.el; },
     onClose: stopTimer
   });
+  // Opens paused: you press play when the kettle is over the bed, not when
+  // the sheet happens to finish animating in.
   timerPaint();
-  timerRun(true);
+  timerControls();
 }
 
 function timerPaint() {
@@ -1092,14 +1098,17 @@ function timerControls() {
   timer.sheet.classList.toggle('is-running', timer.running);
 }
 
-function timerReset() {
+// Rewinds in place: a running timer keeps running from zero, a paused one
+// stays paused at zero. Only "Brew again" (a finished ring) starts itself.
+function timerReset(andRun) {
   if (!timer) return;
+  var resume = andRun || timer.running;
   timerRun(false);
   timer.elapsed = 0;
   timer.seg = -1;
   timer.sheet.classList.remove('is-done');
   timerPaint();
-  timerRun(true);
+  if (resume) timerRun(true); else timerControls();
 }
 
 function stopTimer() {
@@ -1611,7 +1620,7 @@ document.addEventListener('click', function (ev) {
       ev.preventDefault();
       if (!timer) return;
       // Once the ring has closed the same button becomes "brew again".
-      if (timer.elapsed >= timer.plan.total) timerReset();
+      if (timer.elapsed >= timer.plan.total) timerReset(true);
       else timerRun(!timer.running);
       return;
 

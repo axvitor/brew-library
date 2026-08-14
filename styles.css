@@ -365,6 +365,9 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
      columns underneath it. Desktop keeps the original inline row. */
   .detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
   .detail-actions .btn{width:100%;justify-content:center}
+  /* Timer sits above Edit, both spanning the row; Duplicate and Delete
+     fill the two columns underneath. */
+  .detail-actions .action-timer{order:-2;grid-column:1/-1}
   .detail-actions .action-edit{order:-1;grid-column:1/-1}
 }
 .detail-body{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:44px;padding-top:30px;align-items:start}
@@ -549,10 +552,14 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    One closed ring = the recipe's whole brew time. The dim arcs behind are
    the plan (one slice per pouring step, sized by how long it's on screen);
    the bright arc sweeping over them is where you actually are. */
-.sheet-timer{max-width:430px}
-.timer-body{display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px 22px 18px}
+/* Given a fixed height so the step list gets every pixel the ring and
+   controls don't need — otherwise the panel shrink-wraps its content and
+   the list is left showing one row at a time. */
+.sheet-timer{max-width:430px;height:min(760px,calc(100vh - 66px));height:min(760px,calc(100dvh - 66px))}
+.timer-body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 20px 14px;overflow:hidden;min-height:0}
 
-.timer-ring{position:relative;width:min(258px,68vw);aspect-ratio:1;flex:none}
+/* Shrinks on short screens so the steps keep their room. */
+.timer-ring{position:relative;width:min(246px,60vw,30vh);aspect-ratio:1;flex:none}
 .timer-ring svg{width:100%;height:100%;display:block;overflow:visible}
 .timer-ring circle{fill:none}
 .ttrack{stroke:var(--line-2);stroke-width:15}
@@ -575,7 +582,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .timer-elapsed{font-family:var(--mono);font-size:36px;font-weight:500;letter-spacing:-.05em;font-variant-numeric:tabular-nums;line-height:1;color:var(--ink)}
 .timer-total{font-family:var(--mono);font-size:10.5px;font-weight:500;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted)}
 
-.timer-now{min-height:42px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px}
+.timer-now{flex:none;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px}
 .timer-now-label{font-size:15px;line-height:1.45;color:var(--ink)}
 
 /* Each new step gets one quiet nudge — enough to catch the eye when you're
@@ -585,8 +592,8 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 @keyframes ringPulse{0%{transform:scale(1)}38%{transform:scale(1.035)}100%{transform:scale(1)}}
 @keyframes nowIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-.timer-steps{width:100%;display:flex;flex-direction:column;gap:2px;max-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line-2);padding-top:12px}
-.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;padding:8px 10px;border-radius:var(--r-sm);font-size:13.5px;line-height:1.4;color:var(--ink-2);transition:background-color var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard)}
+.timer-steps{width:100%;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:2px;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line-2);padding-top:10px}
+.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:7px 9px;border-radius:var(--r-sm);font-size:13.5px;line-height:1.38;color:var(--ink-2);transition:background-color var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard)}
 .timer-step .ts-t,.timer-step .ts-w{font-family:var(--mono);font-size:10.5px;color:var(--faint);white-space:nowrap}
 .timer-step.is-past{color:var(--faint)}
 .timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--line-strong)}
