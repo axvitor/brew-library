@@ -556,7 +556,8 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    controls don't need — otherwise the panel shrink-wraps its content and
    the list is left showing one row at a time. */
 .sheet-timer{max-width:430px;height:min(760px,calc(100vh - 66px));height:min(760px,calc(100dvh - 66px))}
-.timer-body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 20px 14px;overflow:hidden;min-height:0}
+/* No bottom padding — the step list runs all the way down to the footer. */
+.timer-body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 20px 0;overflow:hidden;min-height:0}
 
 /* Shrinks on short screens so the steps keep their room. */
 .timer-ring{position:relative;width:min(246px,60vw,30vh);aspect-ratio:1;flex:none}
@@ -592,8 +593,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 @keyframes ringPulse{0%{transform:scale(1)}38%{transform:scale(1.035)}100%{transform:scale(1)}}
 @keyframes nowIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-.timer-steps{width:100%;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:2px;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line-2);padding-top:10px}
-.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:7px 9px;border-radius:var(--r-sm);font-size:13.5px;line-height:1.38;color:var(--ink-2);transition:background-color var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard)}
+/* Bleeds past the body's side padding so the rows span the full sheet —
+   list-style/padding reset too, or the browser's own 40px ol indent eats
+   the width the step labels need. */
+.timer-steps{align-self:stretch;margin:0 -20px;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line-2);padding:8px 0 0}
+.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:8px 20px;font-size:13.5px;line-height:1.38;color:var(--ink-2);transition:background-color var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard)}
 .timer-step .ts-t,.timer-step .ts-w{font-family:var(--mono);font-size:10.5px;color:var(--faint);white-space:nowrap}
 .timer-step.is-past{color:var(--faint)}
 .timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--line-strong)}
