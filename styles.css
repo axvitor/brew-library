@@ -175,7 +175,6 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
   .topbar-inner{gap:6px}
   .topbar-actions{gap:6px}
   .brand-text{font-size:17px}
-  .brand-text em{display:none}
 }
 
 /* ---------- buttons ---------- */
@@ -203,14 +202,6 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
    when a button is actually being pressed, not just hovered. */
 .btn:active:not(:disabled){transform:scale(var(--press-scale))}
 .btn-primary:active:not(:disabled){transform:scale(var(--press-scale))}
-/* This used to collapse to icon-only under 720px, back when the header
-   also carried a separate ⋮ menu button alongside the account chip. Now
-   that the menu lives on the avatar itself, the header has room to keep
-   the "Library" label at every width down to genuinely tiny phones. */
-@media(max-width:360px){
-  .btn-icon-label span{display:none}
-  .btn-icon-label{width:var(--control-h);padding:0}
-}
 
 /* ---------- menu (glass, floating) ---------- */
 @keyframes menuPop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
@@ -607,9 +598,8 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .menu-account[hidden]{display:none}
 .menu-account-email{font-family:var(--mono);font-size:11.5px;color:var(--muted);word-break:break-all}
 
-/* Header's primary CTA: icon-only on narrow phones, same collapse pattern
-   as .btn-icon-label but at a tighter breakpoint since it keeps its label
-   on tablets where there's still room. */
+/* Header's primary CTA collapses to icon-only on narrow phones — it keeps
+   its label everywhere down to 400px, where there's still room. */
 @media(max-width:400px){
   .hdr-cta span{display:none}
   .hdr-cta{width:var(--control-h);padding:0}
