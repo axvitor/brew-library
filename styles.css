@@ -364,11 +364,8 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
      regardless of source order); Duplicate and Delete fill the two
      columns underneath it. Desktop keeps the original inline row. */
   .detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
-  .detail-actions .btn{width:100%}
+  .detail-actions .btn{width:100%;justify-content:center}
   .detail-actions .action-edit{order:-1;grid-column:1/-1}
-  .detail-actions .action-edit span,
-  .detail-actions .action-dup span,
-  .detail-actions .action-del span{display:none}
 }
 .detail-body{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:44px;padding-top:30px;align-items:start}
 @media(max-width:860px){ .detail-body{grid-template-columns:1fr;gap:34px} }
