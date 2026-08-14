@@ -203,7 +203,11 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
    when a button is actually being pressed, not just hovered. */
 .btn:active:not(:disabled){transform:scale(var(--press-scale))}
 .btn-primary:active:not(:disabled){transform:scale(var(--press-scale))}
-@media(max-width:720px){
+/* This used to collapse to icon-only under 720px, back when the header
+   also carried a separate ⋮ menu button alongside the account chip. Now
+   that the menu lives on the avatar itself, the header has room to keep
+   the "Library" label at every width down to genuinely tiny phones. */
+@media(max-width:360px){
   .btn-icon-label span{display:none}
   .btn-icon-label{width:var(--control-h);padding:0}
 }
