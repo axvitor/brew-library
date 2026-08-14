@@ -1,50 +1,52 @@
 /* ============================================================
    Brew Library — styled to the Cupform Design System v2
-   (dark-primary "instrument panel": near-black green-cast canvas,
-   sap-green accent, Instrument Sans + Martian Mono for data,
-   Newsreader italic reserved for tasting notes, glass surfaces,
-   calm ease-out-expo motion with a uniform subtle press-scale)
+   ("instrument panel": sap-green accent, Instrument Sans +
+   Martian Mono for data, Newsreader italic reserved for tasting
+   notes, glass surfaces, calm ease-out-expo motion with a
+   uniform subtle press-scale)
+
+   Light is the primary/default mode here — Cupform v2's own
+   design calls dark primary, but this app keeps light as the
+   default and offers dark as the secondary mode via
+   prefers-color-scheme, same as the rest of this app's history.
    ============================================================ */
 
 :root{
-  /* Dark is the primary mode (unconditional default) — the light
-     theme below is secondary, for daylight/print use, matching
-     Cupform v2's own stated priority. */
-  --paper:#060908;
-  --paper-2:#0a0f0d;
-  --card:#0e1412;
-  --card-raised:#131a17;
-  --ink:#f2f7f4;
-  --ink-2:#9db0a8;
+  --paper:#f7faf8;
+  --paper-2:#eef3f1;
+  --card:#ffffff;
+  --card-raised:#eef3f1;
+  --ink:#0b1310;
+  --ink-2:#48594f;
   --muted:#6b7d76;
-  --faint:#5c6f68;
-  --disabled:#465550;
-  --line:rgba(242,247,244,.12);
-  --line-2:rgba(242,247,244,.07);
-  --line-strong:rgba(242,247,244,.22);
-  --accent:#4fd98b;
-  --accent-ink:#7fe8ab;
-  --accent-active:#34c67d;
-  --accent-wash:rgba(79,217,139,.12);
-  --accent-on:#04120b;
-  --ok:#4fd98b;
-  --warning:#eaa94b;
-  --warning-wash:rgba(234,169,75,.14);
-  --danger:#f07963;
-  --danger-wash:rgba(240,121,99,.14);
-  --info:#6fd3e0;
-  --scrim:rgba(6,9,8,.72);
-  --glass-bg:rgba(19,26,23,.62);
-  --glass-bg-strong:rgba(19,26,23,.82);
+  --faint:#8a9a92;
+  --disabled:#a3b1aa;
+  --line:rgba(11,19,16,.13);
+  --line-2:rgba(11,19,16,.07);
+  --line-strong:rgba(11,19,16,.26);
+  --accent:#177a4d;
+  --accent-ink:#125336;
+  --accent-active:#0d3925;
+  --accent-wash:rgba(23,122,77,.1);
+  --accent-on:#ffffff;
+  --ok:#177a4d;
+  --danger:#e0614c;
+  --danger-wash:rgba(224,97,76,.12);
+  --warning:#d99133;
+  --warning-wash:rgba(217,145,51,.12);
+  --info:#4fb8c7;
+  --scrim:rgba(10,15,13,.42);
+  --glass-bg:rgba(255,255,255,.72);
+  --glass-bg-strong:rgba(255,255,255,.88);
   --glass-blur:blur(18px) saturate(1.2);
   --glass-blur-sm:blur(10px) saturate(1.15);
-  --glass-border:rgba(242,247,244,.1);
-  --shadow-sm:0 2px 8px rgba(4,10,7,.45);
-  --shadow-md:0 10px 28px -8px rgba(4,10,7,.6);
-  --shadow-lg:0 28px 60px -18px rgba(4,10,7,.72);
-  --shadow-glow:0 0 0 1px rgba(79,217,139,.35),0 8px 32px -8px rgba(79,217,139,.28);
-  --inner-hairline:inset 0 1px 0 rgba(242,247,244,.06);
-  --grad-depth:radial-gradient(120% 90% at 50% 0%, rgba(31,165,101,.14), transparent 62%);
+  --glass-border:rgba(11,19,16,.08);
+  --shadow-sm:0 2px 8px rgba(11,19,16,.08);
+  --shadow-md:0 10px 28px -10px rgba(11,19,16,.14);
+  --shadow-lg:0 28px 60px -20px rgba(11,19,16,.18);
+  --shadow-glow:0 0 0 1px rgba(23,122,77,.3),0 8px 32px -10px rgba(23,122,77,.22);
+  --inner-hairline:inset 0 1px 0 rgba(255,255,255,.7);
+  --grad-depth:radial-gradient(120% 90% at 50% 0%, rgba(23,122,77,.08), transparent 62%);
   --r-xs:4px;
   --r-sm:8px;
   --r-md:12px;
@@ -78,41 +80,41 @@
   --page-max:1240px;
 }
 
-@media (prefers-color-scheme: light){
+@media (prefers-color-scheme: dark){
   :root{
-    --paper:#f7faf8;
-    --paper-2:#eef3f1;
-    --card:#ffffff;
-    --card-raised:#eef3f1;
-    --ink:#0b1310;
-    --ink-2:#48594f;
+    --paper:#060908;
+    --paper-2:#0a0f0d;
+    --card:#0e1412;
+    --card-raised:#131a17;
+    --ink:#f2f7f4;
+    --ink-2:#9db0a8;
     --muted:#6b7d76;
-    --faint:#8a9a92;
-    --disabled:#a3b1aa;
-    --line:rgba(11,19,16,.13);
-    --line-2:rgba(11,19,16,.07);
-    --line-strong:rgba(11,19,16,.26);
-    --accent:#177a4d;
-    --accent-ink:#125336;
-    --accent-active:#0d3925;
-    --accent-wash:rgba(23,122,77,.1);
-    --accent-on:#ffffff;
-    --ok:#177a4d;
-    --danger:#e0614c;
-    --danger-wash:rgba(224,97,76,.12);
-    --warning:#d99133;
-    --warning-wash:rgba(217,145,51,.12);
-    --info:#4fb8c7;
-    --scrim:rgba(10,15,13,.42);
-    --glass-bg:rgba(255,255,255,.72);
-    --glass-bg-strong:rgba(255,255,255,.88);
-    --glass-border:rgba(11,19,16,.08);
-    --shadow-sm:0 2px 8px rgba(11,19,16,.08);
-    --shadow-md:0 10px 28px -10px rgba(11,19,16,.14);
-    --shadow-lg:0 28px 60px -20px rgba(11,19,16,.18);
-    --shadow-glow:0 0 0 1px rgba(23,122,77,.3),0 8px 32px -10px rgba(23,122,77,.22);
-    --inner-hairline:inset 0 1px 0 rgba(255,255,255,.7);
-    --grad-depth:radial-gradient(120% 90% at 50% 0%, rgba(23,122,77,.08), transparent 62%);
+    --faint:#5c6f68;
+    --disabled:#465550;
+    --line:rgba(242,247,244,.12);
+    --line-2:rgba(242,247,244,.07);
+    --line-strong:rgba(242,247,244,.22);
+    --accent:#4fd98b;
+    --accent-ink:#7fe8ab;
+    --accent-active:#34c67d;
+    --accent-wash:rgba(79,217,139,.12);
+    --accent-on:#04120b;
+    --ok:#4fd98b;
+    --warning:#eaa94b;
+    --warning-wash:rgba(234,169,75,.14);
+    --danger:#f07963;
+    --danger-wash:rgba(240,121,99,.14);
+    --info:#6fd3e0;
+    --scrim:rgba(6,9,8,.72);
+    --glass-bg:rgba(19,26,23,.62);
+    --glass-bg-strong:rgba(19,26,23,.82);
+    --glass-border:rgba(242,247,244,.1);
+    --shadow-sm:0 2px 8px rgba(4,10,7,.45);
+    --shadow-md:0 10px 28px -8px rgba(4,10,7,.6);
+    --shadow-lg:0 28px 60px -18px rgba(4,10,7,.72);
+    --shadow-glow:0 0 0 1px rgba(79,217,139,.35),0 8px 32px -8px rgba(79,217,139,.28);
+    --inner-hairline:inset 0 1px 0 rgba(242,247,244,.06);
+    --grad-depth:radial-gradient(120% 90% at 50% 0%, rgba(31,165,101,.14), transparent 62%);
   }
 }
 
@@ -298,7 +300,6 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 }
 .card:hover{border-color:var(--line);transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .card:active{transform:translateY(0) scale(var(--press-scale-card))}
-@media (prefers-color-scheme: light){ .card{background:#fff} }
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .card-title{font-family:var(--sans);font-size:18px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
 .card-sub{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
