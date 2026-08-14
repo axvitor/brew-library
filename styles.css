@@ -315,12 +315,19 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .stat .k{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted);display:block}
 .stat .v{font-family:var(--mono);font-size:13.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:3px}
 
+/* min-height, not height: a long grinder setting ("KINGrinder · 1 turn +
+   55 clicks") wraps to a second line on a narrow card, and a fixed height
+   let that line spill straight out of the pill. The card grows instead —
+   .stats is margin-top:auto, so the row's bottom edge stays aligned. */
 .tag{
-  display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--r-xs);
-  font-family:var(--mono);font-size:11px;letter-spacing:.02em;background:var(--card-raised);color:var(--ink-2);border:1px solid var(--line-2);
+  display:inline-flex;align-items:center;min-height:22px;max-width:100%;
+  padding:2px 8px;border-radius:var(--r-xs);
+  font-family:var(--mono);font-size:11px;line-height:1.5;letter-spacing:.02em;
+  background:var(--card-raised);color:var(--ink-2);border:1px solid var(--line-2);
 }
 .tag-accent{background:var(--accent-wash);color:var(--accent-ink);border-color:rgba(79,217,139,.28)}
-.tags{display:flex;flex-wrap:wrap;gap:6px}
+/* flex-start so a wrapped tag doesn't stretch its single-line neighbours. */
+.tags{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px}
 .stars{display:inline-flex;gap:3px;color:var(--line-strong)}
 .stars svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6}
 .stars svg.on{color:var(--accent);fill:var(--accent)}
