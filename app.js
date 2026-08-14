@@ -467,9 +467,17 @@ function toast(msg) {
 function iconStar(filled) {
   return '<svg viewBox="0 0 24 24" class="' + (filled ? '' : 'off') + '"><path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.8l5.9-.9z"/></svg>';
 }
+// Cupform rates in beans, not stars — the 1–5 cup score uses this glyph
+// (rating only; the Favourite bookmark stays a star, a separate concept).
+function iconBean(filled) {
+  return '<svg viewBox="0 0 24 24" class="' + (filled ? 'on' : 'off') + '">' +
+    '<ellipse cx="12" cy="12" rx="6.4" ry="9" transform="rotate(38 12 12)"/>' +
+    '<path class="crease" d="M8.2 15.8C10 13 14 11 15.8 8.2"/>' +
+  '</svg>';
+}
 function stars(n) {
   var out = '<span class="stars">', i;
-  for (i = 1; i <= 5; i++) out += iconStar(i <= (n || 0));
+  for (i = 1; i <= 5; i++) out += iconBean(i <= (n || 0));
   return out + '</span>';
 }
 var ICON = {
@@ -1015,11 +1023,11 @@ function buildRecipeForm(m) {
     '<div class="row row-2">' +
       '<div class="field"><label for="f-name">Custom title (optional)</label>' +
         '<input class="inp" id="f-name" value="' + esc(d.name) + '" placeholder="Defaults to the coffee name" /></div>' +
-      '<div class="field"><label>Rating</label>' +
+      '<div class="field"><label>Cup score</label>' +
         '<div class="rate" id="rateWrap">' +
           [1, 2, 3, 4, 5].map(function (i) {
-            return '<button type="button" class="' + (i <= (d.rating || 0) ? 'on' : '') + '" data-action="rate" data-v="' + i + '" aria-label="' + i + ' stars">' +
-              '<svg viewBox="0 0 24 24"><path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.8l5.9-.9z"/></svg></button>';
+            return '<button type="button" class="' + (i <= (d.rating || 0) ? 'on' : '') + '" data-action="rate" data-v="' + i + '" aria-label="Rate ' + i + '">' +
+              iconBean(i <= (d.rating || 0)) + '</button>';
           }).join('') +
         '</div></div>' +
     '</div>';
