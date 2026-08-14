@@ -490,7 +490,12 @@ var ICON = {
   search: '<svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg>',
   star: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.8l5.9-.9z"/></svg>',
   bean: '<svg viewBox="0 0 24 24" class="bean"><g transform="rotate(-28 12 12)">' +
-    '<ellipse cx="12" cy="12" rx="6.4" ry="9.4"/><path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>'
+    '<ellipse cx="12" cy="12" rx="6.4" ry="9.4"/><path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>',
+  // Solid rather than outlined — a hollow triangle reads as a shape, a
+  // filled one reads as "press me".
+  play: '<svg viewBox="0 0 24 24" class="ico ico-fill"><path d="M8 5.2l11 6.8-11 6.8z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" class="ico"><path d="M9.5 5v14M14.5 5v14"/></svg>',
+  replay: '<svg viewBox="0 0 24 24" class="ico"><path d="M4.5 11a7.5 7.5 0 1 1 2.2 6M4 5.5V11h5.5"/></svg>'
 };
 
 /* ---------------------------------------------------------
@@ -712,8 +717,16 @@ function cardHTML(r) {
           '<span>' + esc(nameOf('style', r.styleId)) + '</span>' +
         '</div>' +
       '</div>' +
-      '<button class="fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' +
-        iconStar(true) + '</button>' +
+      '<div class="card-tools">' +
+        // Only offered when there's actually something to count — a recipe
+        // with neither a brew time nor a schedule has no ring to draw.
+        (timerPlan(r)
+          ? '<button class="cardbtn" data-action="timer" data-id="' + esc(r.id) + '" ' +
+            'title="Start brew timer" aria-label="Start brew timer">' + ICON.play + '</button>'
+          : '') +
+        '<button class="fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' +
+          iconStar(true) + '</button>' +
+      '</div>' +
     '</div>' +
     '<div class="tags">' + bits.join('') + '</div>' +
     '<div class="stats">' +
@@ -869,6 +882,251 @@ function renderDetail(id) {
 }
 
 /* ---------------------------------------------------------
+   7b. Brew timer
+
+   A stopwatch drawn as one closed ring: the whole circle is the
+   recipe's brew time, and each pouring step owns the slice of arc
+   it stays on screen for — so the plan is readable at a glance
+   before the timer even starts, and the sweeping progress arc
+   shows how far through the brew you are.
+   --------------------------------------------------------- */
+
+var RING_R = 86;
+var RING_C = 2 * Math.PI * RING_R;
+
+// Times here are free-form ("3:15", "~0:28", "3:10–3:15"), so take the first
+// m:ss found — for a range that's the lower bound, which is the one worth
+// counting up to.
+function secondsOf(v) {
+  var s = String(v == null ? '' : v);
+  var m = s.match(/(\d+):([0-5]\d)/);
+  if (m) return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  m = s.match(/\d+/);
+  return m ? parseInt(m[0], 10) : null;
+}
+
+function timerPlan(r) {
+  var steps = effectiveSteps(r).map(function (s) {
+    return { at: secondsOf(s.t), label: s.label || '', water: Number(s.water) || 0 };
+  }).filter(function (s) { return s.at !== null; });
+  steps.sort(function (a, b) { return a.at - b.at; });
+
+  var brew = secondsOf(r.brewTime);
+  var last = steps.length ? steps[steps.length - 1].at : 0;
+  // The ring has to close *after* the final pour — a recipe whose recorded
+  // brew time is shorter than its own schedule gets padded rather than
+  // truncated, so no step ends up with zero arc.
+  var total = (brew && brew > last) ? brew : (steps.length ? last + 45 : brew);
+  if (!total) return null;
+
+  var segs = [];
+  if (!steps.length) {
+    // Espresso and the like: no pour schedule, so the ring is the shot.
+    segs.push({ start: 0, end: total, label: 'Pull the shot.', water: 0 });
+  } else {
+    if (steps[0].at > 0) segs.push({ start: 0, end: steps[0].at, label: 'Get set up.', water: 0 });
+    steps.forEach(function (s, i) {
+      segs.push({
+        start: s.at,
+        end: i + 1 < steps.length ? steps[i + 1].at : total,
+        label: s.label,
+        water: s.water
+      });
+    });
+  }
+  return { total: total, segs: segs };
+}
+
+var timer = null;
+
+function buildTimerEl(r, plan) {
+  var segHTML = plan.segs.map(function (s, i) {
+    var len = (s.end - s.start) / plan.total * RING_C;
+    // Hairline gap between arcs so the steps read as separate slices —
+    // dropped on slivers too short to survive it.
+    var gap = len > 14 ? 5 : 0;
+    return '<circle class="tseg" data-i="' + i + '" cx="100" cy="100" r="' + RING_R + '" ' +
+      'stroke-dasharray="' + Math.max(len - gap, 1).toFixed(2) + ' ' + RING_C.toFixed(2) + '" ' +
+      'stroke-dashoffset="' + (-(s.start / plan.total * RING_C)).toFixed(2) + '"></circle>';
+  }).join('');
+
+  var rowsHTML = plan.segs.map(function (s, i) {
+    return '<li class="timer-step" data-i="' + i + '">' +
+      '<span class="ts-t">' + esc(mmss(s.start)) + '</span>' +
+      '<span class="ts-l">' + esc(s.label) + '</span>' +
+      (s.water ? '<span class="ts-w">+' + s.water + ' g</span>' : '<span class="ts-w"></span>') +
+    '</li>';
+  }).join('');
+
+  var wrap = document.createElement('div');
+  wrap.className = 'overlay';
+  wrap.innerHTML =
+    '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true">' +
+      '<div class="sheet-head">' +
+        '<h2>' + esc(titleOf(r)) + '</h2>' +
+        '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+      '</div>' +
+      '<div class="sheet-body timer-body">' +
+        '<div class="timer-ring">' +
+          '<svg viewBox="0 0 200 200" aria-hidden="true">' +
+            '<defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">' +
+              '<stop offset="0%" class="g1"/><stop offset="100%" class="g2"/>' +
+            '</linearGradient></defs>' +
+            '<g transform="rotate(-90 100 100)">' +
+              '<circle class="ttrack" cx="100" cy="100" r="' + RING_R + '"></circle>' +
+              segHTML +
+              '<circle class="tprog" cx="100" cy="100" r="' + RING_R + '" ' +
+                'stroke-dasharray="0 ' + RING_C.toFixed(2) + '"></circle>' +
+            '</g>' +
+            '<g class="thead"><circle cx="100" cy="' + (100 - RING_R) + '" r="5.5"></circle></g>' +
+          '</svg>' +
+          '<div class="timer-face">' +
+            '<div class="timer-elapsed" role="timer" aria-live="off">0:00</div>' +
+            '<div class="timer-total">of ' + esc(mmss(plan.total)) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="timer-now"><span class="timer-now-label"></span></div>' +
+        '<ol class="timer-steps">' + rowsHTML + '</ol>' +
+      '</div>' +
+      '<div class="sheet-foot timer-foot">' +
+        '<button class="btn btn-ghost" data-action="timer-reset">' + ICON.replay + '<span>Restart</span></button>' +
+        '<button class="btn btn-primary timer-toggle" data-action="timer-toggle">' + ICON.pause + '<span>Pause</span></button>' +
+      '</div>' +
+    '</div>';
+  wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
+  return wrap;
+}
+
+function openTimer(id) {
+  var r = recipeById(id);
+  if (!r) return;
+  var plan = timerPlan(r);
+  if (!plan) { toast('Add a brew time or pouring steps first.'); return; }
+
+  stopTimer();
+  timer = {
+    plan: plan, el: buildTimerEl(r, plan), sheet: null,
+    elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null
+  };
+  timer.sheet = timer.el.querySelector('.sheet-timer');
+
+  openModal({
+    render: function () { return timer.el; },
+    onClose: stopTimer
+  });
+  timerPaint();
+  timerRun(true);
+}
+
+function timerPaint() {
+  if (!timer) return;
+  var plan = timer.plan, el = timer.el;
+  var e = Math.min(Math.max(timer.elapsed, 0), plan.total);
+  var frac = e / plan.total;
+
+  el.querySelector('.tprog').setAttribute('stroke-dasharray',
+    (frac * RING_C).toFixed(2) + ' ' + RING_C.toFixed(2));
+  el.querySelector('.thead').setAttribute('transform',
+    'rotate(' + (frac * 360).toFixed(3) + ' 100 100)');
+  el.querySelector('.timer-elapsed').textContent = mmss(Math.floor(e));
+
+  var i = 0, k;
+  for (k = 0; k < plan.segs.length; k++) if (e >= plan.segs[k].start) i = k;
+  if (i === timer.seg) return;
+  timer.seg = i;
+
+  var segs = el.querySelectorAll('.tseg');
+  var rows = el.querySelectorAll('.timer-step');
+  for (k = 0; k < segs.length; k++) {
+    segs[k].classList.toggle('is-now', k === i);
+    segs[k].classList.toggle('is-past', k < i);
+    rows[k].classList.toggle('is-now', k === i);
+    rows[k].classList.toggle('is-past', k < i);
+  }
+  el.querySelector('.timer-now-label').textContent = plan.segs[i].label;
+  if (rows[i]) rows[i].scrollIntoView({ block: 'nearest' });
+
+  // Restart the attention pulse from the top on every step change.
+  timer.sheet.classList.remove('pulse');
+  void timer.sheet.offsetWidth;
+  timer.sheet.classList.add('pulse');
+}
+
+function timerFrame(now) {
+  if (!timer || !timer.running) return;
+  timer.elapsed = timer.from + (now - timer.at) / 1000;
+  if (timer.elapsed >= timer.plan.total) {
+    timer.elapsed = timer.plan.total;
+    timerRun(false);
+    timerPaint();
+    timer.sheet.classList.add('is-done');
+    timer.el.querySelector('.timer-now-label').textContent = 'Brew complete.';
+    timerControls();
+    return;
+  }
+  timerPaint();
+  timer.raf = requestAnimationFrame(timerFrame);
+}
+
+function timerRun(on) {
+  if (!timer) return;
+  timer.running = on;
+  if (on) {
+    timer.from = timer.elapsed;
+    timer.at = performance.now();
+    timer.raf = requestAnimationFrame(timerFrame);
+    timerWake(true);
+  } else {
+    cancelAnimationFrame(timer.raf);
+    timerWake(false);
+  }
+  timerControls();
+}
+
+function timerControls() {
+  if (!timer) return;
+  var done = timer.elapsed >= timer.plan.total;
+  var btn = timer.el.querySelector('.timer-toggle');
+  btn.innerHTML = (done ? ICON.replay : timer.running ? ICON.pause : ICON.play) +
+    '<span>' + (done ? 'Brew again' : timer.running ? 'Pause' : 'Start') + '</span>';
+  timer.sheet.classList.toggle('is-running', timer.running);
+}
+
+function timerReset() {
+  if (!timer) return;
+  timerRun(false);
+  timer.elapsed = 0;
+  timer.seg = -1;
+  timer.sheet.classList.remove('is-done');
+  timerPaint();
+  timerRun(true);
+}
+
+function stopTimer() {
+  if (!timer) return;
+  cancelAnimationFrame(timer.raf);
+  timerWake(false);
+  timer = null;
+}
+
+// Brewing means watching the screen without touching it, which is exactly
+// when the phone decides to sleep. Best-effort only — unsupported browsers
+// and rejected requests just carry on without it.
+function timerWake(on) {
+  if (!timer || !navigator.wakeLock) return;
+  if (on) {
+    if (timer.wake) return;
+    navigator.wakeLock.request('screen').then(function (lock) {
+      if (timer && timer.running) timer.wake = lock;
+      else lock.release().catch(function () {});
+    }, function () {});
+  } else if (timer.wake) {
+    timer.wake.release().catch(function () {});
+    timer.wake = null;
+  }
+}
+
+/* ---------------------------------------------------------
    8. Modal stack
    --------------------------------------------------------- */
 
@@ -881,7 +1139,11 @@ function openModal(m) {
   stack.push(m);
   renderModals();
 }
-function closeModal() { stack.pop(); renderModals(); }
+function closeModal() {
+  var m = stack.pop();
+  if (m && m.onClose) m.onClose();
+  renderModals();
+}
 function renderModals() {
   modalRoot.innerHTML = '';
   stack.forEach(function (m) {
@@ -1338,6 +1600,24 @@ document.addEventListener('click', function (ev) {
       ev.preventDefault(); ev.stopPropagation();
       var fr = recipeById(id);
       if (fr) { fr.fav = !fr.fav; save(); render(); }
+      return;
+
+    case 'timer':
+      ev.preventDefault(); ev.stopPropagation();
+      openTimer(id);
+      return;
+
+    case 'timer-toggle':
+      ev.preventDefault();
+      if (!timer) return;
+      // Once the ring has closed the same button becomes "brew again".
+      if (timer.elapsed >= timer.plan.total) timerReset();
+      else timerRun(!timer.running);
+      return;
+
+    case 'timer-reset':
+      ev.preventDefault();
+      timerReset();
       return;
 
     case 'edit':
