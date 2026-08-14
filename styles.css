@@ -192,8 +192,11 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .btn-ghost:hover{background:var(--paper-2);border-color:var(--line-strong);color:var(--ink)}
 .btn-quiet{color:var(--muted)}
 .btn-quiet:hover{color:var(--ink);background:var(--paper-2)}
-.btn-danger{color:var(--danger);border-color:transparent}
-.btn-danger:hover{background:var(--danger-wash)}
+/* Always paired with .btn-ghost — only recolors text/icon and the hover
+   fill, so it keeps the same border every other button has instead of
+   reading as a stray text link next to bordered buttons. */
+.btn-danger{color:var(--danger)}
+.btn-danger:hover{background:var(--danger-wash);border-color:rgba(224,97,76,.4)}
 .btn-icon{width:var(--control-h);padding:0}
 .btn-sm{height:var(--control-h-sm);font-size:13px;padding:0 12px;border-radius:var(--r-sm)}
 .btn:disabled{opacity:.5;pointer-events:none}
@@ -341,15 +344,31 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;margin-bottom:22px}
 .back:hover{color:var(--accent-ink)}
 .detail-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap;padding-bottom:24px;border-bottom:1px solid var(--line-2)}
+.detail-head-info{flex:1;min-width:0}
 .detail-head h1{font-family:var(--sans);font-weight:var(--weight-display);font-size:clamp(26px,4.2vw,36px);letter-spacing:var(--tracking-display);line-height:1.05}
 /* Cupform's "eyebrow" convention — mono micro-label, muted, uppercase. */
 .detail-head .kicker{font-family:var(--mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted);margin-bottom:10px}
+.title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+/* Mobile-only star inline with the title — see .fav-desktop below for its
+   desktop counterpart inside .detail-actions. Both point at the same
+   data-action, so either one works regardless of which is visible. */
+.fav-inline{display:none}
 .detail-actions{display:flex;gap:8px;flex-wrap:wrap}
 
 @media(max-width:640px){
-  .detail-head{gap:16px}
+  .detail-head{gap:14px}
+  .title-row{gap:8px}
+  .fav-inline{display:inline-flex;margin-top:4px}
+  .fav-desktop{display:none}
+  /* Edit is the one full-width row on top (order:-1 pulls it there
+     regardless of source order); Duplicate and Delete fill the two
+     columns underneath it. Desktop keeps the original inline row. */
   .detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
   .detail-actions .btn{width:100%}
+  .detail-actions .action-edit{order:-1;grid-column:1/-1}
+  .detail-actions .action-edit span,
+  .detail-actions .action-dup span,
+  .detail-actions .action-del span{display:none}
 }
 .detail-body{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:44px;padding-top:30px;align-items:start}
 @media(max-width:860px){ .detail-body{grid-template-columns:1fr;gap:34px} }
@@ -436,19 +455,22 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
 .sheet-body{padding:22px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
 .sheet-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line-2);flex:none;background:var(--card-raised);border-radius:0 0 var(--r-sheet) var(--r-sheet)}
 @media(max-width:640px){
-  /* The 50px reserved here (on top of the dvh sizing below) is a flat,
+  /* The sheet floats with margin on every side now rather than docking
+     flush to the screen edges — so it keeps the same fully-rounded
+     corners as the desktop modal instead of only rounding the top ones.
+     The 50px bottom figure (on top of the dvh sizing below) is a flat,
      unconditional safety margin: mobile browser chrome height varies by
      browser/OS and isn't fully reflected by dvh in every case we saw in
      testing, so leave a fixed gap that holds regardless. Applies to every
      modal — recipe form, coffee/grinder/method/style forms, library
      manager — since they all share .overlay/.sheet. */
-  .overlay{padding:0 0 50px;align-items:flex-end}
+  .overlay{padding:16px 16px 50px;align-items:flex-end}
   .sheet{
-    max-width:none;border-radius:var(--r-sheet) var(--r-sheet) 0 0;margin:0;border-bottom:none;
-    max-height:calc(94vh - 50px);max-height:calc(94dvh - 50px);
+    max-width:none;border-radius:var(--r-sheet);margin:0;
+    max-height:calc(100vh - 66px);max-height:calc(100dvh - 66px);
     animation:up var(--dur-slow) var(--ease-out) both;
   }
-  .sheet-foot{border-radius:0;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+  .sheet-foot{border-radius:0 0 var(--r-sheet) var(--r-sheet);padding-bottom:max(16px,env(safe-area-inset-bottom))}
   @keyframes up{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
 }
 

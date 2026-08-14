@@ -807,9 +807,16 @@ function renderDetail(id) {
     '<a class="back" href="#/">' + ICON.back + 'Library</a>' +
 
     '<div class="detail-head">' +
-      '<div>' +
+      '<div class="detail-head-info">' +
         '<div class="kicker">' + esc(nameOf('method', r.methodId)) + ' · ' + esc(nameOf('style', r.styleId)) + '</div>' +
-        '<h1>' + esc(titleOf(r)) + '</h1>' +
+        '<div class="title-row">' +
+          '<h1>' + esc(titleOf(r)) + '</h1>' +
+          // Mobile-only: favourite as a plain star inline with the name,
+          // at the far end of the row (same icon-only treatment as the
+          // grid cards). Hidden on desktop, where the labelled button
+          // below already covers it.
+          '<button class="fav fav-inline' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' + iconStar(true) + '</button>' +
+        '</div>' +
         '<div class="card-sub" style="margin-top:10px">' +
           (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
           '<span>' + ratio(r.dose, r.water) + ' ratio</span>' +
@@ -817,11 +824,11 @@ function renderDetail(id) {
         '</div>' +
       '</div>' +
       '<div class="detail-actions">' +
-        '<button class="btn btn-ghost btn-sm" data-action="fav" data-id="' + esc(r.id) + '">' +
-          ICON.star + (r.fav ? 'Favourited' : 'Favourite') + '</button>' +
-        '<button class="btn btn-ghost btn-sm" data-action="duplicate" data-id="' + esc(r.id) + '">' + ICON.copy + 'Duplicate</button>' +
-        '<button class="btn btn-ghost btn-sm btn-danger" data-action="delete" data-id="' + esc(r.id) + '">' + ICON.trash + 'Delete</button>' +
-        '<button class="btn btn-primary btn-sm" data-action="edit" data-id="' + esc(r.id) + '">' + ICON.edit + 'Edit</button>' +
+        '<button class="btn btn-ghost btn-sm fav-desktop" data-action="fav" data-id="' + esc(r.id) + '">' +
+          ICON.star + '<span>' + (r.fav ? 'Favourited' : 'Favourite') + '</span></button>' +
+        '<button class="btn btn-ghost btn-sm action-dup" data-action="duplicate" data-id="' + esc(r.id) + '">' + ICON.copy + '<span>Duplicate</span></button>' +
+        '<button class="btn btn-ghost btn-sm btn-danger action-del" data-action="delete" data-id="' + esc(r.id) + '">' + ICON.trash + '<span>Delete</span></button>' +
+        '<button class="btn btn-primary btn-sm action-edit" data-action="edit" data-id="' + esc(r.id) + '">' + ICON.edit + '<span>Edit</span></button>' +
       '</div>' +
     '</div>' +
 
