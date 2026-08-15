@@ -724,7 +724,19 @@ function cardHTML(r) {
 
   var roaster = roasterOf(r);
 
-  return '<a class="card" href="#/r/' + encodeURIComponent(r.id) + '">' +
+  // The play/favourite buttons used to live inside this card's <a> — invalid
+  // HTML (interactive content nested in interactive content), and browsers
+  // resolve the ambiguity inconsistently: on real touch input the first tap
+  // can land on the outer link instead of the button, so it took two taps
+  // to actually fire. Fixed with the "stretched link" pattern instead: the
+  // <a> is an invisible full-card hit target with no descendants, painted
+  // *behind* the visible content; the content passes clicks through to it
+  // (pointer-events:none) except for the two real buttons, which sit on
+  // top and get their own taps directly, as true siblings of the link
+  // rather than children of it.
+  return '<div class="card">' +
+    '<a class="card-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="Open ' + esc(titleOf(r)) + '"></a>' +
+    '<div class="card-content">' +
     '<div class="card-head">' +
       '<div class="card-head-info">' +
         // v3 leads the card with the method as a printed tag, then the
@@ -756,7 +768,8 @@ function cardHTML(r) {
       '</div>' +
       (r.rating ? stars(r.rating) : '') +
     '</div>' +
-    '</a>';
+    '</div>' +
+    '</div>';
 }
 
 /* ---- detail ---- */

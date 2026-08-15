@@ -444,21 +444,30 @@ svg.ico-fill{fill:currentColor;stroke:none}
 @media(max-width:640px){ .grid{grid-template-columns:1fr;gap:var(--stack-card)} }
 
 @keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* .card is a plain, non-interactive container. Its two interactive
+   children are true siblings, not nested inside one another:
+   .card-link is an invisible full-card <a> painted *behind* everything
+   (the "stretched link" pattern) and .card-content sits on top with
+   pointer-events:none, letting a tap anywhere on the visible card fall
+   through to the link — except the play/favourite buttons, which
+   re-enable pointer-events and catch their own taps directly. Nesting
+   a <button> inside an <a> (the previous structure) is invalid HTML,
+   and browsers resolve that ambiguity inconsistently on real touch
+   input — the first tap could land on the outer link instead of the
+   button, so it took two taps to actually fire. */
 .card{
-  position:relative;display:flex;flex-direction:column;gap:12px;
+  position:relative;
   background:var(--surface-card);background-image:var(--texture-paper);
   border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-md);
-  padding:var(--pad-card-lg);text-align:left;width:100%;
   box-shadow:var(--shadow-card);
   transition:border-color var(--dur-base) var(--ease-standard),transform var(--dur-fast) var(--ease-tap),box-shadow var(--dur-base) var(--ease-standard);
   animation:cardIn var(--dur-slow) var(--ease-out) both;
 }
-/* hover:hover — not just a bare :hover — because .card is an <a> and a
-   button (the play control) sits inside it. Mobile Safari treats a plain
-   :hover rule on an ancestor link as something to satisfy before a tap on
-   its child can register as a real click: first tap enters :hover,
-   second tap actually fires. Scoping to real pointers removes the need
-   for that first tap, so the play button opens the timer immediately. */
+.card-link{position:absolute;inset:0;z-index:0;border-radius:inherit}
+.card-content{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px;height:100%;padding:var(--pad-card-lg);pointer-events:none}
+.card-content .cardbtn,.card-content .fav{pointer-events:auto}
+/* hover:hover, not a bare :hover, so touch devices never see a lingering
+   hover state after a tap. */
 @media (hover:hover){
   .card:hover{border-color:var(--border-strong);transform:translateY(var(--lift-hover));box-shadow:var(--shadow-raised)}
 }
