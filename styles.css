@@ -365,7 +365,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .menu-account-email{font:var(--weight-medium) var(--text-caption)/1.3 var(--font-text);color:var(--text-muted);word-break:break-all}
 .menu-account[hidden]{display:none}
 
-.account-chip{width:32px;height:32px;border-radius:var(--radius-full);overflow:hidden;flex:none;border:var(--border-w-hairline) solid var(--border-default);transition:var(--transition-control)}
+.account-chip{width:var(--control-h-md);height:var(--control-h-md);border-radius:var(--radius-full);overflow:hidden;flex:none;border:var(--border-w-hairline) solid var(--border-default);transition:var(--transition-control)}
 .account-chip:hover{border-color:var(--border-strong)}
 .account-chip:active{transform:scale(var(--press-scale))}
 .account-chip[hidden]{display:none}
