@@ -729,7 +729,10 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 /* steps editor */
 .steprow{display:grid;grid-template-columns:78px minmax(0,1fr) 84px 34px;gap:8px;margin-bottom:8px;align-items:center}
 .steprow .inp{min-height:40px;font-size:14px;padding:0 10px}
-.steprow .del{color:var(--text-muted);width:34px;height:40px;border-radius:var(--radius-sm);display:inline-flex;align-items:center;justify-content:center;transition:var(--transition-control)}
+/* Ghost icon buttons — no border, no fill by default — are fully round
+   in v3's IconButton spec; only a filled or outlined icon button gets
+   radius-md instead. .iconbtn, .cardbtn and this share that shape. */
+.steprow .del{color:var(--text-muted);width:34px;height:40px;border-radius:var(--radius-full);display:inline-flex;align-items:center;justify-content:center;transition:var(--transition-control)}
 .steprow .del:hover{color:var(--state-error);background:var(--state-error-surface)}
 .steps-head{display:grid;grid-template-columns:78px minmax(0,1fr) 84px 34px;gap:8px;margin-bottom:6px}
 @media(max-width:560px){
@@ -749,8 +752,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .rate button:active{transform:scale(var(--press-scale))}
 
 /* ---------- library manager ---------- */
-.tabs{display:flex;gap:4px;padding:4px;background:var(--surface-sunken);border-radius:var(--radius-full);margin-bottom:20px;overflow-x:auto}
-.tabs button{flex:1;min-width:max-content;height:34px;padding:0 14px;border-radius:var(--radius-full);font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-muted);white-space:nowrap;transition:var(--transition-control)}
+/* v3's segmented Tabs track is squared (radius-md), with each tab a
+   smaller radius-sm chip inside it — the 999px-round treatment is
+   reserved for chips and the timer's start button, not this. */
+.tabs{display:flex;gap:4px;padding:4px;background:var(--surface-sunken);border-radius:var(--radius-md);margin-bottom:20px;overflow-x:auto}
+.tabs button{flex:1;min-width:max-content;height:34px;padding:0 14px;border-radius:var(--radius-sm);font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-muted);white-space:nowrap;transition:var(--transition-control)}
 .tabs button.on{background:var(--action-primary);color:var(--action-primary-text)}
 .list{display:flex;flex-direction:column;gap:8px}
 .list-item{
@@ -761,7 +767,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .list-item .nm{font:var(--type-body-sm);color:var(--text-title)}
 .list-item .mt{font:var(--weight-regular) var(--text-caption)/1.35 var(--font-text);color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .list-item .cnt{font:var(--weight-medium) var(--text-eyebrow)/1 var(--font-mono);color:var(--text-muted);white-space:nowrap}
-.iconbtn{width:32px;height:32px;border-radius:var(--radius-sm);color:var(--text-muted);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:var(--transition-control)}
+.iconbtn{width:32px;height:32px;border-radius:var(--radius-full);color:var(--text-muted);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:var(--transition-control)}
 .iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
 .iconbtn:active{transform:scale(var(--press-scale))}
 .iconbtn.danger:hover{color:var(--state-error);background:var(--state-error-surface)}
@@ -849,7 +855,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 
 /* play button on library cards */
 .card-tools{display:flex;align-items:center;gap:2px;flex:none}
-.cardbtn{width:30px;height:30px;border-radius:var(--radius-sm);color:var(--text-faint);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:var(--transition-control)}
+.cardbtn{width:30px;height:30px;border-radius:var(--radius-full);color:var(--text-faint);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:var(--transition-control)}
 .cardbtn:hover{background:var(--surface-accent);color:var(--action-primary)}
 .cardbtn:active{transform:scale(var(--press-scale))}
 .cardbtn .ico{width:16px;height:16px}
