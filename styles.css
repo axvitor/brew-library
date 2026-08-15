@@ -433,10 +433,41 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .pill-toggle:active{transform:scale(var(--press-scale))}
 .pill-toggle .ico{width:15px;height:15px}
 .filters .spacer{flex:1}
+
+/* "More filters" — desktop shows every filter inline as always, so the
+   toggle is hidden and .filters-more's children flow straight into the
+   parent flex row (display:contents unwraps the group with no visual
+   trace). Mobile hides the group behind the toggle by default so the bar
+   collapses to just Search and Favourites; see the media query below. */
+.filters-toggle{display:none}
+.filters-more{display:contents}
+/* Only ever rendered alongside .on (moreCount > 0 implies the pill is
+   filled), so it's styled purely for contrast against that pine fill. */
+.filter-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:18px;height:18px;padding:0 5px;margin:0 -4px 0 -1px;
+  border-radius:var(--radius-full);
+  font:var(--weight-bold) 11px/1 var(--font-mono);
+  background:rgba(255,255,255,.22);color:inherit;
+}
 @media(max-width:640px){
   .filters{position:static;padding:12px}
   .sel select{max-width:none;width:100%}
   .sel{flex:1 1 46%}
+  /* Search and Favourites stay put; everything else — coffee, roaster,
+     grinder, method, style, sort, Clear — folds under "More filters" so
+     the bar opens small. .filters-more reverts from display:contents to
+     a real collapsed/expandable box only at this width. */
+  /* Favourites and More filters share the row edge-to-edge, matching the
+     two-column rhythm the selects below already use, instead of sitting
+     as small left-aligned pills with empty space to their right. */
+  .filters>.pill-toggle{flex:1 1 0;justify-content:center}
+  .filters-toggle{display:inline-flex}
+  .filters-more{
+    display:none;width:100%;flex-wrap:wrap;gap:10px;
+    margin-top:2px;padding-top:12px;border-top:var(--border-w-hairline) dashed var(--border-default);
+  }
+  .filters.expanded .filters-more{display:flex}
 }
 
 /* ---------- recipe grid (v3 recipe/RecipeCard) ---------- */

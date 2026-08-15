@@ -510,7 +510,10 @@ var ICON = {
   replay: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
   skip: '<svg viewBox="0 0 24 24" class="ico"><path d="M5 4l10 8-10 8zM19 5v14"/></svg>',
   arrowDown: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
-  timer: '<svg viewBox="0 0 24 24" class="ico"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>'
+  timer: '<svg viewBox="0 0 24 24" class="ico"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>',
+  // sliders-horizontal — v3's own glyph for a filter/options toggle.
+  sliders: '<svg viewBox="0 0 24 24" class="ico"><path d="M21 4H14M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/>' +
+    '<circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="20" r="2"/></svg>'
 };
 
 /* ---------------------------------------------------------
@@ -519,8 +522,20 @@ var ICON = {
 
 var filters = { q: '', coffee: '', roaster: '', grinder: '', method: '', style: '', fav: false, sort: 'new' };
 
+// Mobile only: whether the coffee/roaster/grinder/method/style/sort group
+// is expanded under "More filters". A module-level flag rather than
+// something read off the DOM, since renderHome() rebuilds the filter bar
+// on every keystroke and every filter change — it has to survive that.
+var filtersExpanded = false;
+
 function filtersActive() {
   return !!(filters.q || filters.coffee || filters.roaster || filters.grinder || filters.method || filters.style || filters.fav);
+}
+
+// How many of the filters tucked under "More filters" are set — shown as
+// a badge on the toggle so collapsing them doesn't hide that they're active.
+function moreFiltersCount() {
+  return ['coffee', 'roaster', 'grinder', 'method', 'style'].filter(function (k) { return !!filters[k]; }).length;
 }
 
 function roasterOf(r) {
@@ -677,24 +692,33 @@ function renderHome() {
     '. Filter to find the one you want, then brew it.</p>' +
     '</section>';
 
-  html += '<div class="filters">' +
+  var moreCount = moreFiltersCount();
+  html += '<div class="filters' + (filtersExpanded ? ' expanded' : '') + '">' +
     '<div class="search">' + ICON.search +
       '<input id="q" type="search" placeholder="Search recipes…" value="' + esc(filters.q) + '" />' +
     '</div>' +
-    selectHTML('f-coffee', 'coffee', filters.coffee) +
-    roasterSelectHTML(filters.roaster) +
-    selectHTML('f-grinder', 'grinder', filters.grinder) +
-    selectHTML('f-method', 'method', filters.method) +
-    selectHTML('f-style', 'style', filters.style) +
     '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
       ICON.star + 'Favourites</button>' +
-    '<div class="sel"><select id="f-sort" data-filter="sort" aria-label="Sort recipes">' +
-      '<option value="new"' + (filters.sort === 'new' ? ' selected' : '') + '>Newest first</option>' +
-      '<option value="old"' + (filters.sort === 'old' ? ' selected' : '') + '>Oldest first</option>' +
-      '<option value="rating"' + (filters.sort === 'rating' ? ' selected' : '') + '>Top rated</option>' +
-      '<option value="coffee"' + (filters.sort === 'coffee' ? ' selected' : '') + '>A–Z</option>' +
-    '</select></div>' +
-    (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">Clear</button>' : '') +
+    // Mobile only (see CSS) — everything below folds under this toggle so
+    // the bar collapses to just Search and Favourites by default.
+    '<button class="pill-toggle filters-toggle' + (moreCount ? ' on' : '') + '" data-action="toggle-more-filters" ' +
+      'aria-expanded="' + filtersExpanded + '">' + ICON.sliders + 'More filters' +
+      (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
+    '</button>' +
+    '<div class="filters-more">' +
+      selectHTML('f-coffee', 'coffee', filters.coffee) +
+      roasterSelectHTML(filters.roaster) +
+      selectHTML('f-grinder', 'grinder', filters.grinder) +
+      selectHTML('f-method', 'method', filters.method) +
+      selectHTML('f-style', 'style', filters.style) +
+      '<div class="sel"><select id="f-sort" data-filter="sort" aria-label="Sort recipes">' +
+        '<option value="new"' + (filters.sort === 'new' ? ' selected' : '') + '>Newest first</option>' +
+        '<option value="old"' + (filters.sort === 'old' ? ' selected' : '') + '>Oldest first</option>' +
+        '<option value="rating"' + (filters.sort === 'rating' ? ' selected' : '') + '>Top rated</option>' +
+        '<option value="coffee"' + (filters.sort === 'coffee' ? ' selected' : '') + '>A–Z</option>' +
+      '</select></div>' +
+      (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">Clear</button>' : '') +
+    '</div>' +
     '</div>';
 
   if (!list.length) {
@@ -1789,6 +1813,11 @@ document.addEventListener('click', function (ev) {
 
     case 'toggle-fav-filter':
       filters.fav = !filters.fav;
+      render();
+      return;
+
+    case 'toggle-more-filters':
+      filtersExpanded = !filtersExpanded;
       render();
       return;
 
