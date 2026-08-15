@@ -460,8 +460,12 @@ svg.ico-fill{fill:currentColor;stroke:none}
      a real collapsed/expandable box only at this width. */
   /* Favourites and More filters share the row edge-to-edge, matching the
      two-column rhythm the selects below already use, instead of sitting
-     as small left-aligned pills with empty space to their right. */
-  .filters>.pill-toggle{flex:1 1 0;justify-content:center}
+     as small left-aligned pills with empty space to their right. A true
+     999px capsule reads fine at a chip's normal compact width (that's
+     v3's Chip spec, kept as-is on desktop) but stretched across half the
+     row it becomes an elongated stadium shape rather than a button —
+     scaled down to radius-lg here, at full width only. */
+  .filters>.pill-toggle{flex:1 1 0;justify-content:center;border-radius:var(--radius-lg)}
   .filters-toggle{display:inline-flex}
   .filters-more{
     display:none;width:100%;flex-wrap:wrap;gap:10px;
