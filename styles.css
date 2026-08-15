@@ -307,6 +307,10 @@ svg.ico-fill{fill:currentColor;stroke:none}
   .topbar-inner{gap:6px;height:56px}
   .topbar-actions{gap:6px}
   .brand-text{font-size:20px}
+  /* Icon-only on narrow screens — the label crowds the header next to
+     the Library button and account chip. */
+  .hdr-cta{width:var(--control-h-md);padding:0}
+  .hdr-cta span{display:none}
 }
 @media (prefers-color-scheme: dark){ .brand-mark{stroke:var(--sage-300)} }
 
