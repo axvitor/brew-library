@@ -449,7 +449,15 @@ svg.ico-fill{fill:currentColor;stroke:none}
   transition:border-color var(--dur-base) var(--ease-standard),transform var(--dur-fast) var(--ease-tap),box-shadow var(--dur-base) var(--ease-standard);
   animation:cardIn var(--dur-slow) var(--ease-out) both;
 }
-.card:hover{border-color:var(--border-strong);transform:translateY(var(--lift-hover));box-shadow:var(--shadow-raised)}
+/* hover:hover — not just a bare :hover — because .card is an <a> and a
+   button (the play control) sits inside it. Mobile Safari treats a plain
+   :hover rule on an ancestor link as something to satisfy before a tap on
+   its child can register as a real click: first tap enters :hover,
+   second tap actually fires. Scoping to real pointers removes the need
+   for that first tap, so the play button opens the timer immediately. */
+@media (hover:hover){
+  .card:hover{border-color:var(--border-strong);transform:translateY(var(--lift-hover));box-shadow:var(--shadow-raised)}
+}
 .card:active{transform:scale(var(--press-scale-card));box-shadow:none}
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 /* Recipe names carry the voice, so they take the display serif. */
