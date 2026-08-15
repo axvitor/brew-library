@@ -464,8 +464,14 @@ function toast(msg) {
   clearTimeout(toast._t);
   toast._t = setTimeout(function () { el.hidden = true; }, 2600);
 }
+// Cupform v3 marks a favourite with a bookmark, not a star — the star is
+// reserved for nothing, and beans do the rating. bookmark-check is the
+// filled/on state, plain bookmark the off state.
 function iconStar(filled) {
-  return '<svg viewBox="0 0 24 24" class="' + (filled ? '' : 'off') + '"><path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.8l5.9-.9z"/></svg>';
+  return '<svg viewBox="0 0 24 24" class="' + (filled ? '' : 'off') + '">' +
+    '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>' +
+    (filled ? '<path d="M9 10l2 2 4-4"/>' : '') +
+  '</svg>';
 }
 // Cupform rates in beans, not stars — the 1–5 cup score uses this glyph
 // (rating only; the Favourite bookmark stays a star, a separate concept).
@@ -480,22 +486,31 @@ function stars(n) {
   for (i = 1; i <= 5; i++) out += iconBean(i <= (n || 0));
   return out + '</span>';
 }
+/* Lucide geometry (24px grid, 2px stroke, round caps) — v3's icon system.
+   Inlined rather than pulled from the lucide-static CDN so the app keeps
+   its zero-dependency, zero-request-beyond-fonts shape; swap these paths
+   if a real icon set ever arrives. Glyph names match Lucide's own. */
 var ICON = {
-  edit: '<svg viewBox="0 0 24 24" class="ico"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/></svg>',
-  copy: '<svg viewBox="0 0 24 24" class="ico"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
-  trash: '<svg viewBox="0 0 24 24" class="ico"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" class="ico"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="M15 5l4 4"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" class="ico"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14"/></svg>',
-  close: '<svg viewBox="0 0 24 24" class="ico"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-  back: '<svg viewBox="0 0 24 24" class="ico"><path d="M15 6l-6 6 6 6"/></svg>',
-  search: '<svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg>',
-  star: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.8l5.9-.9z"/></svg>',
+  close: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  back: '<svg viewBox="0 0 24 24" class="ico"><path d="M15 18l-6-6 6-6"/></svg>',
+  search: '<svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  // bookmark — the favourite mark in v3.
+  star: '<svg viewBox="0 0 24 24" class="ico"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
+  // The rating mark is deliberately not an icon: a drawn bean with a
+  // centre crease, so it can fill.
   bean: '<svg viewBox="0 0 24 24" class="bean"><g transform="rotate(-28 12 12)">' +
     '<ellipse cx="12" cy="12" rx="6.4" ry="9.4"/><path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>',
-  // Solid rather than outlined — a hollow triangle reads as a shape, a
-  // filled one reads as "press me".
-  play: '<svg viewBox="0 0 24 24" class="ico ico-fill"><path d="M8 5.2l11 6.8-11 6.8z"/></svg>',
-  pause: '<svg viewBox="0 0 24 24" class="ico"><path d="M9.5 5v14M14.5 5v14"/></svg>',
-  replay: '<svg viewBox="0 0 24 24" class="ico"><path d="M4.5 11a7.5 7.5 0 1 1 2.2 6M4 5.5V11h5.5"/></svg>'
+  // Solid: a hollow triangle reads as a shape, a filled one as "press me".
+  play: '<svg viewBox="0 0 24 24" class="ico ico-fill"><path d="M6 3l14 9-14 9z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" class="ico"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+  replay: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  skip: '<svg viewBox="0 0 24 24" class="ico"><path d="M5 4l10 8-10 8zM19 5v14"/></svg>',
+  arrowDown: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+  timer: '<svg viewBox="0 0 24 24" class="ico"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>'
 };
 
 /* ---------------------------------------------------------
@@ -706,16 +721,20 @@ function cardHTML(r) {
   else if (r.grindSize) bits.push('<span class="tag">' + esc(r.grindSize) + '</span>');
   if (r.temp) bits.push('<span class="tag">' + esc(String(r.temp)) + '°C</span>');
   if (r.brewTime) bits.push('<span class="tag">' + esc(r.brewTime) + '</span>');
-  if (r.rating) bits.push('<span class="tag tag-accent">' + stars(r.rating) + '</span>');
+
+  var roaster = roasterOf(r);
 
   return '<a class="card" href="#/r/' + encodeURIComponent(r.id) + '">' +
     '<div class="card-head">' +
-      '<div>' +
-        '<div class="card-title">' + esc(titleOf(r)) + '</div>' +
-        '<div class="card-sub">' +
-          '<span>' + esc(nameOf('method', r.methodId)) + '</span><span class="dot"></span>' +
-          '<span>' + esc(nameOf('style', r.styleId)) + '</span>' +
+      '<div class="card-head-info">' +
+        // v3 leads the card with the method as a printed tag, then the
+        // name in the display serif, then the roaster.
+        '<div class="tags card-kind">' +
+          '<span class="tag tag-accent">' + esc(nameOf('method', r.methodId)) + '</span>' +
+          '<span class="tag">' + esc(nameOf('style', r.styleId)) + '</span>' +
         '</div>' +
+        '<div class="card-title">' + esc(titleOf(r)) + '</div>' +
+        (roaster ? '<div class="card-sub"><span>' + esc(roaster) + '</span></div>' : '') +
       '</div>' +
       '<div class="card-tools">' +
         // Only offered when there's actually something to count — a recipe
@@ -725,14 +744,17 @@ function cardHTML(r) {
             'title="Start brew timer" aria-label="Start brew timer">' + ICON.play + '</button>'
           : '') +
         '<button class="fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' +
-          iconStar(true) + '</button>' +
+          iconStar(r.fav) + '</button>' +
       '</div>' +
     '</div>' +
-    '<div class="tags">' + bits.join('') + '</div>' +
-    '<div class="stats">' +
-      '<div class="stat"><span class="k">Dose</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
-      '<div class="stat"><span class="k">Water</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
-      '<div class="stat"><span class="k">Ratio</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
+    (bits.length ? '<div class="tags">' + bits.join('') + '</div>' : '') +
+    '<div class="card-foot">' +
+      '<div class="stats">' +
+        '<div class="stat"><span class="k">Dose</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
+        '<div class="stat"><span class="k">Water</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
+        '<div class="stat"><span class="k">Ratio</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
+      '</div>' +
+      (r.rating ? stars(r.rating) : '') +
     '</div>' +
     '</a>';
 }
@@ -828,7 +850,7 @@ function renderDetail(id) {
           // at the far end of the row (same icon-only treatment as the
           // grid cards). Hidden on desktop, where the labelled button
           // below already covers it.
-          '<button class="fav fav-inline' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' + iconStar(true) + '</button>' +
+          '<button class="fav fav-inline' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' + iconStar(r.fav) + '</button>' +
         '</div>' +
         '<div class="card-sub" style="margin-top:10px">' +
           (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
@@ -873,9 +895,9 @@ function renderDetail(id) {
           ? '<ol class="timeline">' + stepsHTML + '</ol>' +
             (styleDriven ? '<p class="hint" style="margin-top:12px">' + esc(stepsCaption(r)) + '</p>' : '')
           : styleDriven
-            ? '<p style="color:var(--muted);font-size:15px">' + esc(noStepsMessage(r)) + '</p>'
-            : '<p style="color:var(--muted);font-size:15px">No steps recorded — ' +
-              '<a href="#" data-action="edit" data-id="' + esc(r.id) + '" style="color:var(--accent-ink)">add them</a>.</p>') +
+            ? '<p style="color:var(--text-muted);font:var(--type-body-sm)">' + esc(noStepsMessage(r)) + '</p>'
+            : '<p style="color:var(--text-muted);font:var(--type-body-sm)">No steps recorded — ' +
+              '<a href="#" data-action="edit" data-id="' + esc(r.id) + '" style="color:var(--text-link)">add them</a>.</p>') +
         (r.notes ? '<div class="block"><div class="section-title">Personal notes</div><div class="notes">' + esc(r.notes) + '</div></div>' : '') +
       '</div>' +
     '</div>' +
@@ -938,7 +960,18 @@ function timerPlan(r) {
       });
     });
   }
-  return { total: total, segs: segs };
+  // Running water totals, so the timer can show grams poured against the
+  // target the way v3's BrewTimer does.
+  var run = 0;
+  segs.forEach(function (s) { s.from = run; run += s.water || 0; s.upto = run; });
+  return { total: total, segs: segs, water: run };
+}
+
+// v3 zero-pads the timer's clock (02:05, not 2:05) so the digits never
+// shift width mid-brew. Only the timer uses this; mmss stays elsewhere.
+function mmss2(sec) {
+  var n = Math.max(0, Math.floor(sec));
+  return String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0');
 }
 
 var timer = null;
@@ -967,15 +1000,18 @@ function buildTimerEl(r, plan) {
   wrap.innerHTML =
     '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true">' +
       '<div class="sheet-head">' +
-        '<h2>' + esc(titleOf(r)) + '</h2>' +
-        '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+        '<div class="timer-head-row">' +
+          '<h2>' + esc(titleOf(r)) + '</h2>' +
+          '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+        '</div>' +
+        '<div class="timer-head-row">' +
+          '<span class="timer-eyebrow"></span>' +
+          '<span class="timer-clock">00:00 / ' + esc(mmss2(plan.total)) + '</span>' +
+        '</div>' +
       '</div>' +
       '<div class="sheet-body timer-body">' +
         '<div class="timer-ring">' +
           '<svg viewBox="0 0 200 200" aria-hidden="true">' +
-            '<defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">' +
-              '<stop offset="0%" class="g1"/><stop offset="100%" class="g2"/>' +
-            '</linearGradient></defs>' +
             '<g transform="rotate(-90 100 100)">' +
               '<circle class="ttrack" cx="100" cy="100" r="' + RING_R + '"></circle>' +
               segHTML +
@@ -985,16 +1021,32 @@ function buildTimerEl(r, plan) {
             '<g class="thead"><circle cx="100" cy="' + (100 - RING_R) + '" r="5.5"></circle></g>' +
           '</svg>' +
           '<div class="timer-face">' +
-            '<div class="timer-elapsed" role="timer" aria-live="off">0:00</div>' +
-            '<div class="timer-total">of ' + esc(mmss(plan.total)) + '</div>' +
+            '<div class="timer-elapsed" role="timer" aria-live="off">00:00</div>' +
+            '<div class="timer-total">of ' + esc(mmss2(plan.total)) + '</div>' +
           '</div>' +
+        '</div>' +
+        '<div class="timer-readouts">' +
+          '<div class="timer-readout">' +
+            '<span class="rv timer-left">00:00</span>' +
+            '<span class="rk">Left in this step</span>' +
+          '</div>' +
+          (plan.water
+            ? '<div class="timer-readout">' +
+                '<span class="rv timer-poured">0<small>/ ' + plan.water + ' g</small></span>' +
+                '<span class="rk">Water poured</span>' +
+              '</div>'
+            : '') +
         '</div>' +
         '<div class="timer-now"><span class="timer-now-label"></span></div>' +
         '<ol class="timer-steps">' + rowsHTML + '</ol>' +
       '</div>' +
+      '<div class="timer-next">' + ICON.arrowDown +
+        '<span class="nx"></span><span class="nt"></span>' +
+      '</div>' +
       '<div class="sheet-foot timer-foot">' +
-        '<button class="btn btn-ghost" data-action="timer-reset">' + ICON.replay + '<span>Restart</span></button>' +
-        '<button class="btn btn-primary timer-toggle" data-action="timer-toggle">' + ICON.pause + '<span>Pause</span></button>' +
+        '<button class="btn btn-ghost timer-side" data-action="timer-reset" aria-label="Restart" title="Restart">' + ICON.replay + '</button>' +
+        '<button class="btn timer-toggle" data-action="timer-toggle">' + ICON.play + '<span>Start brewing</span></button>' +
+        '<button class="btn btn-ghost timer-side" data-action="timer-skip" aria-label="Skip to next step" title="Skip to next step">' + ICON.skip + '</button>' +
       '</div>' +
     '</div>';
   wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
@@ -1034,12 +1086,32 @@ function timerPaint() {
     (frac * RING_C).toFixed(2) + ' ' + RING_C.toFixed(2));
   el.querySelector('.thead').setAttribute('transform',
     'rotate(' + (frac * 360).toFixed(3) + ' 100 100)');
-  el.querySelector('.timer-elapsed').textContent = mmss(Math.floor(e));
+  el.querySelector('.timer-elapsed').textContent = mmss2(e);
+  el.querySelector('.timer-clock').textContent = mmss2(e) + ' / ' + mmss2(plan.total);
 
   var i = 0, k;
   for (k = 0; k < plan.segs.length; k++) if (e >= plan.segs[k].start) i = k;
+
+  // Per-step readouts refresh every frame; the heavier class work below
+  // only runs when the step actually changes.
+  var seg = plan.segs[i];
+  var segLen = seg.end - seg.start;
+  el.querySelector('.timer-left').textContent = mmss2(Math.max(0, seg.end - e));
+  var poured = el.querySelector('.timer-poured');
+  if (poured) {
+    var pct = segLen > 0 ? Math.min(1, Math.max(0, (e - seg.start) / segLen)) : 1;
+    var g = seg.from + (seg.upto - seg.from) * pct;
+    poured.innerHTML = Math.round(g) + '<small>/ ' + plan.water + ' g</small>';
+  }
+
   if (i === timer.seg) return;
   timer.seg = i;
+
+  el.querySelector('.timer-eyebrow').textContent =
+    'Step ' + (i + 1) + ' of ' + plan.segs.length;
+  var nxt = plan.segs[i + 1];
+  el.querySelector('.timer-next .nx').textContent = nxt ? 'Next · ' + nxt.label : 'Last step';
+  el.querySelector('.timer-next .nt').textContent = nxt ? mmss2(nxt.start) : '';
 
   var segs = el.querySelectorAll('.tseg');
   var rows = el.querySelectorAll('.timer-step');
@@ -1093,8 +1165,12 @@ function timerControls() {
   if (!timer) return;
   var done = timer.elapsed >= timer.plan.total;
   var btn = timer.el.querySelector('.timer-toggle');
+  // v3's label ladder: Start brewing → Pause → Resume → Brew again.
+  var label = done ? 'Brew again'
+    : timer.running ? 'Pause'
+    : timer.elapsed > 0 ? 'Resume' : 'Start brewing';
   btn.innerHTML = (done ? ICON.replay : timer.running ? ICON.pause : ICON.play) +
-    '<span>' + (done ? 'Brew again' : timer.running ? 'Pause' : 'Start') + '</span>';
+    '<span>' + label + '</span>';
   timer.sheet.classList.toggle('is-running', timer.running);
 }
 
@@ -1288,7 +1364,7 @@ function buildRecipeForm(m) {
       '<div class="field"><label for="f-time">Total brew time</label>' +
         '<input class="inp" id="f-time" value="' + esc(d.brewTime) + '" placeholder="3:30" /></div>' +
       '<div class="field"><label>Ratio</label>' +
-        '<div class="inp" style="display:flex;align-items:center;background:var(--paper-2);border-style:dashed">' +
+        '<div class="inp" style="display:flex;align-items:center;background:var(--surface-sunken);border-style:dashed">' +
           '<span id="ratioOut" class="ratio-hint">' + ratio(d.dose, d.water) + '</span></div></div>' +
     '</div>' +
 
@@ -1608,7 +1684,19 @@ document.addEventListener('click', function (ev) {
     case 'fav':
       ev.preventDefault(); ev.stopPropagation();
       var fr = recipeById(id);
-      if (fr) { fr.fav = !fr.fav; save(); render(); }
+      if (!fr) return;
+      fr.fav = !fr.fav;
+      save();
+      render();
+      // v3 gives the favourite mark the system's only spring. render()
+      // rebuilds the DOM, so the animation class goes on afterwards —
+      // otherwise every already-favourited mark would pop on each render.
+      if (fr.fav) {
+        Array.prototype.forEach.call(
+          document.querySelectorAll('.fav[data-id="' + id + '"]'),
+          function (el) { el.classList.add('pop'); }
+        );
+      }
       return;
 
     case 'timer':
@@ -1627,6 +1715,25 @@ document.addEventListener('click', function (ev) {
     case 'timer-reset':
       ev.preventDefault();
       timerReset();
+      return;
+
+    // v3's BrewTimer offers a skip — you're ahead of the schedule and
+    // want the next instruction now, not in twenty seconds.
+    case 'timer-skip':
+      ev.preventDefault();
+      if (!timer) return;
+      var seg = timer.plan.segs[timer.seg];
+      if (!seg) return;
+      timer.elapsed = Math.min(timer.plan.total, seg.end);
+      timer.from = timer.elapsed;
+      timer.at = performance.now();
+      timerPaint();
+      if (timer.elapsed >= timer.plan.total) {
+        timerRun(false);
+        timer.sheet.classList.add('is-done');
+        timer.el.querySelector('.timer-now-label').textContent = 'Brew complete.';
+        timerControls();
+      }
       return;
 
     case 'edit':

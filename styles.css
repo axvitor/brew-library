@@ -1,364 +1,532 @@
 /* ============================================================
-   Brew Library — styled to the Cupform Design System v2
-   ("instrument panel": sap-green accent, Instrument Sans +
-   Martian Mono for data, Newsreader italic reserved for tasting
-   notes, glass surfaces, calm ease-out-expo motion with a
-   uniform subtle press-scale)
+   Brew Library — styled to the Cupform Design System v3
+   ("a beautifully made coffee notebook rendered as a
+   contemporary product")
 
-   Light is the primary/default mode here — Cupform v2's own
-   design calls dark primary, but this app keeps light as the
-   default and offers dark as the secondary mode via
-   prefers-color-scheme, same as the rest of this app's history.
+   v3 is a different language from v2, not a retint. Gone: glass,
+   backdrop blur, gradients, glow shadows, the sap-green accent and
+   the Instrument Sans / Martian Mono / Newsreader trio. In their
+   place: unbleached paper surfaces with a 4.5% noise tooth, deep
+   pine green, one rationed roast accent, structure from hairlines
+   rather than shadow, and Libre Caslon Display / Archivo /
+   Courier Prime.
+
+   Two deliberate departures from v3 as delivered, both noted at
+   their definitions:
+   1. Dark mode. v3 ships a single paper palette with no dark
+      theme. This app has always had one, so the dark block below
+      is authored here from v3's own pine/ink ramps — faithful in
+      spirit, but not something v3 specifies.
+   2. Mobile sheets float with a margin on all sides and a uniform
+      radius, rather than docking flush to the bottom edge with
+      only the top corners rounded as v3's BottomSheet does. That
+      was an explicit product decision made earlier and is kept.
    ============================================================ */
 
 :root{
-  --paper:#f7faf8;
-  --paper-2:#eef3f1;
-  --card:#ffffff;
-  --card-raised:#eef3f1;
-  --ink:#0b1310;
-  --ink-2:#48594f;
-  --muted:#6b7d76;
-  --faint:#8a9a92;
-  --disabled:#a3b1aa;
-  --line:rgba(11,19,16,.13);
-  --line-2:rgba(11,19,16,.07);
-  --line-strong:rgba(11,19,16,.26);
-  --accent:#177a4d;
-  --accent-ink:#125336;
-  --accent-active:#0d3925;
-  --accent-wash:rgba(23,122,77,.1);
-  --accent-on:#ffffff;
-  --ok:#177a4d;
-  --danger:#e0614c;
-  --danger-wash:rgba(224,97,76,.12);
-  --warning:#d99133;
-  --warning-wash:rgba(217,145,51,.12);
-  --info:#4fb8c7;
-  --scrim:rgba(10,15,13,.42);
-  --glass-bg:rgba(255,255,255,.72);
-  --glass-bg-strong:rgba(255,255,255,.88);
-  --glass-blur:blur(18px) saturate(1.2);
-  --glass-blur-sm:blur(10px) saturate(1.15);
-  --glass-border:rgba(11,19,16,.08);
-  --shadow-sm:0 2px 8px rgba(11,19,16,.08);
-  --shadow-md:0 10px 28px -10px rgba(11,19,16,.14);
-  --shadow-lg:0 28px 60px -20px rgba(11,19,16,.18);
-  --shadow-glow:0 0 0 1px rgba(23,122,77,.3),0 8px 32px -10px rgba(23,122,77,.22);
-  --inner-hairline:inset 0 1px 0 rgba(255,255,255,.7);
-  --grad-depth:radial-gradient(120% 90% at 50% 0%, rgba(23,122,77,.08), transparent 62%);
-  --r-xs:4px;
-  --r-sm:8px;
-  --r-md:12px;
-  --r-lg:16px;
-  --r-xl:22px;
-  --r-2xl:28px;
-  --r-control:10px;
-  --r-card:18px;
-  --r-sheet:24px;
-  --serif:'Newsreader',Georgia,serif;
-  --sans:'Instrument Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  --mono:'Martian Mono',ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-  --weight-display:700;
-  --weight-light:300;
-  --tracking-display:-0.03em;
-  --tracking-label:0.08em;
-  --ease-standard:cubic-bezier(.22,.61,.36,1);
-  --ease-out:cubic-bezier(.16,1,.3,1);
-  --ease-in-out:cubic-bezier(.65,.05,.36,1);
-  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  /* ---- Base ramps (v3 tokens/colors.css, verbatim) ---------- */
+  --ink-900:#1C1713;
+  --ink-800:#2A231C;
+  --ink-700:#3D332A;
+  --ink-600:#584A3D;
+  --ink-500:#7A6A5A;
+  --ink-400:#9C8C7B;
+  --ink-300:#BFB2A2;
+
+  --paper-000:#FFFCF7;
+  --paper-100:#F8F3EA;
+  --paper-200:#F1EADD;
+  --paper-300:#E7DECE;
+  --paper-400:#D9CDB9;
+  --paper-500:#C6B79F;
+
+  --pine-900:#1B2620;
+  --pine-800:#243128;
+  --pine-700:#2E3D33;
+  --pine-600:#3C5044;
+  --pine-500:#4E6656;
+  --pine-300:#8FA292;
+  --pine-100:#D6DED7;
+
+  --sage-500:#97A48F;
+  --sage-300:#BAC3B3;
+  --sage-100:#E3E7DF;
+
+  --roast-700:#8E3F22;
+  --roast-600:#AE522C;
+  --roast-500:#C2683B;
+  --roast-300:#E0A783;
+  --roast-100:#F6E3D6;
+
+  --caramel-500:#C9A87C;
+  --caramel-300:#DFC9A6;
+  --caramel-100:#F2E7D3;
+
+  --green-600:#4B6B4F;
+  --amber-600:#B58128;
+  --red-600:#9E3B2E;
+  --blue-600:#3E5B6B;
+
+  /* ---- Semantic aliases ------------------------------------- */
+  --bg-app:var(--paper-100);
+  --surface-card:var(--paper-000);
+  --surface-sunken:var(--paper-200);
+  --surface-inverse:var(--pine-700);
+  --surface-inverse-deep:var(--pine-900);
+  --surface-accent:var(--sage-100);
+  --surface-warm:var(--caramel-100);
+  --surface-scrim:rgba(28,23,19,.52);
+
+  --text-title:var(--ink-900);
+  --text-body:var(--ink-800);
+  --text-muted:var(--ink-500);
+  --text-faint:var(--ink-400);
+  --text-on-inverse:var(--paper-100);
+  --text-on-inverse-muted:var(--pine-300);
+  --text-accent:var(--roast-600);
+  --text-link:var(--pine-700);
+  --text-link-hover:var(--roast-600);
+
+  --border-hairline:#EDE5D7;
+  --border-default:#E0D7C6;
+  --border-strong:var(--paper-500);
+  --border-inverse:rgba(246,241,232,.18);
+  --border-focus:var(--pine-600);
+
+  --action-primary:var(--pine-700);
+  --action-primary-hover:var(--pine-600);
+  --action-primary-press:var(--pine-800);
+  --action-primary-text:var(--paper-000);
+  --action-secondary-border:var(--ink-300);
+  --action-disabled:var(--paper-300);
+  --action-disabled-text:var(--ink-400);
+
+  --accent-star:var(--roast-500);
+  --accent-star-empty:var(--paper-400);
+  --accent-favorite:var(--roast-600);
+  --accent-timer:var(--roast-600);
+
+  --state-success:var(--green-600);
+  --state-error:var(--red-600);
+  --state-error-surface:#F6E0DB;
+
+  /* ---- Type (v3 tokens/typography.css) ---------------------- */
+  --font-display:"Libre Caslon Display","Iowan Old Style",Georgia,serif;
+  --font-text:"Archivo","Helvetica Neue",system-ui,sans-serif;
+  --font-mono:"Courier Prime",ui-monospace,"SF Mono",Menlo,monospace;
+
+  --text-display-2:34px;
+  --text-display-3:27px;
+  --text-heading:19px;
+  --text-body-size:16px;
+  --text-body-sm:15px;
+  --text-label:13px;
+  --text-caption:12px;
+  --text-eyebrow:11px;
+
+  --leading-tight:1.06;
+  --leading-snug:1.22;
+  --leading-body:1.5;
+
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;
+  --weight-bold:700;
+
+  --tracking-display:-0.015em;
+  --tracking-label:0.02em;
+  --tracking-eyebrow:0.16em;
+  --tracking-mono:0.01em;
+
+  --type-body:var(--weight-regular) var(--text-body-size)/var(--leading-body) var(--font-text);
+  --type-body-sm:var(--weight-regular) var(--text-body-sm)/var(--leading-body) var(--font-text);
+  --type-label:var(--weight-semibold) var(--text-label)/1.2 var(--font-text);
+  --type-eyebrow:var(--weight-bold) var(--text-eyebrow)/1.2 var(--font-text);
+
+  /* ---- Space / shape / elevation / motion ------------------- */
+  --gutter-screen:20px;
+  --stack-card:12px;
+  --pad-card:16px;
+  --pad-card-lg:20px;
+  --pad-sheet:20px;
+
+  --radius-xs:3px;
+  --radius-sm:4px;
+  --radius-md:6px;
+  --radius-lg:10px;
+  --radius-sheet:16px;
+  --radius-full:999px;
+
+  --border-w-hairline:1px;
+  --border-w-strong:1.5px;
+
+  --control-h-sm:36px;
+  --control-h-md:44px;
+  --control-h-lg:52px;
+  --page-max:1240px;
+
+  /* Paper tooth. Flat noise, never a gradient — v3 forbids gradients
+     outright, so this is the only surface treatment in the system. */
+  --texture-paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.045'/%3E%3C/svg%3E");
+  --rule-dotted:repeating-linear-gradient(to right,var(--border-default) 0 2px,transparent 2px 6px);
+
+  --shadow-card:0 1px 1px rgba(45,34,24,.04),0 2px 6px rgba(45,34,24,.05);
+  --shadow-raised:0 1px 2px rgba(45,34,24,.06),0 6px 14px rgba(45,34,24,.07);
+  --shadow-sheet:0 -2px 4px rgba(45,34,24,.06),0 -14px 34px rgba(45,34,24,.14);
+  --shadow-press:inset 0 1px 2px rgba(45,34,24,.14);
+  --shadow-focus:0 0 0 2px var(--paper-000),0 0 0 4px var(--pine-600);
+
   --dur-instant:80ms;
   --dur-fast:140ms;
   --dur-base:220ms;
-  --dur-slow:380ms;
-  --dur-slower:620ms;
-  --press-scale:.975;
-  --press-scale-card:.995;
-  --lift-y:-1px;
-  --control-h:40px;
-  --control-h-sm:32px;
-  --page-max:1240px;
+  --dur-slow:340ms;
+  --dur-sheet:380ms;
+  --dur-chart:640ms;
+
+  --ease-standard:cubic-bezier(.2,.7,.25,1);
+  --ease-out:cubic-bezier(.16,.84,.3,1);
+  --ease-settle:cubic-bezier(.18,.9,.28,1.02);
+  --ease-tap:cubic-bezier(.3,.9,.4,1);
+  --ease-pop:cubic-bezier(.34,1.56,.64,1);
+
+  --press-scale:0.972;
+  --press-scale-card:0.988;
+  --lift-hover:-1px;
+  --transition-control:background-color var(--dur-fast) var(--ease-standard),border-color var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard),box-shadow var(--dur-fast) var(--ease-standard),transform var(--dur-instant) var(--ease-tap);
 }
 
+/* ---- Dark mode -----------------------------------------------
+   AUTHORED HERE, NOT PART OF v3. v3 defines one paper palette and
+   stops. Rather than invent a second language, this rebinds only
+   the semantic aliases onto v3's existing pine and ink ramps: the
+   canvas becomes the deepest pine, cards sit one step up, and the
+   roast accent carries over untouched because it already reads
+   well on dark green. Primary actions flip to sage-on-pine, since
+   a pine button on a pine canvas would disappear. */
 @media (prefers-color-scheme: dark){
   :root{
-    --paper:#060908;
-    --paper-2:#0a0f0d;
-    --card:#0e1412;
-    --card-raised:#131a17;
-    --ink:#f2f7f4;
-    --ink-2:#9db0a8;
-    --muted:#6b7d76;
-    --faint:#5c6f68;
-    --disabled:#465550;
-    --line:rgba(242,247,244,.12);
-    --line-2:rgba(242,247,244,.07);
-    --line-strong:rgba(242,247,244,.22);
-    --accent:#4fd98b;
-    --accent-ink:#7fe8ab;
-    --accent-active:#34c67d;
-    --accent-wash:rgba(79,217,139,.12);
-    --accent-on:#04120b;
-    --ok:#4fd98b;
-    --warning:#eaa94b;
-    --warning-wash:rgba(234,169,75,.14);
-    --danger:#f07963;
-    --danger-wash:rgba(240,121,99,.14);
-    --info:#6fd3e0;
-    --scrim:rgba(6,9,8,.72);
-    --glass-bg:rgba(19,26,23,.62);
-    --glass-bg-strong:rgba(19,26,23,.82);
-    --glass-border:rgba(242,247,244,.1);
-    --shadow-sm:0 2px 8px rgba(4,10,7,.45);
-    --shadow-md:0 10px 28px -8px rgba(4,10,7,.6);
-    --shadow-lg:0 28px 60px -18px rgba(4,10,7,.72);
-    --shadow-glow:0 0 0 1px rgba(79,217,139,.35),0 8px 32px -8px rgba(79,217,139,.28);
-    --inner-hairline:inset 0 1px 0 rgba(242,247,244,.06);
-    --grad-depth:radial-gradient(120% 90% at 50% 0%, rgba(31,165,101,.14), transparent 62%);
+    --bg-app:var(--pine-900);
+    --surface-card:var(--pine-800);
+    --surface-sunken:#1F2A23;
+    --surface-inverse:var(--pine-800);
+    --surface-inverse-deep:#141C17;
+    --surface-accent:rgba(186,195,179,.12);
+    --surface-warm:rgba(201,168,124,.14);
+    --surface-scrim:rgba(8,12,10,.66);
+
+    --text-title:var(--paper-100);
+    --text-body:var(--paper-200);
+    --text-muted:var(--pine-300);
+    --text-faint:#7D8F82;
+    --text-link:var(--sage-300);
+    --text-link-hover:var(--roast-300);
+    --text-accent:var(--roast-300);
+
+    --border-hairline:rgba(246,241,232,.10);
+    --border-default:rgba(246,241,232,.16);
+    --border-strong:rgba(246,241,232,.30);
+    --border-focus:var(--sage-300);
+
+    --action-primary:var(--sage-300);
+    --action-primary-hover:var(--pine-100);
+    --action-primary-press:var(--sage-500);
+    --action-primary-text:var(--pine-900);
+    --action-secondary-border:rgba(246,241,232,.22);
+    --action-disabled:rgba(246,241,232,.08);
+    --action-disabled-text:#6F8074;
+
+    --accent-star:var(--roast-500);
+    --accent-star-empty:rgba(246,241,232,.20);
+
+    --state-error:#D9705C;
+    --state-error-surface:rgba(217,112,92,.16);
+
+    /* Black noise vanishes on a dark ground — invert the tooth. */
+    --texture-paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' fill='%23fff' opacity='.03'/%3E%3C/svg%3E");
+    --rule-dotted:repeating-linear-gradient(to right,var(--border-default) 0 2px,transparent 2px 6px);
+
+    --shadow-card:0 1px 2px rgba(0,0,0,.34),0 2px 8px rgba(0,0,0,.28);
+    --shadow-raised:0 2px 4px rgba(0,0,0,.38),0 8px 20px rgba(0,0,0,.36);
+    --shadow-sheet:0 -2px 6px rgba(0,0,0,.34),0 -16px 40px rgba(0,0,0,.46);
+    --shadow-focus:0 0 0 2px var(--pine-900),0 0 0 4px var(--sage-300);
   }
 }
 
-@media (prefers-reduced-motion: reduce){
-  :root{
-    --dur-instant:0ms;--dur-fast:0ms;--dur-base:0ms;--dur-slow:0ms;--dur-slower:0ms;
-    --press-scale:1;--press-scale-card:1;--lift-y:0px;
-  }
-}
-
+/* ---------- reset / base (v3 tokens/base.css) ---------- */
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
-
 body{
-  font-family:var(--sans);
-  background:var(--paper);
-  color:var(--ink);
-  line-height:1.55;
+  font:var(--type-body);
+  background:var(--bg-app);
+  color:var(--text-body);
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
   min-height:100vh;
-  background-image:var(--grad-depth);
-  background-repeat:no-repeat;
-  background-attachment:fixed;
 }
-
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:none;padding:0}
-a{color:var(--accent);text-decoration:none;transition:color var(--dur-fast) var(--ease-standard)}
-a:hover{color:var(--accent-ink)}
-h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.015em}
-p{margin:0}
-svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
-:focus-visible{outline:none;box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--accent)}
+a{color:var(--text-link);text-decoration:none;transition:color var(--dur-fast) var(--ease-standard)}
+a:hover{color:var(--text-link-hover)}
+h1,h2,h3,h4{margin:0;font-weight:var(--weight-regular);color:var(--text-title)}
+p{margin:0;text-wrap:pretty}
+::selection{background:var(--caramel-300);color:var(--ink-900)}
+/* Lucide metrics: 24px grid, 2px stroke, round caps. */
+svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.ico-fill{fill:currentColor;stroke:none}
+:focus-visible{outline:none;box-shadow:var(--shadow-focus)}
 
 .wrap{width:100%;max-width:var(--page-max);margin:0 auto;padding:0 24px}
-@media(max-width:640px){ .wrap{padding:0 16px} }
+@media(max-width:640px){ .wrap{padding:0 var(--gutter-screen)} }
 
-/* ---------- top bar (glass surface — floating above content) ---------- */
+/* Eyebrow: the system's only uppercase, tracked 0.16em. */
+.section-title,.lbl,.field > label,.detail-head .kicker,.steps-head span,
+.bigstat .k,.stat .k,.form-sep-label{
+  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--text-muted);
+}
+
+/* ---------- top bar ----------
+   v3's AppBar: 52px compact, paper, hairline underneath. No blur —
+   v3 allows transparency only on the scrim. */
 .topbar{
   position:sticky;top:0;z-index:60;
-  background:var(--glass-bg);
-  backdrop-filter:var(--glass-blur);
-  -webkit-backdrop-filter:var(--glass-blur);
-  border-bottom:1px solid var(--glass-border);
+  background:var(--bg-app);
+  border-bottom:var(--border-w-hairline) solid var(--border-hairline);
 }
-.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:66px}
-/* flex:none keeps the logo from being crushed to nothing when the actions
-   area runs out of room; the padding+negative-margin pair enlarges the tap
-   target on touch devices without shifting any visible layout. */
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:60px}
 .brand{display:inline-flex;align-items:center;gap:10px;min-width:0;flex:none;padding:12px 4px;margin:-12px -4px}
-.brand-mark{width:24px;height:24px;fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;flex:none}
-.brand-text{font-family:var(--sans);font-weight:700;font-size:19px;letter-spacing:var(--tracking-display);white-space:nowrap}
-.brand-text em{font-style:normal;font-weight:400;color:var(--muted);margin-left:.32em}
+.brand-mark{width:22px;height:22px;fill:none;stroke:var(--pine-700);stroke-width:1.6;stroke-linecap:round;flex:none}
+/* v3 has no logo: the brand is a lowercase wordmark in the display
+   serif. The bean mark is this app's own and predates v3, so it
+   stays — but the wordmark now follows the system. */
+.brand-text{font-family:var(--font-display);font-weight:var(--weight-regular);font-size:22px;letter-spacing:var(--tracking-display);white-space:nowrap;color:var(--text-title);text-transform:lowercase}
+.brand-text em{font-style:normal;color:var(--text-muted);margin-left:.3em}
 .topbar-actions{display:flex;align-items:center;gap:8px;flex:none;min-width:0}
 @media(max-width:560px){
-  .topbar-inner{gap:6px}
+  .topbar-inner{gap:6px;height:56px}
   .topbar-actions{gap:6px}
-  .brand-text{font-size:17px}
+  .brand-text{font-size:20px}
 }
+@media (prefers-color-scheme: dark){ .brand-mark{stroke:var(--sage-300)} }
 
-/* ---------- buttons ---------- */
+/* ---------- buttons (v3 core/Button) ---------- */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  height:var(--control-h);padding:0 18px;border-radius:var(--r-control);
-  font-family:var(--sans);font-size:14px;font-weight:500;letter-spacing:-.01em;white-space:nowrap;
-  border:1px solid transparent;
-  transition:background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+  min-height:var(--control-h-md);padding:0 18px;border-radius:var(--radius-md);
+  font:var(--weight-semibold) 15px/1 var(--font-text);
+  letter-spacing:var(--tracking-label);white-space:nowrap;
+  border:var(--border-w-hairline) solid transparent;
+  transition:var(--transition-control);
+  -webkit-tap-highlight-color:transparent;
 }
-.btn-primary{background:var(--accent);color:var(--accent-on);box-shadow:var(--shadow-sm)}
-.btn-primary:hover{background:var(--accent-ink);box-shadow:var(--shadow-glow);transform:translateY(var(--lift-y))}
-.btn-primary:active{background:var(--accent-active)}
-.btn-ghost{border-color:var(--line);background:var(--card-raised);color:var(--ink-2);box-shadow:var(--inner-hairline)}
-.btn-ghost:hover{background:var(--paper-2);border-color:var(--line-strong);color:var(--ink)}
-.btn-quiet{color:var(--muted)}
-.btn-quiet:hover{color:var(--ink);background:var(--paper-2)}
-/* Always paired with .btn-ghost — only recolors text/icon and the hover
-   fill, so it keeps the same border every other button has instead of
-   reading as a stray text link next to bordered buttons. */
-.btn-danger{color:var(--danger)}
-.btn-danger:hover{background:var(--danger-wash);border-color:rgba(224,97,76,.4)}
-.btn-icon{width:var(--control-h);padding:0}
-.btn-sm{height:var(--control-h-sm);font-size:13px;padding:0 12px;border-radius:var(--r-sm)}
-.btn:disabled{opacity:.5;pointer-events:none}
-/* Cupform's press convention: uniform scale(.975), never darker-only —
-   placed after :hover so equal-specificity cascade order lets it win
-   when a button is actually being pressed, not just hovered. */
-.btn:active:not(:disabled){transform:scale(var(--press-scale))}
-.btn-primary:active:not(:disabled){transform:scale(var(--press-scale))}
+.btn-primary{background:var(--action-primary);color:var(--action-primary-text);border-color:var(--action-primary)}
+.btn-primary:hover{background:var(--action-primary-hover);border-color:var(--action-primary-hover)}
+.btn-primary:active{background:var(--action-primary-press)}
+/* v3's "secondary": paper fill, ink hairline. */
+.btn-ghost{background:var(--surface-card);color:var(--text-title);border-color:var(--action-secondary-border)}
+.btn-ghost:hover{background:var(--surface-sunken)}
+.btn-quiet{color:var(--text-muted);border-color:transparent;background:transparent}
+.btn-quiet:hover{color:var(--text-title);background:var(--surface-sunken)}
+/* v3 danger is an outlined destructive, not a text link. */
+.btn-danger{color:var(--state-error);border-color:var(--state-error);background:transparent}
+.btn-danger:hover{background:var(--state-error-surface);border-color:var(--state-error)}
+.btn-icon{width:var(--control-h-md);padding:0}
+.btn-sm{min-height:var(--control-h-sm);font-size:var(--text-label);padding:0 14px}
+.btn-sm.btn-icon{width:var(--control-h-sm)}
+.btn:disabled{background:var(--action-disabled);color:var(--action-disabled-text);border-color:var(--action-disabled);pointer-events:none}
+.btn:active:not(:disabled){transform:scale(var(--press-scale));box-shadow:var(--shadow-press)}
 
-/* ---------- menu (glass, floating) ---------- */
-@keyframes menuPop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+/* Google sign-in keeps its own neutral treatment. */
+.btn-google{background:var(--surface-card);color:var(--text-title);border-color:var(--action-secondary-border)}
+.btn-google:hover{background:var(--surface-sunken)}
+.btn-google .ico{width:19px;height:19px}
+.btn-google:active{transform:scale(var(--press-scale))}
+
+/* ---------- menu ---------- */
+@keyframes menuPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .menu-holder{position:relative}
 .menu{
-  position:absolute;right:0;top:46px;min-width:210px;z-index:70;
-  background:var(--glass-bg-strong);backdrop-filter:var(--glass-blur-sm);-webkit-backdrop-filter:var(--glass-blur-sm);
-  border:1px solid var(--glass-border);border-radius:var(--r-md);
-  box-shadow:var(--shadow-lg);padding:6px;
+  position:absolute;right:0;top:46px;min-width:212px;z-index:70;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border:var(--border-w-hairline) solid var(--border-default);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-raised);padding:6px;
   transform-origin:top right;animation:menuPop var(--dur-base) var(--ease-out) both;
 }
-.menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:7px;font-size:14px;color:var(--ink-2);transition:background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard)}
-.menu button:hover{background:var(--paper-2);color:var(--ink)}
-.menu button.danger{color:var(--danger)}
-.menu-sep{height:1px;background:var(--line-2);margin:6px 4px}
+.menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:var(--radius-sm);font:var(--type-body-sm);color:var(--text-body);transition:background-color var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard)}
+.menu button:hover{background:var(--surface-sunken);color:var(--text-title)}
+.menu button.danger{color:var(--state-error)}
+.menu-sep{height:1px;background:var(--border-hairline);margin:6px 4px}
+.menu-account{padding:8px 12px 6px}
+.menu-account-email{font:var(--weight-medium) var(--text-caption)/1.3 var(--font-text);color:var(--text-muted);word-break:break-all}
+.menu-account[hidden]{display:none}
 
-/* ---------- hero / page head ---------- */
-.hero{padding:52px 0 26px}
-.hero h1{font-family:var(--sans);font-weight:var(--weight-display);font-size:clamp(28px,4.6vw,40px);letter-spacing:var(--tracking-display);line-height:1.05}
-.hero p{color:var(--muted);margin-top:12px;font-size:15px;max-width:52ch}
-.hero .count{font-family:var(--mono);font-variant-numeric:tabular-nums}
-@media(max-width:640px){ .hero{padding:32px 0 20px} }
+.account-chip{width:32px;height:32px;border-radius:var(--radius-full);overflow:hidden;flex:none;border:var(--border-w-hairline) solid var(--border-default);transition:var(--transition-control)}
+.account-chip:hover{border-color:var(--border-strong)}
+.account-chip:active{transform:scale(var(--press-scale))}
+.account-chip[hidden]{display:none}
+.account-avatar{width:100%;height:100%;object-fit:cover;display:block}
+.app-actions{display:flex;align-items:center;gap:8px}
+.app-actions[hidden]{display:none}
 
-/* ---------- filter bar (glass) ---------- */
+/* ---------- hero ---------- */
+.hero{padding:44px 0 24px}
+.hero h1{font:var(--weight-regular) clamp(30px,4.6vw,44px)/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
+.hero p{color:var(--text-muted);margin-top:12px;font:var(--type-body-sm);max-width:52ch}
+.hero .count{font-family:var(--font-mono);font-weight:var(--weight-bold);font-variant-numeric:tabular-nums;color:var(--text-title)}
+@media(max-width:640px){ .hero{padding:28px 0 18px} }
+
+/* ---------- filter bar ---------- */
 .filters{
   display:flex;flex-wrap:wrap;gap:10px;align-items:center;
   padding:14px;margin-bottom:28px;
-  background:var(--glass-bg-strong);backdrop-filter:var(--glass-blur-sm);-webkit-backdrop-filter:var(--glass-blur-sm);
-  border:1px solid var(--glass-border);border-radius:var(--r-lg);
-  box-shadow:var(--shadow-sm);
-  position:sticky;top:74px;z-index:40;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-card);
+  position:sticky;top:68px;z-index:40;
 }
 .search{position:relative;flex:1 1 210px;min-width:170px}
-.search .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-faint);width:17px;height:17px}
 .search input{
-  width:100%;height:var(--control-h);padding:0 12px 0 36px;border-radius:var(--r-control);
-  border:1px solid var(--line);background:var(--paper);outline:none;font-size:14px;
-  transition:border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+  width:100%;height:var(--control-h-md);padding:0 12px 0 38px;border-radius:var(--radius-md);
+  border:var(--border-w-hairline) solid var(--border-default);background:var(--surface-card);
+  outline:none;font:var(--type-body-sm);color:var(--text-title);
+  transition:var(--transition-control);
 }
-.search input:hover{border-color:var(--line-strong)}
-.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+.search input:hover{border-color:var(--border-strong)}
+.search input:focus{border-color:var(--border-focus);box-shadow:var(--shadow-focus)}
 
 .sel{position:relative}
 .sel select{
   appearance:none;-webkit-appearance:none;
-  height:var(--control-h);padding:0 32px 0 14px;border-radius:var(--r-control);
-  border:1px solid var(--line);background:var(--paper);
-  font-size:14px;color:var(--ink-2);outline:none;max-width:190px;
-  text-overflow:ellipsis;
-  transition:background-color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+  height:var(--control-h-md);padding:0 34px 0 14px;border-radius:var(--radius-md);
+  border:var(--border-w-hairline) solid var(--border-default);background:var(--surface-card);
+  font:var(--type-body-sm);color:var(--text-body);outline:none;max-width:190px;
+  text-overflow:ellipsis;transition:var(--transition-control);
 }
-.sel select:hover{border-color:var(--line-strong)}
+.sel select:hover{border-color:var(--border-strong)}
 .sel::after{
   content:"";position:absolute;right:14px;top:50%;width:7px;height:7px;
-  border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);
+  border-right:1.6px solid var(--text-muted);border-bottom:1.6px solid var(--text-muted);
   transform:translateY(-70%) rotate(45deg);pointer-events:none;
 }
-.sel select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
-.sel.on select{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-wash);font-weight:500}
+.sel select:focus{border-color:var(--border-focus);box-shadow:var(--shadow-focus)}
+/* Active filter = pine fill with a paper label, matching v3's selected Chip. */
+.sel.on select{border-color:var(--action-primary);color:var(--action-primary-text);background:var(--action-primary);font-weight:var(--weight-semibold)}
+.sel.on::after{border-color:var(--action-primary-text)}
 
+/* v3 rounds fully in exactly two places: chips and the timer's start
+   button. This is the chip. */
 .pill-toggle{
-  height:var(--control-h);padding:0 14px;border-radius:999px;border:1px solid var(--line);
-  background:var(--paper);font-size:14px;color:var(--ink-2);display:inline-flex;align-items:center;gap:7px;
-  transition:background-color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+  height:var(--control-h-md);padding:0 15px;border-radius:var(--radius-full);
+  border:var(--border-w-hairline) solid var(--border-default);
+  background:var(--surface-card);font:var(--type-label);letter-spacing:var(--tracking-label);
+  color:var(--text-body);display:inline-flex;align-items:center;gap:7px;
+  transition:var(--transition-control);
 }
-.pill-toggle.on{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink);font-weight:500}
+.pill-toggle:hover{background:var(--surface-sunken)}
+.pill-toggle.on{border-color:var(--action-primary);background:var(--action-primary);color:var(--action-primary-text)}
 .pill-toggle:active{transform:scale(var(--press-scale))}
 .pill-toggle .ico{width:15px;height:15px}
 .filters .spacer{flex:1}
 @media(max-width:640px){
-  .filters{position:static;padding:12px;border-radius:var(--r-lg)}
+  .filters{position:static;padding:12px}
   .sel select{max-width:none;width:100%}
   .sel{flex:1 1 46%}
 }
 
-/* ---------- recipe grid ---------- */
+/* ---------- recipe grid (v3 recipe/RecipeCard) ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:16px;padding-bottom:8px}
-@media(max-width:640px){ .grid{grid-template-columns:1fr;gap:12px} }
+@media(max-width:640px){ .grid{grid-template-columns:1fr;gap:var(--stack-card)} }
 
-@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .card{
-  position:relative;display:flex;flex-direction:column;gap:14px;
-  background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-card);
-  padding:22px;text-align:left;width:100%;
-  box-shadow:var(--shadow-sm),var(--inner-hairline);
-  transition:border-color var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
-  /* Uniform (no stagger) and quick: the grid re-renders on every search
-     keystroke, so anything slower or staggered would feel laggy rather
-     than lively. */
+  position:relative;display:flex;flex-direction:column;gap:12px;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-md);
+  padding:var(--pad-card-lg);text-align:left;width:100%;
+  box-shadow:var(--shadow-card);
+  transition:border-color var(--dur-base) var(--ease-standard),transform var(--dur-fast) var(--ease-tap),box-shadow var(--dur-base) var(--ease-standard);
   animation:cardIn var(--dur-slow) var(--ease-out) both;
 }
-.card:hover{border-color:var(--line);transform:translateY(-2px);box-shadow:var(--shadow-md)}
-.card:active{transform:translateY(0) scale(var(--press-scale-card))}
+.card:hover{border-color:var(--border-strong);transform:translateY(var(--lift-hover));box-shadow:var(--shadow-raised)}
+.card:active{transform:scale(var(--press-scale-card));box-shadow:none}
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.card-title{font-family:var(--sans);font-size:18px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
-.card-sub{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.dot{width:3px;height:3px;border-radius:50%;background:var(--faint);flex:none}
-.fav{color:var(--faint);padding:2px;line-height:0;border-radius:6px;flex:none;transition:color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-spring)}
-.fav:hover{color:var(--accent)}
+/* Recipe names carry the voice, so they take the display serif. */
+.card-title{font:var(--weight-regular) 23px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
+.card-sub{font:var(--type-body-sm);font-size:13.5px;color:var(--text-muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dot{width:3px;height:3px;border-radius:50%;background:var(--text-faint);flex:none}
+
+/* Favourite mark — v3 uses a bookmark, not a star, and gives it the
+   system's one and only spring. */
+.fav{color:var(--text-faint);padding:2px;line-height:0;border-radius:var(--radius-full);flex:none;position:relative;transition:color var(--dur-fast) var(--ease-standard)}
+.fav:hover{color:var(--accent-favorite)}
+.fav.on{color:var(--accent-favorite)}
+.fav svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:fill var(--dur-fast) var(--ease-standard)}
+/* .pop is added by JS only on the transition into favourited, never on
+   render — see the fav case in app.js. */
+.fav.pop{animation:favPop 400ms var(--ease-pop)}
+.fav.pop::after{content:"";position:absolute;inset:-3px;border-radius:var(--radius-full);border:1px solid var(--accent-favorite);animation:favRing 440ms var(--ease-out) forwards;pointer-events:none}
+@keyframes favPop{0%{transform:scale(1)}45%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes favRing{0%{transform:scale(.55);opacity:.55}100%{transform:scale(1.5);opacity:0}}
 .fav:active{transform:scale(var(--press-scale))}
-.fav.on{color:var(--accent)}
-.fav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;transition:fill var(--dur-fast) var(--ease-standard)}
-.fav.on svg{fill:currentColor}
 
-.stats{display:flex;gap:0;border-top:1px solid var(--line-2);padding-top:13px;margin-top:auto}
+.card-head-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.card-kind{margin-bottom:2px}
+/* Stats and rating share the card's bottom rule, v3's RecipeCard footer. */
+.card-foot{display:flex;align-items:flex-end;gap:12px;margin-top:auto}
+.card-foot .stats{flex:1;min-width:0;margin-top:0}
+.card-foot .stars{padding-bottom:2px;flex:none}
+.stats{display:flex;gap:0;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px;margin-top:auto}
 .stat{flex:1;min-width:0}
-.stat + .stat{border-left:1px solid var(--line-2);padding-left:12px}
-.stat .k{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted);display:block}
-.stat .v{font-family:var(--mono);font-size:13.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:3px}
+.stat + .stat{border-left:var(--border-w-hairline) solid var(--border-hairline);padding-left:12px}
+.stat .k{display:block}
+.stat .v{font:var(--weight-medium) 13px/1.2 var(--font-mono);color:var(--text-body);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:4px}
 
-/* min-height, not height: a long grinder setting ("KINGrinder · 1 turn +
-   55 clicks") wraps to a second line on a narrow card, and a fixed height
-   let that line spill straight out of the pill. The card grows instead —
-   .stats is margin-top:auto, so the row's bottom edge stays aligned. */
+/* ---------- tags (v3 core/Tag) ----------
+   Printed labels, squared at 3px — chips are pressed, tags are not.
+   min-height rather than height so a long grinder setting wraps
+   inside the pill and grows the card. */
 .tag{
-  display:inline-flex;align-items:center;min-height:22px;max-width:100%;
-  padding:2px 8px;border-radius:var(--r-xs);
-  font-family:var(--mono);font-size:11px;line-height:1.5;letter-spacing:.02em;
-  background:var(--card-raised);color:var(--ink-2);border:1px solid var(--line-2);
+  display:inline-flex;align-items:center;min-height:21px;max-width:100%;
+  padding:2px 7px;border-radius:var(--radius-xs);
+  font:var(--weight-medium) var(--text-eyebrow)/1.5 var(--font-mono);
+  letter-spacing:var(--tracking-mono);
+  background:var(--surface-sunken);color:var(--text-muted);
+  border:var(--border-w-hairline) solid transparent;
 }
-.tag-accent{background:var(--accent-wash);color:var(--accent-ink);border-color:rgba(79,217,139,.28)}
-/* flex-start so a wrapped tag doesn't stretch its single-line neighbours. */
+/* The method/style tag is the one that gets v3's pine tone. */
+.tag-accent{background:var(--surface-accent);color:var(--text-link);border-color:transparent}
 .tags{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px}
-.stars{display:inline-flex;gap:3px;color:var(--line-strong)}
+
+/* Rating: five beans filled with roast, never stars. */
+.stars{display:inline-flex;gap:3px}
 .stars svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6}
-.stars svg.on{color:var(--accent);fill:var(--accent)}
-.stars svg.on .crease{stroke:var(--card)}
-.stars svg.off{color:var(--line-strong)}
+.stars svg.on{color:var(--accent-star);fill:var(--accent-star)}
+.stars svg.on .crease{stroke:var(--surface-card)}
+.stars svg.off{color:var(--accent-star-empty)}
 
 /* ---------- empty state ---------- */
 .empty{
-  text-align:center;padding:76px 24px;border:1px dashed var(--line);
-  border-radius:var(--r-lg);background:var(--glass-bg);
-  backdrop-filter:var(--glass-blur-sm);-webkit-backdrop-filter:var(--glass-blur-sm);
+  text-align:center;padding:72px 24px;
+  border:var(--border-w-hairline) dashed var(--border-default);
+  border-radius:var(--radius-lg);background:var(--surface-card);background-image:var(--texture-paper);
   animation:cardIn var(--dur-slow) var(--ease-out) both;
 }
-.empty .bean{width:38px;height:38px;stroke:var(--muted);fill:none;stroke-width:1.4;margin-bottom:14px}
-.empty h3{font-family:var(--sans);font-weight:600;font-size:20px}
-.empty p{color:var(--muted);margin:8px auto 20px;max-width:38ch;font-size:14.5px}
+.empty .bean{width:36px;height:36px;stroke:var(--text-faint);fill:none;stroke-width:1.4;margin-bottom:14px}
+.empty h3{font:var(--weight-regular) var(--text-display-3)/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display)}
+.empty p{color:var(--text-muted);margin:8px auto 20px;max-width:38ch;font:var(--type-body-sm)}
 
 /* ---------- detail view ---------- */
-.detail{padding:26px 0 60px;animation:rise var(--dur-base) var(--ease-out) both}
-@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;margin-bottom:22px}
-.back:hover{color:var(--accent-ink)}
-.detail-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap;padding-bottom:24px;border-bottom:1px solid var(--line-2)}
+.detail{padding:24px 0 60px;animation:rise var(--dur-base) var(--ease-out) both}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font:var(--type-body-sm);margin-bottom:20px}
+.back:hover{color:var(--text-title)}
+.detail-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap;padding-bottom:22px;border-bottom:var(--border-w-hairline) solid var(--border-hairline)}
 .detail-head-info{flex:1;min-width:0}
-.detail-head h1{font-family:var(--sans);font-weight:var(--weight-display);font-size:clamp(26px,4.2vw,36px);letter-spacing:var(--tracking-display);line-height:1.05}
-/* Cupform's "eyebrow" convention — mono micro-label, muted, uppercase. */
-.detail-head .kicker{font-family:var(--mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted);margin-bottom:10px}
+.detail-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
+.detail-head .kicker{display:block;margin-bottom:10px}
 .title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-/* Mobile-only star inline with the title — see .fav-desktop below for its
-   desktop counterpart inside .detail-actions. Both point at the same
-   data-action, so either one works regardless of which is visible. */
 .fav-inline{display:none}
 .detail-actions{display:flex;gap:8px;flex-wrap:wrap}
 
@@ -367,135 +535,126 @@ svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;st
   .title-row{gap:8px}
   .fav-inline{display:inline-flex;margin-top:4px}
   .fav-desktop{display:none}
-  /* Edit is the one full-width row on top (order:-1 pulls it there
-     regardless of source order); Duplicate and Delete fill the two
-     columns underneath it. Desktop keeps the original inline row. */
   .detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
   .detail-actions .btn{width:100%;justify-content:center}
-  /* Timer sits above Edit, both spanning the row; Duplicate and Delete
-     fill the two columns underneath. */
   .detail-actions .action-timer{order:-2;grid-column:1/-1}
   .detail-actions .action-edit{order:-1;grid-column:1/-1}
 }
 .detail-body{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:44px;padding-top:30px;align-items:start}
 @media(max-width:860px){ .detail-body{grid-template-columns:1fr;gap:34px} }
 
-.section-title{font-family:var(--mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted);margin-bottom:14px}
+.section-title{display:block;margin-bottom:14px}
 
-.specs{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line-2)}
-.spec{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line-2);font-size:14px}
-.spec dt{color:var(--muted);flex:none}
-.spec dd{margin:0;text-align:right;color:var(--ink);font-family:var(--mono);font-variant-numeric:tabular-nums}
+.specs{display:flex;flex-direction:column;gap:0;border-top:var(--border-w-hairline) solid var(--border-hairline)}
+.spec{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:var(--border-w-hairline) solid var(--border-hairline);font:var(--type-body-sm)}
+.spec dt{color:var(--text-muted);flex:none}
+.spec dd{margin:0;text-align:right;color:var(--text-title);font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono)}
 
 .bigstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}
-.bigstat{background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-card);padding:16px 18px;box-shadow:var(--shadow-sm),var(--inner-hairline);animation:cardIn var(--dur-slow) var(--ease-out) both}
+.bigstat{background:var(--surface-card);background-image:var(--texture-paper);border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-card);animation:cardIn var(--dur-slow) var(--ease-out) both}
 .bigstat:nth-child(1){animation-delay:0s}
-.bigstat:nth-child(2){animation-delay:.05s}
-.bigstat:nth-child(3){animation-delay:.1s}
-.bigstat:nth-child(4){animation-delay:.15s}
-.bigstat:nth-child(5){animation-delay:.2s}
-.bigstat:nth-child(6){animation-delay:.25s}
-.bigstat .k{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted)}
-/* Big data readouts: Instrument Sans Light (not the display bold, not the
-   tasting-notes serif) — the "hero number" treatment Cupform's StatCard
-   and BrewDetailScreen's Metric both use, with the unit in small mono. */
-.bigstat .v{font-family:var(--sans);font-weight:var(--weight-light);font-size:27px;line-height:1.15;margin-top:5px;letter-spacing:var(--tracking-display);font-variant-numeric:tabular-nums}
-.bigstat .v small{font-family:var(--mono);font-size:13px;font-weight:400;color:var(--muted);margin-left:3px;letter-spacing:0}
+.bigstat:nth-child(2){animation-delay:.04s}
+.bigstat:nth-child(3){animation-delay:.08s}
+.bigstat:nth-child(4){animation-delay:.12s}
+.bigstat:nth-child(5){animation-delay:.16s}
+.bigstat:nth-child(6){animation-delay:.2s}
+.bigstat .k{display:block}
+/* Every measurement is mono in v3 — this is the "recipe numbers" role. */
+.bigstat .v{font:var(--weight-bold) 30px/1.05 var(--font-mono);margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text-title)}
+.bigstat .v small{font:var(--weight-medium) 13px/1 var(--font-text);color:var(--text-muted);margin-left:4px;letter-spacing:var(--tracking-label)}
 @media(max-width:520px){ .bigstats{grid-template-columns:repeat(2,1fr)} }
 
+/* ---------- pouring steps (v3 recipe/StepList) ---------- */
 .timeline{position:relative;margin:0;padding:0 0 0 4px;list-style:none}
-@keyframes stepIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes stepIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
 .step{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:16px;padding-bottom:22px;animation:stepIn var(--dur-slow) var(--ease-out) both}
-/* Pours reveal one after another, like the schedule itself — capped at six
-   steps of delay so a long AeroPress/4:6 list doesn't take forever to settle. */
-.step:nth-child(1){animation-delay:.06s}
-.step:nth-child(2){animation-delay:.14s}
-.step:nth-child(3){animation-delay:.22s}
-.step:nth-child(4){animation-delay:.3s}
-.step:nth-child(5){animation-delay:.38s}
-.step:nth-child(n+6){animation-delay:.46s}
+.step:nth-child(1){animation-delay:.05s}
+.step:nth-child(2){animation-delay:.11s}
+.step:nth-child(3){animation-delay:.17s}
+.step:nth-child(4){animation-delay:.23s}
+.step:nth-child(5){animation-delay:.29s}
+.step:nth-child(n+6){animation-delay:.35s}
 .step:last-child{padding-bottom:0}
-.step::before{content:"";position:absolute;left:5px;top:16px;bottom:-6px;width:1px;background:var(--line)}
+.step::before{content:"";position:absolute;left:5px;top:16px;bottom:-6px;width:1px;background:var(--border-default)}
 .step:last-child::before{display:none}
-.step .bullet{position:absolute;left:0;top:7px;width:11px;height:11px;border-radius:50%;background:var(--card);border:1.8px solid var(--accent)}
-.step .t{padding-left:24px;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px;color:var(--accent-ink);font-weight:500;white-space:nowrap}
+.step .bullet{position:absolute;left:0;top:7px;width:11px;height:11px;border-radius:50%;background:var(--surface-card);border:var(--border-w-strong) solid var(--action-primary)}
+.step .t{padding-left:24px;font:var(--weight-bold) 13px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);color:var(--text-title);white-space:nowrap}
 .step .body{min-width:0}
-.step .body p{font-size:15px;color:var(--ink-2)}
-.step .w{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.step .body p{font:var(--type-body-sm);color:var(--text-body)}
+.step .w{font:var(--weight-medium) 12px/1.2 var(--font-mono);color:var(--text-muted);margin-top:4px;font-variant-numeric:tabular-nums}
 @media(max-width:520px){
   .step{grid-template-columns:56px minmax(0,1fr);gap:10px}
   .step .t{padding-left:22px;font-size:12px}
 }
 
-/* Tasting/personal notes are the one place the system gets lyrical —
-   italic serif, larger and looser than the surrounding UI type. */
+/* Tasting notes keep the editorial serif — in v3 that's the display
+   face, which is what carries voice throughout the system. */
 .notes{
-  background:var(--paper-2);border-radius:var(--r-md);padding:18px 20px;
-  font-family:var(--serif);font-style:italic;font-size:19px;line-height:1.5;
-  color:var(--ink);white-space:pre-wrap;border:1px solid var(--line-2);
+  background:var(--surface-warm);border-radius:var(--radius-md);padding:18px 20px;
+  font:var(--weight-regular) 19px/1.5 var(--font-display);
+  color:var(--text-title);white-space:pre-wrap;
+  border:var(--border-w-hairline) solid var(--border-hairline);
 }
 .block{margin-top:34px}
-.coffee-note{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--muted);margin-top:10px;white-space:pre-wrap;line-height:1.5}
+.coffee-note{font:var(--weight-regular) 16px/1.5 var(--font-display);color:var(--text-muted);margin-top:10px;white-space:pre-wrap}
 
-/* ---------- modal ---------- */
+/* ---------- modal / sheet ----------
+   Scrim only, no blur. Mobile keeps the floating-with-margin
+   treatment decided earlier rather than v3's docked BottomSheet. */
 .overlay{
-  position:fixed;inset:0;z-index:100;background:var(--scrim);
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  position:fixed;inset:0;z-index:100;background:var(--surface-scrim);
   display:flex;align-items:center;justify-content:center;padding:24px;
-  animation:fade var(--dur-base) var(--ease-standard) both;overflow-y:auto;
+  animation:fade var(--dur-base) var(--ease-out) both;overflow-y:auto;
 }
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .sheet{
-  width:100%;max-width:660px;background:var(--card);border-radius:var(--r-sheet);
-  box-shadow:var(--shadow-lg);border:1px solid var(--line);
-  /* dvh tracks the browser's actual visible area, shrinking when its address/
-     tab bar is showing — plain vh doesn't, which let the footer (Save button)
-     hide behind mobile browser chrome. vh stays first as a fallback. */
+  width:100%;max-width:660px;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-raised);border:var(--border-w-hairline) solid var(--border-hairline);
   max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);
   display:flex;flex-direction:column;
   animation:pop var(--dur-base) var(--ease-out) both;margin:auto;
 }
 .sheet.narrow{max-width:480px}
-@keyframes pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line-2);flex:none}
-.sheet-head h2{font-family:var(--sans);font-weight:600;font-size:18px;letter-spacing:-.01em}
-.sheet-body{padding:22px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
-.sheet-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line-2);flex:none;background:var(--card-raised);border-radius:0 0 var(--r-sheet) var(--r-sheet)}
+@keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px var(--pad-sheet);border-bottom:var(--border-w-hairline) solid var(--border-hairline);flex:none}
+.sheet-head h2{font:var(--weight-regular) 24px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
+.sheet-body{padding:var(--pad-sheet);overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.sheet-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px var(--pad-sheet);border-top:var(--border-w-hairline) solid var(--border-hairline);flex:none;background:var(--surface-sunken);border-radius:0 0 var(--radius-lg) var(--radius-lg)}
 @media(max-width:640px){
-  /* The sheet floats with margin on every side now rather than docking
-     flush to the screen edges — so it keeps the same fully-rounded
-     corners as the desktop modal instead of only rounding the top ones.
-     The 50px bottom figure (on top of the dvh sizing below) is a flat,
-     unconditional safety margin: mobile browser chrome height varies by
-     browser/OS and isn't fully reflected by dvh in every case we saw in
-     testing, so leave a fixed gap that holds regardless. Applies to every
-     modal — recipe form, coffee/grinder/method/style forms, library
-     manager — since they all share .overlay/.sheet. */
+  /* Floats with margin on every side rather than docking flush, so all
+     four corners round equally. The flat 50px bottom figure is an
+     unconditional safety margin: mobile browser chrome height varies
+     and isn't always reflected by dvh. */
   .overlay{padding:16px 16px 50px;align-items:flex-end}
   .sheet{
-    max-width:none;border-radius:var(--r-sheet);margin:0;
+    max-width:none;border-radius:var(--radius-sheet);margin:0;
     max-height:calc(100vh - 66px);max-height:calc(100dvh - 66px);
-    animation:up var(--dur-slow) var(--ease-out) both;
+    animation:up var(--dur-sheet) var(--ease-settle) both;
   }
-  .sheet-foot{border-radius:0 0 var(--r-sheet) var(--r-sheet);padding-bottom:max(16px,env(safe-area-inset-bottom))}
-  @keyframes up{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
+  .sheet-foot{border-radius:0 0 var(--radius-sheet) var(--radius-sheet);padding-bottom:max(14px,env(safe-area-inset-bottom))}
+  @keyframes up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 }
 
-/* ---------- forms ---------- */
+/* ---------- forms (v3 forms/Input) ---------- */
 .field{margin-bottom:16px}
-.field > label,.lbl{font-family:var(--mono);display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted);margin-bottom:6px}
+.field > label,.lbl{display:block;margin-bottom:6px}
 .inp{
-  width:100%;height:var(--control-h);padding:0 13px;border-radius:var(--r-control);
-  border:1px solid var(--line);background:var(--paper);outline:none;font-size:15px;
-  transition:border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+  width:100%;min-height:var(--control-h-md);padding:0 14px;border-radius:var(--radius-md);
+  border:var(--border-w-hairline) solid var(--border-default);background:var(--surface-card);
+  outline:none;font:var(--type-body);color:var(--text-title);
+  transition:var(--transition-control);
 }
-.inp:hover:not(:focus){border-color:var(--line-strong)}
-textarea.inp{height:auto;min-height:92px;padding:11px 13px;resize:vertical;line-height:1.55}
+.inp:hover:not(:focus){border-color:var(--border-strong)}
+textarea.inp{height:auto;min-height:92px;padding:12px 14px;resize:vertical;line-height:var(--leading-body)}
 select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
-  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
-  background-position:calc(100% - 18px) 18px,calc(100% - 13px) 18px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
-.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
-.inp::placeholder{color:var(--disabled)}
+  background-image:linear-gradient(45deg,transparent 50%,var(--text-muted) 50%),linear-gradient(135deg,var(--text-muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 20px,calc(100% - 13px) 20px;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.inp:focus{border-color:var(--border-focus);box-shadow:var(--shadow-focus)}
+.inp::placeholder{color:var(--text-faint)}
+/* Measurements are typed, not set — mono with tabular figures. */
+.inp[inputmode="decimal"],.inp[inputmode="numeric"]{font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono)}
 .row{display:grid;gap:14px}
 .row-2{grid-template-columns:1fr 1fr}
 .row-3{grid-template-columns:repeat(3,1fr)}
@@ -503,155 +662,172 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .with-add{display:flex;gap:8px;align-items:center}
 .with-add .inp{flex:1}
 .addbtn{
-  width:var(--control-h);height:var(--control-h);flex:none;border-radius:var(--r-control);border:1px dashed var(--line);
-  color:var(--muted);display:inline-flex;align-items:center;justify-content:center;
-  transition:border-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard);
+  width:var(--control-h-md);height:var(--control-h-md);flex:none;border-radius:var(--radius-md);
+  border:var(--border-w-hairline) dashed var(--border-default);
+  color:var(--text-muted);display:inline-flex;align-items:center;justify-content:center;
+  transition:var(--transition-control);
 }
-.addbtn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-wash);border-style:solid}
-.hint{font-size:12.5px;color:var(--muted);margin-top:6px}
-.ratio-hint{font-family:var(--mono);color:var(--accent-ink);font-variant-numeric:tabular-nums}
-.form-sep{height:1px;background:var(--line-2);margin:24px 0 20px}
-.form-sep-label{display:flex;align-items:center;gap:12px;margin:26px 0 16px;color:var(--muted);font-family:var(--mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:var(--tracking-label)}
-.form-sep-label::after{content:"";flex:1;height:1px;background:var(--line-2)}
+.addbtn:hover{border-color:var(--action-primary);color:var(--action-primary);background:var(--surface-accent);border-style:solid}
+.hint{font:var(--weight-regular) var(--text-caption)/1.35 var(--font-text);color:var(--text-muted);margin-top:6px}
+.ratio-hint{font-family:var(--font-mono);font-weight:var(--weight-bold);color:var(--text-accent);font-variant-numeric:tabular-nums}
+.form-sep{height:1px;background:var(--border-hairline);margin:24px 0 20px}
+.form-sep-label{display:flex;align-items:center;gap:12px;margin:26px 0 16px}
+.form-sep-label::after{content:"";flex:1;height:1px;background:var(--border-hairline)}
 
 /* steps editor */
 .steprow{display:grid;grid-template-columns:78px minmax(0,1fr) 84px 34px;gap:8px;margin-bottom:8px;align-items:center}
-.steprow .inp{height:40px;font-size:14px;padding:0 10px}
-.steprow .del{color:var(--muted);width:34px;height:40px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;transition:color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard)}
-.steprow .del:hover{color:var(--danger);background:var(--danger-wash)}
+.steprow .inp{min-height:40px;font-size:14px;padding:0 10px}
+.steprow .del{color:var(--text-muted);width:34px;height:40px;border-radius:var(--radius-sm);display:inline-flex;align-items:center;justify-content:center;transition:var(--transition-control)}
+.steprow .del:hover{color:var(--state-error);background:var(--state-error-surface)}
 .steps-head{display:grid;grid-template-columns:78px minmax(0,1fr) 84px 34px;gap:8px;margin-bottom:6px}
-.steps-head span{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted)}
 @media(max-width:560px){
   .steprow,.steps-head{grid-template-columns:66px minmax(0,1fr) 68px 30px;gap:6px}
   .steprow .del{width:30px}
 }
 .steps-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
-/* rating input — beans, per Cupform's Rating component */
+/* rating input — beans, roast fill, one-step scale and no bounce */
 .rate{display:inline-flex;gap:4px}
-.rate button{color:var(--line-strong);padding:3px;line-height:0;transition:color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-spring)}
-.rate button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6}
-.rate button.on{color:var(--accent)}
+.rate button{color:var(--accent-star-empty);padding:3px;line-height:0;transition:color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-tap)}
+.rate button svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6}
+.rate button.on{color:var(--accent-star)}
 .rate button.on svg{fill:currentColor}
-.rate button.on svg .crease{stroke:var(--card)}
-.rate button:hover{transform:scale(1.18) rotate(-6deg)}
-.rate button:active{transform:scale(.92) rotate(-6deg)}
+.rate button.on svg .crease{stroke:var(--surface-card)}
+.rate button:hover{transform:scale(1.12)}
+.rate button:active{transform:scale(var(--press-scale))}
 
 /* ---------- library manager ---------- */
-.tabs{display:flex;gap:4px;padding:4px;background:var(--paper-2);border-radius:999px;margin-bottom:20px;overflow-x:auto}
-.tabs button{flex:1;min-width:max-content;height:32px;padding:0 14px;border-radius:999px;font-size:13.5px;color:var(--muted);white-space:nowrap;transition:background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard)}
-.tabs button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow-sm);font-weight:500}
+.tabs{display:flex;gap:4px;padding:4px;background:var(--surface-sunken);border-radius:var(--radius-full);margin-bottom:20px;overflow-x:auto}
+.tabs button{flex:1;min-width:max-content;height:34px;padding:0 14px;border-radius:var(--radius-full);font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-muted);white-space:nowrap;transition:var(--transition-control)}
+.tabs button.on{background:var(--action-primary);color:var(--action-primary-text)}
 .list{display:flex;flex-direction:column;gap:8px}
 .list-item{
   display:flex;align-items:center;gap:12px;padding:12px 14px;
-  background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-sm);
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-md);
 }
 .list-item .txt{flex:1;min-width:0}
-.list-item .nm{font-size:15px}
-.list-item .mt{font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.list-item .cnt{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
-.iconbtn{width:30px;height:30px;border-radius:7px;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard)}
-.iconbtn:hover{background:var(--paper-2);color:var(--ink)}
+.list-item .nm{font:var(--type-body-sm);color:var(--text-title)}
+.list-item .mt{font:var(--weight-regular) var(--text-caption)/1.35 var(--font-text);color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list-item .cnt{font:var(--weight-medium) var(--text-eyebrow)/1 var(--font-mono);color:var(--text-muted);white-space:nowrap}
+.iconbtn{width:32px;height:32px;border-radius:var(--radius-sm);color:var(--text-muted);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:var(--transition-control)}
+.iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
 .iconbtn:active{transform:scale(var(--press-scale))}
-.iconbtn.danger:hover{color:var(--danger);background:var(--danger-wash)}
+.iconbtn.danger:hover{color:var(--state-error);background:var(--state-error-surface)}
 
 /* ---------- brew timer ----------
-   One closed ring = the recipe's whole brew time. The dim arcs behind are
-   the plan (one slice per pouring step, sized by how long it's on screen);
-   the bright arc sweeping over them is where you actually are. */
-/* Given a fixed height so the step list gets every pixel the ring and
-   controls don't need — otherwise the panel shrink-wraps its content and
-   the list is left showing one row at a time. */
-.sheet-timer{max-width:430px;height:min(760px,calc(100vh - 66px));height:min(760px,calc(100dvh - 66px))}
-/* No bottom padding — the step list runs all the way down to the footer. */
-.timer-body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 20px 0;overflow:hidden;min-height:0}
+   v3 puts the timer on the inverse pine surface with the roast
+   accent — the one screen that inverts. Structure and typography
+   follow v3's BrewTimer (eyebrow step counter, mono readouts, the
+   instruction in the display serif, capsule accent control, a
+   next-step footer); the ring keeps this app's own semantics of
+   one closed circle for the whole brew, with a segment per pour.
+   Progress moves linearly and never eases — easing would misreport
+   elapsed time. */
+.sheet-timer{
+  max-width:430px;
+  height:min(760px,calc(100vh - 66px));height:min(760px,calc(100dvh - 66px));
+  background:var(--surface-inverse);background-image:var(--texture-paper);
+  border-color:var(--pine-900);color:var(--text-on-inverse);
+}
+.sheet-timer .sheet-head{border-bottom-color:var(--border-inverse);padding-bottom:12px;flex-direction:column;align-items:stretch;gap:6px}
+.sheet-timer .sheet-head h2{color:var(--paper-000)}
+.timer-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.timer-eyebrow{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-on-inverse-muted)}
+.timer-clock{font:var(--weight-medium) 14px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse-muted)}
+.sheet-timer .iconbtn{color:var(--paper-200)}
+.sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
 
-/* Shrinks on short screens so the steps keep their room. */
-.timer-ring{position:relative;width:min(246px,60vw,30vh);aspect-ratio:1;flex:none}
+.timer-body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px var(--pad-sheet) 0;overflow:hidden;min-height:0}
+
+.timer-ring{position:relative;width:min(232px,58vw,29vh);aspect-ratio:1;flex:none}
 .timer-ring svg{width:100%;height:100%;display:block;overflow:visible}
 .timer-ring circle{fill:none}
-.ttrack{stroke:var(--line-2);stroke-width:15}
-.tseg{stroke:var(--accent);stroke-opacity:.15;stroke-width:15;transition:stroke-opacity var(--dur-slow) var(--ease-standard)}
+.ttrack{stroke:rgba(246,241,232,.10);stroke-width:14}
+/* The plan, drawn once: one arc per pour, brightening as it passes. */
+.tseg{stroke:var(--paper-000);stroke-opacity:.14;stroke-width:14;transition:stroke-opacity var(--dur-slow) var(--ease-standard)}
 .tseg.is-past{stroke-opacity:.26}
-.tseg.is-now{stroke-opacity:.44}
-.tprog{stroke:url(#ringGrad);stroke-width:15;stroke-linecap:round;filter:drop-shadow(0 0 8px var(--accent-wash))}
-#ringGrad .g1{stop-color:var(--accent)}
-#ringGrad .g2{stop-color:var(--accent-ink)}
-/* The head sits outside the rotated group, so it starts at 12 o'clock and
-   JS rotates it around the centre to follow the arc. */
-.timer-ring .thead circle{fill:var(--accent);stroke:var(--card);stroke-width:3}
-.sheet-timer.is-running .tprog{animation:progGlow 2.6s var(--ease-in-out) infinite}
-@keyframes progGlow{
-  0%,100%{filter:drop-shadow(0 0 6px var(--accent-wash))}
-  50%{filter:drop-shadow(0 0 17px var(--accent-wash))}
-}
+.tseg.is-now{stroke-opacity:.40}
+.tprog{stroke:var(--roast-500);stroke-width:14;stroke-linecap:round}
+.timer-ring .thead circle{fill:var(--roast-500);stroke:var(--pine-700);stroke-width:3}
+.sheet-timer.is-done .tprog{stroke:var(--sage-300)}
+.sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
+.sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
 
 .timer-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;pointer-events:none}
-.timer-elapsed{font-family:var(--mono);font-size:36px;font-weight:500;letter-spacing:-.05em;font-variant-numeric:tabular-nums;line-height:1;color:var(--ink)}
-.timer-total{font-family:var(--mono);font-size:10.5px;font-weight:500;text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--muted)}
+.timer-elapsed{font:var(--weight-bold) 44px/1 var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--paper-000)}
+.timer-total{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-on-inverse-muted)}
 
-.timer-now{flex:none;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px}
-.timer-now-label{font-size:15px;line-height:1.45;color:var(--ink)}
+/* v3's two secondary readouts: time left in this step, water poured. */
+.timer-readouts{display:flex;align-items:flex-start;justify-content:center;gap:28px;width:100%}
+.timer-readout{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.timer-readout .rv{font:var(--weight-bold) 20px/1.05 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--paper-000)}
+.timer-readout .rv small{font:var(--weight-medium) 12px/1 var(--font-text);color:var(--text-on-inverse-muted);margin-left:2px}
+.timer-readout .rk{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-on-inverse-muted)}
 
-/* Each new step gets one quiet nudge — enough to catch the eye when you're
-   holding a kettle and not staring at the screen. */
-.sheet-timer.pulse .timer-ring{animation:ringPulse var(--dur-slower) var(--ease-out)}
-.sheet-timer.pulse .timer-now-label{animation:nowIn var(--dur-slow) var(--ease-out)}
-@keyframes ringPulse{0%{transform:scale(1)}38%{transform:scale(1.035)}100%{transform:scale(1)}}
-@keyframes nowIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+/* The instruction itself — the display serif, the largest text here. */
+.timer-now{flex:none;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px;width:100%;border-top:var(--border-w-hairline) solid var(--border-inverse);padding-top:12px}
+.timer-now-label{font:var(--weight-regular) 22px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--paper-000)}
 
-/* Bleeds past the body's side padding so the rows span the full sheet —
-   list-style/padding reset too, or the browser's own 40px ol indent eats
-   the width the step labels need. */
-.timer-steps{align-self:stretch;margin:0 -20px;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line-2);padding:8px 0 0}
-.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:8px 20px;font-size:13.5px;line-height:1.38;color:var(--ink-2);transition:background-color var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard)}
-.timer-step .ts-t,.timer-step .ts-w{font-family:var(--mono);font-size:10.5px;color:var(--faint);white-space:nowrap}
-.timer-step.is-past{color:var(--faint)}
-.timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--line-strong)}
-.timer-step.is-now{background:var(--accent-wash);color:var(--ink)}
-.timer-step.is-now .ts-t{color:var(--accent-ink)}
+.sheet-timer.pulse .timer-ring{animation:ringPulse var(--dur-slow) var(--ease-out)}
+.sheet-timer.pulse .timer-now-label{animation:nowIn var(--dur-base) var(--ease-out)}
+@keyframes ringPulse{0%{transform:scale(1)}38%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes nowIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-.timer-foot{justify-content:center;gap:10px}
-.timer-foot .btn{flex:1;max-width:170px;justify-content:center}
-.sheet-timer.is-done .tprog{filter:drop-shadow(0 0 18px var(--accent-wash))}
-.sheet-timer.is-done .timer-elapsed{color:var(--accent-ink)}
+.timer-steps{align-self:stretch;margin:0 calc(var(--pad-sheet) * -1);flex:1 1 auto;min-height:0;display:flex;flex-direction:column;list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:var(--border-w-hairline) solid var(--border-inverse);padding:8px 0 0}
+.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:8px var(--pad-sheet);font:var(--type-body-sm);font-size:14px;color:var(--paper-200);transition:background-color var(--dur-base) var(--ease-standard),color var(--dur-base) var(--ease-standard)}
+.timer-step .ts-t,.timer-step .ts-w{font:var(--weight-medium) 11px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse-muted);white-space:nowrap}
+.timer-step.is-past{color:var(--text-on-inverse-muted)}
+.timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--border-inverse)}
+.timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
+.timer-step.is-now .ts-t{color:var(--roast-300)}
+
+/* "Next · …" strip, v3's BrewTimer footer. */
+.timer-next{display:flex;align-items:center;gap:9px;padding:10px var(--pad-sheet);background:var(--surface-inverse-deep);border-top:var(--border-w-hairline) solid var(--border-inverse);flex:none}
+.timer-next .ico{width:15px;height:15px;color:var(--sage-300)}
+.timer-next .nx{flex:1;min-width:0;font:var(--weight-medium) 14px/1.3 var(--font-text);color:var(--paper-200);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timer-next .nt{font:var(--weight-medium) 12px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse-muted)}
+
+.timer-foot{justify-content:center;gap:10px;background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
+/* The start control is one of only two true capsules in the system. */
+.timer-foot .timer-toggle{flex:1;max-width:220px;justify-content:center;border-radius:var(--radius-full);background:var(--roast-600);border-color:var(--roast-600);color:var(--paper-000);min-height:var(--control-h-lg)}
+.timer-foot .timer-toggle:hover{background:var(--roast-500);border-color:var(--roast-500)}
+.timer-foot .timer-toggle:active{background:var(--roast-700)}
+.timer-foot .timer-side{width:var(--control-h-lg);min-height:var(--control-h-lg);padding:0;flex:none;background:transparent;border-color:var(--border-inverse);color:var(--paper-200)}
+.timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
 
 /* play button on library cards */
 .card-tools{display:flex;align-items:center;gap:2px;flex:none}
-.cardbtn{width:28px;height:28px;border-radius:8px;color:var(--faint);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-spring)}
-.cardbtn:hover{background:var(--accent-wash);color:var(--accent)}
+.cardbtn{width:30px;height:30px;border-radius:var(--radius-sm);color:var(--text-faint);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:var(--transition-control)}
+.cardbtn:hover{background:var(--surface-accent);color:var(--action-primary)}
 .cardbtn:active{transform:scale(var(--press-scale))}
-.cardbtn .ico{width:15px;height:15px}
-svg.ico-fill{fill:currentColor;stroke:none}
+.cardbtn .ico{width:16px;height:16px}
 
-/* ---------- toast (glass) ---------- */
+/* ---------- toast ---------- */
 .toast{
   position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:200;
-  background:var(--glass-bg-strong);backdrop-filter:var(--glass-blur-sm);-webkit-backdrop-filter:var(--glass-blur-sm);
-  border:1px solid var(--glass-border);color:var(--ink);padding:11px 18px;border-radius:var(--r-md);
-  font-size:14px;box-shadow:var(--shadow-md);animation:toastin var(--dur-base) var(--ease-out) both;max-width:88vw;text-align:center;
+  background:var(--surface-inverse);color:var(--text-on-inverse);
+  border:var(--border-w-hairline) solid var(--pine-900);
+  padding:12px 18px;border-radius:var(--radius-md);
+  font:var(--type-body-sm);box-shadow:var(--shadow-raised);
+  animation:toastin var(--dur-base) var(--ease-out) both;max-width:88vw;text-align:center;
 }
-@keyframes toastin{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 
-.foot{padding:34px 24px 44px;color:var(--muted);font-size:12.5px;text-align:center}
+.foot{padding:34px 24px 44px;color:var(--text-muted);font:var(--weight-regular) var(--text-caption)/1.5 var(--font-text);text-align:center}
 
-/* ---------- back to top ---------- */
-/* Shown/hidden via a .show class toggled in JS, transitioning opacity +
-   transform + visibility — deliberately NOT display:none plus a restarting
-   keyframe animation, which depends on the browser reliably re-running a
-   CSS animation on every single display:none-to-visible change (a real
-   cross-browser risk that can leave the button stuck invisible). visibility
-   (not display) is what removes it from layout/hit-testing while hidden;
-   its own transition is delayed so it only flips to hidden after the
-   fade-out finishes, and flips to visible immediately when showing. */
+/* ---------- back to top ----------
+   Shown/hidden via a .show class, transitioning opacity + transform +
+   visibility rather than display:none plus a restarting keyframe —
+   the latter depends on browsers reliably re-running an animation on
+   every display flip, which can leave the button stuck invisible. */
 .back-to-top{
   position:fixed;right:20px;bottom:24px;z-index:90;
-  width:44px;height:44px;border-radius:50%;
-  background:var(--glass-bg-strong);backdrop-filter:var(--glass-blur-sm);-webkit-backdrop-filter:var(--glass-blur-sm);
-  border:1px solid var(--glass-border);color:var(--ink-2);
+  width:44px;height:44px;border-radius:var(--radius-full);
+  background:var(--surface-card);
+  border:var(--border-w-hairline) solid var(--border-default);color:var(--text-body);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:var(--shadow-md);
-  opacity:0;visibility:hidden;transform:translateY(14px);pointer-events:none;
+  box-shadow:var(--shadow-raised);
+  opacity:0;visibility:hidden;transform:translateY(12px);pointer-events:none;
   transition:
     opacity var(--dur-slow) var(--ease-out),
     transform var(--dur-slow) var(--ease-out),
@@ -670,57 +846,29 @@ svg.ico-fill{fill:currentColor;stroke:none}
     border-color var(--dur-fast) var(--ease-standard),
     color var(--dur-fast) var(--ease-standard);
 }
-.back-to-top:hover{border-color:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow-glow)}
-.back-to-top:active{transform:scale(var(--press-scale))}
-.back-to-top.show:active{transform:scale(var(--press-scale))}
 .back-to-top .ico{width:19px;height:19px}
-@media(max-width:640px){
-  /* Same fixed-clearance approach as the modal footer fix: mobile browser
-     chrome (address/tab bar) can sit right over a fixed bottom:16px
-     button, making it visible in the DOM but covered on screen. 50px
-     holds clear regardless of which browser/OS is showing it. */
-  .back-to-top{right:16px;bottom:calc(50px + env(safe-area-inset-bottom))}
+.back-to-top:hover{border-color:var(--border-strong);color:var(--text-title)}
+.back-to-top.show:active{transform:scale(var(--press-scale))}
+
+/* ---------- sign-in gate ---------- */
+.gate{min-height:72vh;display:flex;align-items:center;justify-content:center;padding:40px 0}
+.gate-card{
+  width:100%;max-width:420px;text-align:center;padding:40px 32px;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-card);
+  animation:cardIn var(--dur-slow) var(--ease-out) both;
 }
+.gate-card .bean{width:40px;height:40px;stroke:var(--action-primary);fill:none;stroke-width:1.5;margin-bottom:18px}
+.gate-card h1{font:var(--weight-regular) var(--text-display-3)/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display)}
+.gate-msg{color:var(--text-muted);margin:10px auto 24px;font:var(--type-body-sm);max-width:34ch}
 
-/* ---------- account chip ---------- */
-/* Just the avatar in the topbar — email + Sign out live in the ⋮ menu
-   (see .menu-account below) so the header stays narrow on phones. */
-.app-actions{display:flex;align-items:center;gap:8px;flex:none}
-.app-actions[hidden]{display:none}
-.account-chip{display:flex;align-items:center;flex:none;border-radius:50%;transition:box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard)}
-.account-chip[hidden]{display:none}
-.account-chip:hover{box-shadow:0 0 0 3px var(--accent-wash)}
-.account-chip:active{transform:scale(var(--press-scale))}
-.account-avatar{width:30px;height:30px;border-radius:50%;background:var(--paper-2);flex:none;object-fit:cover;border:1px solid var(--line)}
-.menu-account{padding:6px 12px 10px;margin-bottom:4px;border-bottom:1px solid var(--line-2)}
-.menu-account[hidden]{display:none}
-.menu-account-email{font-family:var(--mono);font-size:11.5px;color:var(--muted);word-break:break-all}
-
-/* Header's primary CTA collapses to icon-only on narrow phones — it keeps
-   its label everywhere down to 400px, where there's still room. */
-@media(max-width:400px){
-  .hdr-cta span{display:none}
-  .hdr-cta{width:var(--control-h);padding:0}
-}
-
-/* ---------- sign-in / gate screens ---------- */
-.gate{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 66px - 90px);padding:40px 20px}
-.gate-card{max-width:380px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
-.gate-card .bean{width:38px;height:38px;stroke:var(--accent);fill:none;stroke-width:1.4;margin-bottom:10px}
-.gate-card h1{font-family:var(--sans);font-weight:var(--weight-display);font-size:24px;letter-spacing:var(--tracking-display)}
-.gate-msg{color:var(--muted);font-size:15px;line-height:1.6;margin:6px 0 22px}
-.btn-google{
-  height:var(--control-h);padding:0 20px;border-radius:var(--r-control);border:1px solid var(--line);
-  background:var(--card);color:var(--ink);font-size:14px;font-weight:500;
-  display:inline-flex;align-items:center;gap:10px;box-shadow:var(--shadow-sm);
-  transition:border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
-}
-.btn-google:hover{border-color:var(--line-strong);box-shadow:var(--shadow-md)}
-.btn-google:active{transform:scale(var(--press-scale))}
-.btn-google .ico{width:19px;height:19px}
-
-::selection{background:var(--accent);color:var(--accent-on)}
+/* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce){
+  :root{
+    --dur-fast:0ms;--dur-base:0ms;--dur-slow:0ms;--dur-sheet:0ms;--dur-chart:0ms;
+    --press-scale:1;--press-scale-card:1;--lift-hover:0px;
+  }
   *{animation-duration:.01ms !important;transition-duration:.01ms !important}
   .card:hover{transform:none}
 }
