@@ -513,10 +513,7 @@ var ICON = {
   timer: '<svg viewBox="0 0 24 24" class="ico"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>',
   // sliders-horizontal — v3's own glyph for a filter/options toggle.
   sliders: '<svg viewBox="0 0 24 24" class="ico"><path d="M21 4H14M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/>' +
-    '<circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="20" r="2"/></svg>',
-  sun: '<svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="4"/>' +
-    '<path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
-  moon: '<svg viewBox="0 0 24 24" class="ico"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>'
+    '<circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="20" r="2"/></svg>'
 };
 
 /* ---------------------------------------------------------
@@ -1016,13 +1013,6 @@ function mmss2(sec) {
 
 var timer = null;
 
-// Exploratory: v3 puts the timer on the inverse pine surface unconditionally
-// (its one screen that always inverts, regardless of the app's own light/
-// dark setting). This flag lets a paper-surface alternative be toggled
-// live from the timer itself for comparison — not persisted, since it's
-// a one-time "which reads better" check, not a real setting yet.
-var timerLightTheme = false;
-
 function buildTimerEl(r, plan) {
   var segHTML = plan.segs.map(function (s, i) {
     var len = (s.end - s.start) / plan.total * RING_C;
@@ -1045,17 +1035,11 @@ function buildTimerEl(r, plan) {
   var wrap = document.createElement('div');
   wrap.className = 'overlay';
   wrap.innerHTML =
-    '<div class="sheet narrow sheet-timer' + (timerLightTheme ? ' theme-light' : '') + '" role="dialog" aria-modal="true">' +
+    '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true">' +
       '<div class="sheet-head">' +
         '<div class="timer-head-row">' +
           '<h2>' + esc(titleOf(r)) + '</h2>' +
-          '<div class="timer-head-actions">' +
-            '<button class="iconbtn" data-action="timer-theme" ' +
-              'aria-label="Switch to ' + (timerLightTheme ? 'dark' : 'light') + ' theme" ' +
-              'title="Switch to ' + (timerLightTheme ? 'dark' : 'light') + ' theme">' +
-              (timerLightTheme ? ICON.moon : ICON.sun) + '</button>' +
-            '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
-          '</div>' +
+          '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
         '</div>' +
         '<div class="timer-head-row">' +
           '<span class="timer-eyebrow"></span>' +
@@ -1114,7 +1098,7 @@ function openTimer(id) {
 
   stopTimer();
   timer = {
-    recipe: r, plan: plan, el: buildTimerEl(r, plan), sheet: null,
+    plan: plan, el: buildTimerEl(r, plan), sheet: null,
     elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null
   };
   timer.sheet = timer.el.querySelector('.sheet-timer');
@@ -1253,26 +1237,6 @@ function timerReset(andRun) {
   timer.sheet.classList.remove('is-done');
   timerPaint();
   if (resume) timerRun(true); else timerControls();
-}
-
-// Swaps the timer's whole DOM for a fresh one built under the other
-// theme, without touching the running clock — timerFrame() re-queries
-// timer.el/timer.sheet every tick, so as long as those are pointed at the
-// new node before the next frame, the brew just keeps going on new paint.
-function timerRetheme() {
-  if (!timer || !timer.recipe) return;
-  timerLightTheme = !timerLightTheme;
-  var done = timer.elapsed >= timer.plan.total;
-  timer.el = buildTimerEl(timer.recipe, timer.plan);
-  timer.sheet = timer.el.querySelector('.sheet-timer');
-  timer.seg = -1; // forces timerPaint to resync eyebrow/next-step/highlight below
-  renderModals();
-  timerPaint();
-  timerControls();
-  if (done) {
-    timer.sheet.classList.add('is-done');
-    timer.el.querySelector('.timer-now-label').textContent = 'Brew complete.';
-  }
 }
 
 function stopTimer() {
@@ -1892,11 +1856,6 @@ document.addEventListener('click', function (ev) {
         timer.el.querySelector('.timer-now-label').textContent = 'Brew complete.';
         timerControls();
       }
-      return;
-
-    case 'timer-theme':
-      ev.preventDefault();
-      timerRetheme();
       return;
 
     case 'edit':

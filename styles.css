@@ -800,139 +800,131 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .iconbtn.danger:hover{color:var(--state-error);background:var(--state-error-surface)}
 
 /* ---------- brew timer ----------
-   v3 puts the timer on the inverse pine surface with the roast
-   accent — the one screen that inverts. Structure and typography
-   follow v3's BrewTimer (eyebrow step counter, mono readouts, the
-   instruction in the display serif, capsule accent control, a
-   next-step footer); the ring keeps this app's own semantics of
-   one closed circle for the whole brew, with a segment per pour.
-   Progress moves linearly and never eases — easing would misreport
-   elapsed time. */
+   Follows the app's own light/dark setting like every other surface,
+   rather than being forced onto the inverse pine surface unconditionally
+   the way v3's own BrewTimer always does — with the rest of the app in
+   light mode, a permanently-dark timer read as inconsistent rather than
+   deliberate. Structure and typography still follow v3's BrewTimer
+   (eyebrow step counter, mono readouts, the instruction in the display
+   serif, capsule accent control, a next-step footer); the ring keeps
+   this app's own semantics of one closed circle for the whole brew, with
+   a segment per pour. Progress moves linearly and never eases — easing
+   would misreport elapsed time. The roast accent (progress arc, start
+   button) is the one constant between light and dark — v3 rations roast
+   specifically for "the live timer" regardless of surface. */
 .sheet-timer{
   max-width:430px;
   height:min(760px,calc(100vh - 66px));height:min(760px,calc(100dvh - 66px));
-  background:var(--surface-inverse);background-image:var(--texture-paper);
-  border-color:var(--pine-900);color:var(--text-on-inverse);
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border-color:var(--border-hairline);color:var(--text-body);
 }
-.sheet-timer .sheet-head{border-bottom-color:var(--border-inverse);padding-bottom:12px;flex-direction:column;align-items:stretch;gap:6px}
-.sheet-timer .sheet-head h2{color:var(--paper-000)}
+.sheet-timer .sheet-head{border-bottom-color:var(--border-hairline);padding-bottom:12px;flex-direction:column;align-items:stretch;gap:6px}
+.sheet-timer .sheet-head h2{color:var(--text-title)}
 .timer-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.timer-head-actions{display:flex;align-items:center;gap:2px;flex:none}
-.timer-eyebrow{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-on-inverse-muted)}
-.timer-clock{font:var(--weight-medium) 14px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse-muted)}
-.sheet-timer .iconbtn{color:var(--paper-200)}
-.sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
+.timer-eyebrow{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+.timer-clock{font:var(--weight-medium) 14px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted)}
+.sheet-timer .iconbtn{color:var(--text-muted)}
+.sheet-timer .iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
 
 .timer-body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px var(--pad-sheet) 0;overflow:hidden;min-height:0}
 
 .timer-ring{position:relative;width:min(232px,58vw,29vh);aspect-ratio:1;flex:none}
 .timer-ring svg{width:100%;height:100%;display:block;overflow:visible}
 .timer-ring circle{fill:none}
-.ttrack{stroke:rgba(246,241,232,.10);stroke-width:14}
+.ttrack{stroke:var(--border-hairline);stroke-width:14}
 /* The plan, drawn once: one arc per pour, brightening as it passes. */
-.tseg{stroke:var(--paper-000);stroke-opacity:.14;stroke-width:14;transition:stroke-opacity var(--dur-slow) var(--ease-standard)}
+.tseg{stroke:var(--pine-700);stroke-opacity:.14;stroke-width:14;transition:stroke-opacity var(--dur-slow) var(--ease-standard)}
 .tseg.is-past{stroke-opacity:.26}
 .tseg.is-now{stroke-opacity:.40}
 .tprog{stroke:var(--roast-500);stroke-width:14;stroke-linecap:round}
-.timer-ring .thead circle{fill:var(--roast-500);stroke:var(--pine-700);stroke-width:3}
-.sheet-timer.is-done .tprog{stroke:var(--sage-300)}
-.sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
-.sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
+.timer-ring .thead circle{fill:var(--roast-500);stroke:var(--surface-card);stroke-width:3}
+.sheet-timer.is-done .tprog{stroke:var(--pine-700)}
+.sheet-timer.is-done .timer-ring .thead circle{fill:var(--pine-700)}
+.sheet-timer.is-done .timer-elapsed{color:var(--pine-700)}
 
 .timer-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;pointer-events:none}
-.timer-elapsed{font:var(--weight-bold) 44px/1 var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--paper-000)}
-.timer-total{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-on-inverse-muted)}
+.timer-elapsed{font:var(--weight-bold) 44px/1 var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--text-title)}
+.timer-total{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
 
 /* v3's two secondary readouts: time left in this step, water poured. */
 .timer-readouts{display:flex;align-items:flex-start;justify-content:center;gap:28px;width:100%}
 .timer-readout{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
-.timer-readout .rv{font:var(--weight-bold) 20px/1.05 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--paper-000)}
-.timer-readout .rv small{font:var(--weight-medium) 12px/1 var(--font-text);color:var(--text-on-inverse-muted);margin-left:2px}
-.timer-readout .rk{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-on-inverse-muted)}
+.timer-readout .rv{font:var(--weight-bold) 20px/1.05 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-title)}
+.timer-readout .rv small{font:var(--weight-medium) 12px/1 var(--font-text);color:var(--text-muted);margin-left:2px}
+.timer-readout .rk{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
 
 /* The instruction itself — the display serif, the largest text here. */
-.timer-now{flex:none;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px;width:100%;border-top:var(--border-w-hairline) solid var(--border-inverse);padding-top:12px}
-.timer-now-label{font:var(--weight-regular) 22px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--paper-000)}
+.timer-now{flex:none;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px;width:100%;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px}
+.timer-now-label{font:var(--weight-regular) 22px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
 
 .sheet-timer.pulse .timer-ring{animation:ringPulse var(--dur-slow) var(--ease-out)}
 .sheet-timer.pulse .timer-now-label{animation:nowIn var(--dur-base) var(--ease-out)}
 @keyframes ringPulse{0%{transform:scale(1)}38%{transform:scale(1.03)}100%{transform:scale(1)}}
 @keyframes nowIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-.timer-steps{align-self:stretch;margin:0 calc(var(--pad-sheet) * -1);flex:1 1 auto;min-height:0;display:flex;flex-direction:column;list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:var(--border-w-hairline) solid var(--border-inverse);padding:8px 0 0}
-.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:8px var(--pad-sheet);font:var(--type-body-sm);font-size:14px;color:var(--paper-200);transition:background-color var(--dur-base) var(--ease-standard),color var(--dur-base) var(--ease-standard)}
-.timer-step .ts-t,.timer-step .ts-w{font:var(--weight-medium) 11px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse-muted);white-space:nowrap}
-.timer-step.is-past{color:var(--text-on-inverse-muted)}
-.timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--border-inverse)}
-.timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
-.timer-step.is-now .ts-t{color:var(--roast-300)}
+.timer-steps{align-self:stretch;margin:0 calc(var(--pad-sheet) * -1);flex:1 1 auto;min-height:0;display:flex;flex-direction:column;list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:var(--border-w-hairline) solid var(--border-hairline);padding:8px 0 0}
+.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:8px var(--pad-sheet);font:var(--type-body-sm);font-size:14px;color:var(--text-body);transition:background-color var(--dur-base) var(--ease-standard),color var(--dur-base) var(--ease-standard)}
+.timer-step .ts-t,.timer-step .ts-w{font:var(--weight-medium) 11px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted);white-space:nowrap}
+.timer-step.is-past{color:var(--text-faint)}
+.timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--border-default)}
+.timer-step.is-now{background:var(--surface-accent);color:var(--text-title)}
+.timer-step.is-now .ts-t{color:var(--text-link)}
 
 /* "Next · …" strip, v3's BrewTimer footer. */
-.timer-next{display:flex;align-items:center;gap:9px;padding:10px var(--pad-sheet);background:var(--surface-inverse-deep);border-top:var(--border-w-hairline) solid var(--border-inverse);flex:none}
-.timer-next .ico{width:15px;height:15px;color:var(--sage-300)}
-.timer-next .nx{flex:1;min-width:0;font:var(--weight-medium) 14px/1.3 var(--font-text);color:var(--paper-200);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.timer-next .nt{font:var(--weight-medium) 12px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse-muted)}
+.timer-next{display:flex;align-items:center;gap:9px;padding:10px var(--pad-sheet);background:var(--surface-sunken);border-top:var(--border-w-hairline) solid var(--border-hairline);flex:none}
+.timer-next .ico{width:15px;height:15px;color:var(--pine-600)}
+.timer-next .nx{flex:1;min-width:0;font:var(--weight-medium) 14px/1.3 var(--font-text);color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timer-next .nt{font:var(--weight-medium) 12px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted)}
 
-.timer-foot{justify-content:center;gap:10px;background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
+.timer-foot{justify-content:center;gap:10px;background:var(--surface-sunken);border-top-color:var(--border-hairline)}
 /* The start control is one of only two true capsules in the system. */
 .timer-foot .timer-toggle{flex:1;max-width:220px;justify-content:center;border-radius:var(--radius-full);background:var(--roast-600);border-color:var(--roast-600);color:var(--paper-000);min-height:var(--control-h-lg)}
 .timer-foot .timer-toggle:hover{background:var(--roast-500);border-color:var(--roast-500)}
 .timer-foot .timer-toggle:active{background:var(--roast-700)}
-.timer-foot .timer-side{width:var(--control-h-lg);min-height:var(--control-h-lg);padding:0;flex:none;background:transparent;border-color:var(--border-inverse);color:var(--paper-200)}
-.timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
+.timer-foot .timer-side{width:var(--control-h-lg);min-height:var(--control-h-lg);padding:0;flex:none;background:transparent;border-color:var(--border-default);color:var(--text-muted)}
+.timer-foot .timer-side:hover{background:var(--surface-card);border-color:var(--border-strong)}
 
-/* ---------- brew timer — light theme (exploratory, see timerLightTheme in
-   app.js) ----------
-   Same structure, remapped from the inverse pine surface onto the app's
-   normal paper surface: every var(--paper-*) / var(--text-on-inverse*) /
-   var(--*-inverse) token swaps for its ordinary light-mode equivalent.
-   The roast accent (progress arc, start button) is untouched in both —
-   v3 rations roast specifically for "the live timer" regardless of
-   surface, so that's the one thing that shouldn't change. */
-.sheet-timer.theme-light{
-  background:var(--surface-card);background-image:var(--texture-paper);
-  border-color:var(--border-hairline);color:var(--text-body);
+/* Dark mode: v3's own inverse-pine BrewTimer, same light-default/
+   dark-override pattern every other surface in this file follows. */
+@media (prefers-color-scheme: dark){
+  .sheet-timer{background:var(--surface-inverse);border-color:var(--pine-900);color:var(--text-on-inverse)}
+  .sheet-timer .sheet-head{border-bottom-color:var(--border-inverse)}
+  .sheet-timer .sheet-head h2{color:var(--paper-000)}
+  .timer-eyebrow,.timer-clock{color:var(--text-on-inverse-muted)}
+  .sheet-timer .iconbtn{color:var(--paper-200)}
+  .sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
+
+  .ttrack{stroke:rgba(246,241,232,.10)}
+  .tseg{stroke:var(--paper-000)}
+  .timer-ring .thead circle{stroke:var(--pine-700)}
+  .sheet-timer.is-done .tprog{stroke:var(--sage-300)}
+  .sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
+  .sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
+
+  .timer-elapsed{color:var(--paper-000)}
+  .timer-total{color:var(--text-on-inverse-muted)}
+  .timer-readout .rv{color:var(--paper-000)}
+  .timer-readout .rv small,.timer-readout .rk{color:var(--text-on-inverse-muted)}
+  .timer-now{border-top-color:var(--border-inverse)}
+  .timer-now-label{color:var(--paper-000)}
+
+  .timer-steps{border-top-color:var(--border-inverse)}
+  .timer-step{color:var(--paper-200)}
+  .timer-step .ts-t,.timer-step .ts-w{color:var(--text-on-inverse-muted)}
+  .timer-step.is-past{color:var(--text-on-inverse-muted)}
+  .timer-step.is-past .ts-l{text-decoration-color:var(--border-inverse)}
+  .timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
+  .timer-step.is-now .ts-t{color:var(--roast-300)}
+
+  .timer-next{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
+  .timer-next .ico{color:var(--sage-300)}
+  .timer-next .nx{color:var(--paper-200)}
+  .timer-next .nt{color:var(--text-on-inverse-muted)}
+
+  .timer-foot{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
+  .timer-foot .timer-side{border-color:var(--border-inverse);color:var(--paper-200)}
+  .timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
 }
-.sheet-timer.theme-light .sheet-head{border-bottom-color:var(--border-hairline)}
-.sheet-timer.theme-light .sheet-head h2{color:var(--text-title)}
-.sheet-timer.theme-light .timer-eyebrow,
-.sheet-timer.theme-light .timer-clock{color:var(--text-muted)}
-.sheet-timer.theme-light .iconbtn{color:var(--text-muted)}
-.sheet-timer.theme-light .iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
-
-.sheet-timer.theme-light .ttrack{stroke:var(--border-hairline)}
-.sheet-timer.theme-light .tseg{stroke:var(--pine-700)}
-.sheet-timer.theme-light .timer-ring .thead circle{stroke:var(--surface-card)}
-.sheet-timer.theme-light.is-done .tprog{stroke:var(--pine-700)}
-.sheet-timer.theme-light.is-done .timer-ring .thead circle{fill:var(--pine-700)}
-.sheet-timer.theme-light.is-done .timer-elapsed{color:var(--pine-700)}
-
-.sheet-timer.theme-light .timer-elapsed{color:var(--text-title)}
-.sheet-timer.theme-light .timer-total{color:var(--text-muted)}
-.sheet-timer.theme-light .timer-readout .rv{color:var(--text-title)}
-.sheet-timer.theme-light .timer-readout .rv small,
-.sheet-timer.theme-light .timer-readout .rk{color:var(--text-muted)}
-.sheet-timer.theme-light .timer-now{border-top-color:var(--border-hairline)}
-.sheet-timer.theme-light .timer-now-label{color:var(--text-title)}
-
-.sheet-timer.theme-light .timer-steps{border-top-color:var(--border-hairline)}
-.sheet-timer.theme-light .timer-step{color:var(--text-body)}
-.sheet-timer.theme-light .timer-step .ts-t,
-.sheet-timer.theme-light .timer-step .ts-w{color:var(--text-muted)}
-.sheet-timer.theme-light .timer-step.is-past{color:var(--text-faint)}
-.sheet-timer.theme-light .timer-step.is-past .ts-l{text-decoration-color:var(--border-default)}
-.sheet-timer.theme-light .timer-step.is-now{background:var(--surface-accent);color:var(--text-title)}
-.sheet-timer.theme-light .timer-step.is-now .ts-t{color:var(--text-link)}
-
-.sheet-timer.theme-light .timer-next{background:var(--surface-sunken);border-top-color:var(--border-hairline)}
-.sheet-timer.theme-light .timer-next .ico{color:var(--pine-600)}
-.sheet-timer.theme-light .timer-next .nx{color:var(--text-body)}
-.sheet-timer.theme-light .timer-next .nt{color:var(--text-muted)}
-
-.sheet-timer.theme-light .timer-foot{background:var(--surface-sunken);border-top-color:var(--border-hairline)}
-.sheet-timer.theme-light .timer-foot .timer-side{border-color:var(--border-default);color:var(--text-muted)}
-.sheet-timer.theme-light .timer-foot .timer-side:hover{background:var(--surface-card);border-color:var(--border-strong)}
-/* .timer-toggle (the roast capsule) is intentionally untouched here. */
 
 /* play button on library cards */
 .card-tools{display:flex;align-items:center;gap:2px;flex:none}
