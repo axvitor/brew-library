@@ -817,6 +817,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .sheet-timer .sheet-head{border-bottom-color:var(--border-inverse);padding-bottom:12px;flex-direction:column;align-items:stretch;gap:6px}
 .sheet-timer .sheet-head h2{color:var(--paper-000)}
 .timer-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.timer-head-actions{display:flex;align-items:center;gap:2px;flex:none}
 .timer-eyebrow{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-on-inverse-muted)}
 .timer-clock{font:var(--weight-medium) 14px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse-muted)}
 .sheet-timer .iconbtn{color:var(--paper-200)}
@@ -879,6 +880,59 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .timer-foot .timer-toggle:active{background:var(--roast-700)}
 .timer-foot .timer-side{width:var(--control-h-lg);min-height:var(--control-h-lg);padding:0;flex:none;background:transparent;border-color:var(--border-inverse);color:var(--paper-200)}
 .timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
+
+/* ---------- brew timer — light theme (exploratory, see timerLightTheme in
+   app.js) ----------
+   Same structure, remapped from the inverse pine surface onto the app's
+   normal paper surface: every var(--paper-*) / var(--text-on-inverse*) /
+   var(--*-inverse) token swaps for its ordinary light-mode equivalent.
+   The roast accent (progress arc, start button) is untouched in both —
+   v3 rations roast specifically for "the live timer" regardless of
+   surface, so that's the one thing that shouldn't change. */
+.sheet-timer.theme-light{
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border-color:var(--border-hairline);color:var(--text-body);
+}
+.sheet-timer.theme-light .sheet-head{border-bottom-color:var(--border-hairline)}
+.sheet-timer.theme-light .sheet-head h2{color:var(--text-title)}
+.sheet-timer.theme-light .timer-eyebrow,
+.sheet-timer.theme-light .timer-clock{color:var(--text-muted)}
+.sheet-timer.theme-light .iconbtn{color:var(--text-muted)}
+.sheet-timer.theme-light .iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
+
+.sheet-timer.theme-light .ttrack{stroke:var(--border-hairline)}
+.sheet-timer.theme-light .tseg{stroke:var(--pine-700)}
+.sheet-timer.theme-light .timer-ring .thead circle{stroke:var(--surface-card)}
+.sheet-timer.theme-light.is-done .tprog{stroke:var(--pine-700)}
+.sheet-timer.theme-light.is-done .timer-ring .thead circle{fill:var(--pine-700)}
+.sheet-timer.theme-light.is-done .timer-elapsed{color:var(--pine-700)}
+
+.sheet-timer.theme-light .timer-elapsed{color:var(--text-title)}
+.sheet-timer.theme-light .timer-total{color:var(--text-muted)}
+.sheet-timer.theme-light .timer-readout .rv{color:var(--text-title)}
+.sheet-timer.theme-light .timer-readout .rv small,
+.sheet-timer.theme-light .timer-readout .rk{color:var(--text-muted)}
+.sheet-timer.theme-light .timer-now{border-top-color:var(--border-hairline)}
+.sheet-timer.theme-light .timer-now-label{color:var(--text-title)}
+
+.sheet-timer.theme-light .timer-steps{border-top-color:var(--border-hairline)}
+.sheet-timer.theme-light .timer-step{color:var(--text-body)}
+.sheet-timer.theme-light .timer-step .ts-t,
+.sheet-timer.theme-light .timer-step .ts-w{color:var(--text-muted)}
+.sheet-timer.theme-light .timer-step.is-past{color:var(--text-faint)}
+.sheet-timer.theme-light .timer-step.is-past .ts-l{text-decoration-color:var(--border-default)}
+.sheet-timer.theme-light .timer-step.is-now{background:var(--surface-accent);color:var(--text-title)}
+.sheet-timer.theme-light .timer-step.is-now .ts-t{color:var(--text-link)}
+
+.sheet-timer.theme-light .timer-next{background:var(--surface-sunken);border-top-color:var(--border-hairline)}
+.sheet-timer.theme-light .timer-next .ico{color:var(--pine-600)}
+.sheet-timer.theme-light .timer-next .nx{color:var(--text-body)}
+.sheet-timer.theme-light .timer-next .nt{color:var(--text-muted)}
+
+.sheet-timer.theme-light .timer-foot{background:var(--surface-sunken);border-top-color:var(--border-hairline)}
+.sheet-timer.theme-light .timer-foot .timer-side{border-color:var(--border-default);color:var(--text-muted)}
+.sheet-timer.theme-light .timer-foot .timer-side:hover{background:var(--surface-card);border-color:var(--border-strong)}
+/* .timer-toggle (the roast capsule) is intentionally untouched here. */
 
 /* play button on library cards */
 .card-tools{display:flex;align-items:center;gap:2px;flex:none}
