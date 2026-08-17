@@ -881,10 +881,12 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    Shown/hidden via a .show class, transitioning opacity + transform +
    visibility rather than display:none plus a restarting keyframe —
    the latter depends on browsers reliably re-running an animation on
-   every display flip, which can leave the button stuck invisible. */
+   every display flip, which can leave the button stuck invisible.
+   Filled AND outlined at rest, so per v3's IconButton rule (radius-full
+   only for the bare ghost state) this takes radius-md like .addbtn. */
 .back-to-top{
   position:fixed;right:20px;bottom:24px;z-index:90;
-  width:44px;height:44px;border-radius:var(--radius-full);
+  width:44px;height:44px;border-radius:var(--radius-md);
   background:var(--surface-card);
   border:var(--border-w-hairline) solid var(--border-default);color:var(--text-body);
   display:flex;align-items:center;justify-content:center;
