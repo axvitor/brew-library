@@ -1105,7 +1105,22 @@ function openTimer(id) {
 
   openModal({
     render: function () { return timer.el; },
-    onClose: stopTimer
+    onClose: stopTimer,
+    // A stray tap outside the sheet or an Escape while the kettle's still
+    // going is exactly the moment a silent close costs the most — ask first.
+    guardClose: function () {
+      if (!timer || !timer.running) return true;
+      confirmDanger({
+        title: 'Still brewing',
+        body: '<p>Your timer is running. Leaving now will stop it and you’ll need to start over.</p>',
+        confirmLabel: 'Leave anyway',
+        onConfirm: function () {
+          closeModal();       // dismiss this confirmation
+          closeModal(true);   // then force-close the timer underneath it
+        }
+      });
+      return false;
+    }
   });
   // Opens paused: you press play when the kettle is over the bed, not when
   // the sheet happens to finish animating in.
@@ -1261,7 +1276,11 @@ function openModal(m) {
   stack.push(m);
   renderModals();
 }
-function closeModal() {
+// `force` bypasses a modal's own guardClose — used once a guarded modal's
+// own confirmation has already been answered, so it doesn't ask twice.
+function closeModal(force) {
+  var top = stack[stack.length - 1];
+  if (!force && top && top.guardClose && !top.guardClose()) return;
   var m = stack.pop();
   if (m && m.onClose) m.onClose();
   renderModals();
@@ -1293,6 +1312,26 @@ function sheet(opts) {
     '</div>';
   wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
   return wrap;
+}
+
+// A themed stand-in for the browser's own confirm() — used for anything
+// that destroys data, so the moment users are most at risk of a mis-click
+// never drops out of the app's own design language into an OS dialog.
+// `body` is HTML (already escaped by the caller where it embeds user text).
+function confirmDanger(opts) {
+  var m = {
+    _onConfirm: opts.onConfirm,
+    render: function () {
+      return sheet({
+        title: opts.title,
+        narrow: true,
+        body: opts.body,
+        foot: '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+          '<button class="btn btn-danger" data-action="confirm-danger">' + esc(opts.confirmLabel) + '</button>'
+      });
+    }
+  };
+  openModal(m);
 }
 
 /* ---------------------------------------------------------
@@ -1620,15 +1659,22 @@ function deleteEntity(type, id) {
   var e = findIn(type, id);
   if (!e) return;
   var used = state.recipes.filter(function (r) { return r[def.ref] === id; }).length;
-  var msg = 'Delete “' + e.name + '”?';
-  if (used) msg += '\n\nIt is used by ' + used + ' ' + (used === 1 ? 'recipe' : 'recipes') +
-    ', which will show “—” for this field until you edit them.';
-  if (!confirm(msg)) return;
-  state[def.coll] = coll(type).filter(function (x) { return x.id !== id; });
-  save();
-  renderModals();
-  render();
-  toast(def.label + ' deleted.');
+  var body = '<p>Delete “' + esc(e.name) + '”?</p>' +
+    (used ? '<p>It is used by ' + used + ' ' + (used === 1 ? 'recipe' : 'recipes') +
+      ', which will show “—” for this field until you edit them.</p>' : '');
+  confirmDanger({
+    title: 'Delete ' + def.label.toLowerCase(),
+    body: body,
+    confirmLabel: 'Delete',
+    onConfirm: function () {
+      closeModal();
+      state[def.coll] = coll(type).filter(function (x) { return x.id !== id; });
+      save();
+      renderModals();
+      render();
+      toast(def.label + ' deleted.');
+    }
+  });
 }
 
 /* ---------------------------------------------------------
@@ -1651,32 +1697,54 @@ function exportData() {
 function importData(file) {
   var reader = new FileReader();
   reader.onload = function () {
+    var data;
     try {
-      var data = JSON.parse(reader.result);
+      data = JSON.parse(reader.result);
       if (!data || !Array.isArray(data.recipes) || !Array.isArray(data.coffees)) throw new Error('bad shape');
-      if (!confirm('Replace your current library with the imported file?\n\nThis cannot be undone — export a backup first if unsure.')) return;
-      state = data;
-      ['coffees', 'grinders', 'methods', 'styles', 'recipes'].forEach(function (k) {
-        if (!Array.isArray(state[k])) state[k] = [];
-      });
-      save();
-      render();
-      toast('Library imported.');
     } catch (e) {
       toast('That file does not look like a Brew Library export.');
+      return;
     }
+    var have = state.recipes.length, incoming = data.recipes.length;
+    confirmDanger({
+      title: 'Replace your library',
+      body: '<p>Replace your current library — ' + have + ' ' + (have === 1 ? 'recipe' : 'recipes') +
+        ' — with the imported file (' + incoming + ' ' + (incoming === 1 ? 'recipe' : 'recipes') + ')?</p>' +
+        '<p>This cannot be undone — export a backup first if unsure.</p>',
+      confirmLabel: 'Replace library',
+      onConfirm: function () {
+        closeModal();
+        state = data;
+        ['coffees', 'grinders', 'methods', 'styles', 'recipes'].forEach(function (k) {
+          if (!Array.isArray(state[k])) state[k] = [];
+        });
+        save();
+        render();
+        toast('Library imported.');
+      }
+    });
   };
   reader.readAsText(file);
 }
 
 function resetAll() {
-  if (!confirm('Reset the library back to the starter data?\n\nEvery recipe and coffee you added will be deleted.')) return;
-  initialLibraryFor(currentUser).then(function (fresh) {
-    state = fresh;
-    save({ keepPristine: true });
-    location.hash = '#/';
-    render();
-    toast('Library reset.');
+  var n = state.recipes.length;
+  confirmDanger({
+    title: 'Reset the library',
+    body: '<p>Reset the library back to the starter data?</p>' +
+      '<p>Every recipe and coffee you added will be deleted' +
+      (n ? ' — including ' + n + ' ' + (n === 1 ? 'recipe' : 'recipes') + ' you currently have' : '') + '.</p>',
+    confirmLabel: 'Reset library',
+    onConfirm: function () {
+      closeModal();
+      initialLibraryFor(currentUser).then(function (fresh) {
+        state = fresh;
+        save({ keepPristine: true });
+        location.hash = '#/';
+        render();
+        toast('Library reset.');
+      });
+    }
   });
 }
 
@@ -1797,12 +1865,19 @@ document.addEventListener('click', function (ev) {
       ev.preventDefault();
       var dr = recipeById(id);
       if (!dr) return;
-      if (!confirm('Delete “' + titleOf(dr) + '”?')) return;
-      state.recipes = state.recipes.filter(function (r) { return r.id !== id; });
-      save();
-      location.hash = '#/';
-      render();
-      toast('Recipe deleted.');
+      confirmDanger({
+        title: 'Delete recipe',
+        body: '<p>Delete “' + esc(titleOf(dr)) + '”?</p>',
+        confirmLabel: 'Delete',
+        onConfirm: function () {
+          closeModal();
+          state.recipes = state.recipes.filter(function (r) { return r.id !== id; });
+          save();
+          location.hash = '#/';
+          render();
+          toast('Recipe deleted.');
+        }
+      });
       return;
 
     case 'clear-filters':
@@ -1842,6 +1917,11 @@ document.addEventListener('click', function (ev) {
 
     /* --- modal actions --- */
     case 'close-modal': ev.preventDefault(); closeModal(); return;
+
+    case 'confirm-danger':
+      ev.preventDefault();
+      if (top && top._onConfirm) top._onConfirm();
+      return;
 
     case 'add-step':
       top.capture();
