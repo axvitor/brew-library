@@ -1295,7 +1295,10 @@ function renderModals() {
   document.body.style.overflow = stack.length ? 'hidden' : '';
   var last = stack[stack.length - 1];
   if (last && last.el) {
-    var focusable = last.el.querySelector('input,select,textarea');
+    // Confirmation dialogs have no field to land on — fall back to Cancel,
+    // the safe default action, so a keyboard user can hit Enter to back
+    // out immediately instead of landing nowhere.
+    var focusable = last.el.querySelector('input,select,textarea,.dialog .btn-ghost');
     if (focusable && !('ontouchstart' in window)) focusable.focus();
   }
 }
@@ -1318,17 +1321,31 @@ function sheet(opts) {
 // that destroys data, so the moment users are most at risk of a mis-click
 // never drops out of the app's own design language into an OS dialog.
 // `body` is HTML (already escaped by the caller where it embeds user text).
+//
+// Deliberately its own centered dialog, not sheet() — v3 treats these as
+// two different components: BottomSheet (forms, rises from the bottom
+// edge) vs. Modal (centered, "reserved for confirmations and destructive
+// choices"). Reusing sheet() here would dock every delete/reset prompt to
+// the bottom edge on mobile along with ordinary forms, when the whole
+// point of a centered dialog is that it reads as a deliberate interrupt
+// rather than routine navigation.
 function confirmDanger(opts) {
   var m = {
     _onConfirm: opts.onConfirm,
     render: function () {
-      return sheet({
-        title: opts.title,
-        narrow: true,
-        body: opts.body,
-        foot: '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
-          '<button class="btn btn-danger" data-action="confirm-danger">' + esc(opts.confirmLabel) + '</button>'
-      });
+      var wrap = document.createElement('div');
+      wrap.className = 'overlay overlay-modal';
+      wrap.innerHTML =
+        '<div class="dialog" role="alertdialog" aria-modal="true" aria-label="' + esc(opts.title) + '">' +
+          '<h2>' + esc(opts.title) + '</h2>' +
+          '<div class="dialog-body">' + opts.body + '</div>' +
+          '<div class="dialog-foot">' +
+            '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+            '<button class="btn btn-danger" data-action="confirm-danger">' + esc(opts.confirmLabel) + '</button>' +
+          '</div>' +
+        '</div>';
+      wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
+      return wrap;
     }
   };
   openModal(m);

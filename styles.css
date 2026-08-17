@@ -693,6 +693,29 @@ svg.ico-fill{fill:currentColor;stroke:none}
   @keyframes up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 }
 
+/* ---------- confirmation dialog ----------
+   v3's Modal: centered, scale-pop entrance, reserved for destructive
+   confirmations — a different component from the BottomSheet above, not
+   a variant of it. .overlay.overlay-modal (two classes) outranks the
+   bare .overlay rule the mobile media query above sets, so this stays
+   centered at every width instead of docking to the bottom like a form
+   sheet would. */
+.overlay.overlay-modal{align-items:center}
+.dialog{
+  width:100%;max-width:360px;margin:auto;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border:var(--border-w-hairline) solid var(--border-hairline);
+  border-top:3px solid var(--state-error);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-raised);
+  padding:var(--pad-sheet);display:flex;flex-direction:column;gap:12px;
+  max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);overflow-y:auto;
+  animation:pop var(--dur-base) var(--ease-out) both;
+}
+.dialog h2{font:var(--weight-regular) 22px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
+.dialog-body{display:flex;flex-direction:column;gap:8px;font:var(--type-body-sm);color:var(--text-body)}
+.dialog-body p{margin:0}
+.dialog-foot{display:flex;justify-content:flex-end;gap:10px}
+
 /* ---------- forms (v3 forms/Input) ---------- */
 .field{margin-bottom:16px}
 .field > label,.lbl{display:block;margin-bottom:6px}
