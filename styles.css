@@ -794,6 +794,44 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 }
 .steps-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
+/* ---------- recipe-style step builder ----------
+   The editor is the timeline: same numbered bullet and connector rule the
+   read-only .timeline uses on the detail page, so what you build here and
+   what you brew from later are visibly the same object. Rows hold the order
+   you gave them; the numbers are positional, not stored. */
+.stepbuild{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px}
+.stepbuild-row{
+  position:relative;display:grid;gap:8px 10px;align-items:start;
+  grid-template-columns:26px minmax(0,1fr) auto;
+  grid-template-areas:"mark time tools" ". label label";
+}
+/* Connector between bullets, stopping at the last one. */
+.stepbuild-row::before{content:"";position:absolute;left:13px;top:38px;bottom:-20px;width:1px;background:var(--border-default)}
+.stepbuild-row:last-child::before{display:none}
+.stepbuild-mark{
+  grid-area:mark;width:26px;height:26px;margin-top:7px;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-full);background:var(--surface-card);
+  border:var(--border-w-strong) solid var(--action-primary);
+  font:var(--weight-bold) 11px/1 var(--font-mono);color:var(--action-primary);
+  font-variant-numeric:tabular-nums;
+}
+.stepbuild-t{grid-area:time}
+.stepbuild-l{grid-area:label}
+.stepbuild .inp{min-height:40px;font-size:14px;padding:0 12px}
+.stepbuild-tools{grid-area:tools;display:flex;align-items:center;gap:2px;margin-top:5px}
+.stepbuild-tools .iconbtn{width:30px;height:30px}
+.iconbtn:disabled{opacity:.3;pointer-events:none}
+.stepbuild-warn{display:flex;align-items:flex-start;gap:6px;margin-top:12px;color:var(--state-error)}
+.stepbuild-warn .ico{width:14px;height:14px;flex:none;margin-top:2px}
+/* One line once there's room for the instruction beside the time. */
+@media(min-width:561px){
+  .stepbuild-row{
+    grid-template-columns:26px 112px minmax(0,1fr) auto;
+    grid-template-areas:"mark time label tools";
+  }
+}
+
 /* rating input — beans, roast fill, one-step scale and no bounce */
 .rate{display:inline-flex;gap:4px}
 .rate button{color:var(--accent-star-empty);padding:3px;line-height:0;transition:color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-tap)}

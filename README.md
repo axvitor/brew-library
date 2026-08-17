@@ -46,10 +46,11 @@ small group, but unbounded sign-ups aren't rate-limited by anything in this app.
 
 ## How it's organised
 
-Four **reusable entities** live independently of the recipes that reference them:
+Five **reusable entities** live independently of the recipes that reference them:
 
 | Entity | Seeded with |
 | --- | --- |
+| Roaster | derived from the coffees already in your library |
 | Coffee | three example coffees — edit or delete them |
 | Grinder | KINGrinder, Starseeker, Timemore C2 |
 | Brewing method | V60, Origami, AeroPress, Timemore B75, Moka Pot, Espresso, Espresso — DEX basket, Espresso — 3Bomber (18g basket), Filtro Oster |
@@ -60,7 +61,14 @@ next to any selector in the recipe form. A recipe stores only the *id* of each e
 so renaming a coffee or grinder updates it everywhere at once.
 
 A saved recipe holds: coffee, grinder, grind size, method, style, dose, water,
-temperature, brew time, the pouring steps, personal notes and a rating.
+temperature, brew time, personal notes and a rating. The new-recipe form asks in
+that order — roaster, then coffee, method, grinder, style — narrowing from shelf
+to cup, and every field starts empty rather than pre-filled.
+
+A coffee's roaster is typed into an autocomplete backed by the roasters already on
+record: a matching name reuses that roaster (so one roaster never ends up spelled
+three ways), and an unrecognised one creates it. Roasters also carry a location,
+editable under **Library → Roasters**.
 
 ## Pouring steps follow the recipe style
 
@@ -82,8 +90,11 @@ automatically; there's nothing to keep in sync by hand.
   so it deliberately has no pour schedule. Every recipe on an espresso method uses
   this style.
 
-Styles you add yourself have no formula, so their recipes get a manual step editor
-instead — write the pour schedule by hand for those.
+Styles you add yourself get a **step builder** instead of a formula: add Time +
+Instruction pairs, reorder them, and see the whole brew as a timeline before you
+save. Those steps then belong to the style, so every recipe using it follows the
+same schedule and you only write it once. (Recipes saved before styles could carry
+their own steps keep theirs — nothing already stored loses its schedule.)
 
 ## Your data
 

@@ -59,7 +59,7 @@ function emptyLibrary() {
   var base = seed();
   return {
     version: 1, seedVersion: SEED_VERSION, pristine: true,
-    coffees: [], recipes: [],
+    coffees: [], recipes: [], roasters: [],
     grinders: base.grinders, methods: base.methods, styles: base.styles
   };
 }
@@ -295,18 +295,34 @@ function seed() {
    --------------------------------------------------------- */
 
 var ENTITIES = {
+  // Listed first so the Library manager's tabs read in the same order the
+  // recipe form asks for things: roaster, then coffee, then the gear.
+  roaster: {
+    coll: 'roasters', label: 'Roaster', plural: 'Roasters', ref: 'roasterId',
+    fields: [
+      { k: 'name', l: 'Name', ph: 'Moka Clube', req: true },
+      { k: 'location', l: 'Location', ph: 'City, country' }
+    ],
+    meta: function (e) { return e.location || ''; },
+    // Roasters are referenced by coffees, not recipes, so the usage count
+    // shown in the Library and the delete warning has to look there instead.
+    usedBy: function (id) {
+      return state.coffees.filter(function (c) { return c.roasterId === id; }).length;
+    },
+    usedLabel: 'coffee'
+  },
   coffee: {
     coll: 'coffees', label: 'Coffee', plural: 'Coffees', ref: 'coffeeId',
     fields: [
       { k: 'name', l: 'Name', ph: 'Ethiopia Guji', req: true },
-      { k: 'roaster', l: 'Roaster', ph: 'Who roasted it' },
+      { k: 'roasterName', l: 'Roaster', ph: 'Start typing — reuses a roaster or creates it', kind: 'autocomplete' },
       { k: 'origin', l: 'Origin', ph: 'Region, country' },
       { k: 'process', l: 'Process', ph: 'Washed / Natural / Honey' },
       { k: 'roast', l: 'Roast level', ph: 'Light / Medium / Dark' },
       { k: 'varietal', l: 'Varietal', ph: 'Caturra, Geisha…' },
       { k: 'notes', l: 'Tasting notes', ph: 'Peach, bergamot, jasmine', area: true }
     ],
-    meta: function (e) { return [e.roaster, e.origin, e.process].filter(Boolean).join(' · '); }
+    meta: function (e) { return [roasterNameOf(e), e.origin, e.process].filter(Boolean).join(' · '); }
   },
   grinder: {
     coll: 'grinders', label: 'Grinder', plural: 'Grinders', ref: 'grinderId',
@@ -338,6 +354,44 @@ var ENTITIES = {
     meta: function (e) { return e.author || ''; }
   }
 };
+
+/* Roasters used to be a free-text field on each coffee. They're a real entity
+   now — a location has nowhere to live on a bare string, and the same roaster
+   spelled two ways used to read as two roasters. This promotes the old
+   strings on load: one roaster record per distinct name, each coffee pointed
+   at it. Idempotent and safe to run on every load, including on libraries
+   that have already been through it and on freshly seeded ones.
+
+   The legacy `coffee.roaster` string is deliberately left in place rather
+   than deleted: it costs nothing, and it means a library written by this
+   version still opens correctly in a tab running the previous one. */
+function normalizeLibrary(lib) {
+  if (!lib) return lib;
+  ['coffees', 'grinders', 'methods', 'styles', 'recipes', 'roasters'].forEach(function (k) {
+    if (!Array.isArray(lib[k])) lib[k] = [];
+  });
+
+  var byName = {};
+  lib.roasters.forEach(function (ro) { byName[(ro.name || '').trim().toLowerCase()] = ro; });
+
+  lib.coffees.forEach(function (c) {
+    if (c.roasterId && byName[String(c.roasterId)]) return;
+    var name = (c.roaster || '').trim();
+    if (!name) return;
+    // Already pointing at a roaster that exists? Nothing to do.
+    if (c.roasterId && lib.roasters.some(function (ro) { return ro.id === c.roasterId; })) return;
+    var key = name.toLowerCase();
+    var found = byName[key];
+    if (!found) {
+      found = { id: uid('roa'), name: name, location: '' };
+      lib.roasters.push(found);
+      byName[key] = found;
+    }
+    c.roasterId = found.id;
+  });
+
+  return lib;
+}
 
 function coll(type) { return state[ENTITIES[type].coll]; }
 function findIn(type, id) {
@@ -513,7 +567,9 @@ var ICON = {
   timer: '<svg viewBox="0 0 24 24" class="ico"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>',
   // sliders-horizontal — v3's own glyph for a filter/options toggle.
   sliders: '<svg viewBox="0 0 24 24" class="ico"><path d="M21 4H14M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/>' +
-    '<circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="20" r="2"/></svg>'
+    '<circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="20" r="2"/></svg>',
+  chevUp: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 15l-6-6-6 6"/></svg>',
+  chevDown: '<svg viewBox="0 0 24 24" class="ico"><path d="M6 9l6 6 6-6"/></svg>'
 };
 
 /* ---------------------------------------------------------
@@ -538,26 +594,33 @@ function moreFiltersCount() {
   return ['coffee', 'roaster', 'grinder', 'method', 'style'].filter(function (k) { return !!filters[k]; }).length;
 }
 
-function roasterOf(r) {
+// Display name for a coffee's roaster: the linked record if it resolves,
+// otherwise the legacy string, so a library mid-migration still reads right.
+function roasterNameOf(c) {
+  if (!c) return '';
+  var ro = c.roasterId ? findIn('roaster', c.roasterId) : null;
+  if (ro) return ro.name;
+  return (c.roaster || '').trim();
+}
+
+function roasterIdOf(r) {
   var c = findIn('coffee', r.coffeeId);
-  return c ? (c.roaster || '') : '';
+  return c ? (c.roasterId || '') : '';
+}
+
+function roasterOf(r) {
+  return roasterNameOf(findIn('coffee', r.coffeeId));
 }
 
 function allRoasters() {
-  var seen = {}, out = [];
-  state.coffees.forEach(function (c) {
-    var name = (c.roaster || '').trim();
-    if (name && !seen[name]) { seen[name] = true; out.push(name); }
-  });
-  out.sort(function (a, b) { return a.localeCompare(b); });
-  return out;
+  return coll('roaster').slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
 }
 
 function visibleRecipes() {
   var q = filters.q.trim().toLowerCase();
   var out = state.recipes.filter(function (r) {
     if (filters.coffee && r.coffeeId !== filters.coffee) return false;
-    if (filters.roaster && roasterOf(r) !== filters.roaster) return false;
+    if (filters.roaster && roasterIdOf(r) !== filters.roaster) return false;
     if (filters.grinder && r.grinderId !== filters.grinder) return false;
     if (filters.method && r.methodId !== filters.method) return false;
     if (filters.style && r.styleId !== filters.style) return false;
@@ -673,8 +736,8 @@ function selectHTML(id, type, value) {
 function roasterSelectHTML(value) {
   var list = allRoasters();
   var opts = '<option value="">All roasters</option>';
-  list.forEach(function (name) {
-    opts += '<option value="' + esc(name) + '"' + (name === value ? ' selected' : '') + '>' + esc(name) + '</option>';
+  list.forEach(function (ro) {
+    opts += '<option value="' + esc(ro.id) + '"' + (ro.id === value ? ' selected' : '') + '>' + esc(ro.name) + '</option>';
   });
   return '<div class="sel' + (value ? ' on' : '') + '"><select id="f-roaster" data-filter="roaster" aria-label="Filter by roaster">' +
     opts + '</select></div>';
@@ -837,14 +900,32 @@ function stepsCaption(r) {
   return 'Follows the ' + styleName + ' formula, scaled to this dose and water.';
 }
 
-// Pouring steps are always derived from the recipe style's formula (scaled to
-// this recipe's dose/water/method) whenever that style has one built in.
-// Only styles without a formula (custom, user-added ones) keep hand-written steps.
+// Steps a user-authored style defines for itself, via the style form's step
+// builder. Built-in formula styles compute theirs instead and never store any.
+function styleSteps(styleId) {
+  var st = findIn('style', styleId);
+  if (!st || !st.steps) return [];
+  return st.steps.filter(function (s) { return s.t || s.label; });
+}
+
+// True when the style itself owns the schedule — either a built-in formula or
+// hand-built steps. Recipes on such a style don't store steps of their own.
+function styleProvidesSteps(styleId) {
+  return hasFormula(styleId) || styleSteps(styleId).length > 0;
+}
+
+// Pouring steps follow the recipe *style*, in priority order: a built-in
+// formula (scaled live to this recipe's dose/water/method), then steps the
+// style defines itself. Recipes created before styles could carry their own
+// steps fall back to the ones stored on the recipe, so nothing already saved
+// loses its schedule.
 function effectiveSteps(r) {
   if (hasFormula(r.styleId)) {
     var me = findIn('method', r.methodId);
     return preset(r.styleId, r.dose, r.water, me ? me.name : '');
   }
+  var own = styleSteps(r.styleId);
+  if (own.length) return own;
   return (r.steps || []).filter(function (s) { return s.label || s.water || s.t; });
 }
 
@@ -868,7 +949,12 @@ function renderDetail(id) {
   var specs = '';
   function spec(k, v) { if (v) specs += '<div class="spec"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>'; }
   spec('Coffee', c ? c.name : '—');
-  if (c) { spec('Roaster', c.roaster); spec('Origin', c.origin); spec('Process', c.process); spec('Roast', c.roast); spec('Varietal', c.varietal); }
+  if (c) {
+    var ro = c.roasterId ? findIn('roaster', c.roasterId) : null;
+    spec('Roaster', roasterNameOf(c));
+    if (ro && ro.location) spec('Roastery', ro.location);
+    spec('Origin', c.origin); spec('Process', c.process); spec('Roast', c.roast); spec('Varietal', c.varietal);
+  }
   spec('Grinder', gr ? gr.name : '—');
   spec('Grind size', r.grindSize);
   spec('Method', me ? me.name : '—');
@@ -1368,19 +1454,23 @@ function confirmDanger(opts) {
 
 function blankRecipe() {
   return {
-    id: '', name: '', coffeeId: state.coffees[0] ? state.coffees[0].id : '',
-    grinderId: state.grinders[0] ? state.grinders[0].id : '', grindSize: '',
-    methodId: state.methods[0] ? state.methods[0].id : '',
-    styleId: state.styles[0] ? state.styles[0].id : '',
-    dose: '', water: '', temp: 94, brewTime: '',
+    // Nothing is pre-filled: every field opens empty and leans on its
+    // placeholder for the hint. A silently pre-selected grinder or a 94 already
+    // sitting in the temperature box is a value the user never chose but that
+    // gets saved as though they did — placeholders suggest without asserting.
+    id: '', name: '', coffeeId: '',
+    grinderId: '', grindSize: '',
+    methodId: '',
+    styleId: '',
+    dose: '', water: '', temp: '', brewTime: '',
     steps: [{ t: '', label: '', water: '' }],
     notes: '', rating: 0, fav: false
   };
 }
 
-function entitySelect(type, value, id) {
+function entitySelect(type, value, id, placeholder) {
   var list = coll(type).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
-  var opts = '<option value="">— none —</option>';
+  var opts = '<option value="">' + esc(placeholder || '— none —') + '</option>';
   list.forEach(function (e) {
     opts += '<option value="' + esc(e.id) + '"' + (e.id === value ? ' selected' : '') + '>' + esc(e.name) + '</option>';
   });
@@ -1389,6 +1479,101 @@ function entitySelect(type, value, id) {
     '<button type="button" class="addbtn" data-action="quick-add" data-type="' + type + '" ' +
       'title="Add ' + esc(ENTITIES[type].label.toLowerCase()) + '">' + ICON.plus + '</button>' +
   '</div>';
+}
+
+/* The recipe form opens on the roaster, which narrows the coffee list below
+   it. Roaster isn't stored on the recipe — it lives on the Coffee entity, and
+   duplicating it here would give the same fact two homes. It's a filter that
+   makes picking a coffee quick once the library is large, and it's derived
+   back off the coffee when an existing recipe is reopened. */
+function formRoasterSelect(value) {
+  var opts = '<option value="">All roasters</option>';
+  allRoasters().forEach(function (ro) {
+    opts += '<option value="' + esc(ro.id) + '"' + (ro.id === value ? ' selected' : '') + '>' + esc(ro.name) + '</option>';
+  });
+  return '<select class="inp" id="f-roaster-sel">' + opts + '</select>';
+}
+
+// Coffees for the chosen roaster, or all of them when none is chosen (which
+// is also how coffees with no roaster recorded stay reachable).
+function coffeesForRoaster(roasterId) {
+  var list = coll('coffee').slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+  if (!roasterId) return list;
+  return list.filter(function (c) { return c.roasterId === roasterId; });
+}
+
+function coffeeSelectHTML(roaster, value) {
+  var list = coffeesForRoaster(roaster);
+  // Deliberately unselected to start: the coffee is the one field worth a
+  // conscious choice every time, and quietly defaulting to whichever coffee
+  // sorts first is how a recipe ends up filed under the wrong bag.
+  var opts = '<option value="">' +
+    (list.length ? 'Select a coffee…' : 'No coffees for this roaster yet') + '</option>';
+  list.forEach(function (c) {
+    opts += '<option value="' + esc(c.id) + '"' + (c.id === value ? ' selected' : '') + '>' + esc(c.name) + '</option>';
+  });
+  return '<div class="with-add">' +
+    '<select class="inp" id="f-coffee-sel" data-role="coffee">' + opts + '</select>' +
+    '<button type="button" class="addbtn" data-action="quick-add" data-type="coffee" ' +
+      'title="Add coffee">' + ICON.plus + '</button>' +
+  '</div>';
+}
+
+/* Step builder for a recipe style: a timeline you edit in place, so the whole
+   brew reads top to bottom while you're writing it. Rows keep the order you
+   put them in rather than re-sorting as you type — a list that rearranges
+   itself mid-keystroke is unusable — and a hint flags any time that isn't
+   later than the one above it, which is the case worth catching. */
+function styleStepsSectionHTML(d) {
+  var head = '<div class="form-sep-label">Brewing steps</div>';
+
+  if (hasFormula(d.id)) {
+    return head + '<p class="hint" style="margin:0">This style\'s steps come from its built-in formula and ' +
+      'rescale to each recipe\'s dose and water automatically — there\'s nothing to write by hand.</p>';
+  }
+
+  if (!d.steps || !d.steps.length) d.steps = [{ t: '', label: '' }];
+  var last = d.steps.length - 1;
+
+  var rows = d.steps.map(function (s, i) {
+    return '<li class="stepbuild-row" data-i="' + i + '">' +
+      '<span class="stepbuild-mark">' + (i + 1) + '</span>' +
+      '<input class="inp stepbuild-t" data-s="t" value="' + esc(s.t || '') + '" ' +
+        'placeholder="0:45" inputmode="numeric" aria-label="Step ' + (i + 1) + ' time" />' +
+      '<input class="inp stepbuild-l" data-s="label" value="' + esc(s.label || '') + '" ' +
+        'placeholder="What to do at this point" aria-label="Step ' + (i + 1) + ' instruction" />' +
+      '<span class="stepbuild-tools">' +
+        '<button type="button" class="iconbtn" data-action="style-step-move" data-i="' + i + '" data-dir="-1" ' +
+          'aria-label="Move step ' + (i + 1) + ' earlier"' + (i === 0 ? ' disabled' : '') + '>' + ICON.chevUp + '</button>' +
+        '<button type="button" class="iconbtn" data-action="style-step-move" data-i="' + i + '" data-dir="1" ' +
+          'aria-label="Move step ' + (i + 1) + ' later"' + (i === last ? ' disabled' : '') + '>' + ICON.chevDown + '</button>' +
+        '<button type="button" class="iconbtn danger" data-action="style-step-del" data-i="' + i + '" ' +
+          'aria-label="Remove step ' + (i + 1) + '">' + ICON.close + '</button>' +
+      '</span>' +
+    '</li>';
+  }).join('');
+
+  return head +
+    '<p class="hint" style="margin:0 0 14px">Every recipe on this style follows these steps, so you only write them once.</p>' +
+    '<ol class="stepbuild">' + rows + '</ol>' +
+    (stepsOutOfOrder(d.steps)
+      ? '<p class="hint stepbuild-warn">' + ICON.arrowDown + 'Some times run backwards — reorder the steps so the brew reads start to finish.</p>'
+      : '') +
+    '<div class="steps-tools">' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-action="style-step-add">' + ICON.plus + 'Add step</button>' +
+    '</div>';
+}
+
+// True when any filled-in time is not later than the filled-in time before it.
+function stepsOutOfOrder(steps) {
+  var prev = -1, bad = false;
+  (steps || []).forEach(function (s) {
+    var sec = secondsOf(s.t);
+    if (sec === null) return;
+    if (sec <= prev) bad = true;
+    prev = sec;
+  });
+  return bad;
 }
 
 function stepsEditor(steps) {
@@ -1425,6 +1610,14 @@ function stepsSectionHTML(m) {
     return '<p class="hint" style="margin:0">' + esc(noStepsMessage(d)) + '</p>';
   }
 
+  var own = styleSteps(d.styleId);
+  if (own.length) {
+    var st = findIn('style', d.styleId);
+    return '<ol class="timeline">' + timelineHTML(own) + '</ol>' +
+      '<p class="hint" style="margin-top:12px">These steps come from the ' +
+      esc(st ? st.name : 'selected') + ' style — edit the style to change them for every recipe using it.</p>';
+  }
+
   if (!d.steps || !d.steps.length) d.steps = [{ t: '', label: '', water: '' }];
   return stepsEditor(d.steps);
 }
@@ -1437,23 +1630,31 @@ function openRecipeForm(existing) {
     capture: function () { readRecipeForm(m); },
     render: function () { return buildRecipeForm(m); }
   };
+  // Reopening an existing recipe derives the roaster back off its coffee, so
+  // the narrowed list matches what's already selected instead of resetting.
+  var c = findIn('coffee', m.draft.coffeeId);
+  m.roaster = c ? (c.roasterId || '') : '';
   openModal(m);
 }
 
 function buildRecipeForm(m) {
   var d = m.draft;
   var body =
+    // Roaster first, then the coffee it roasted, then how you brew it —
+    // the order you actually decide these in, narrowing from shelf to cup.
     '<div class="row row-2">' +
-      '<div class="field"><label for="f-coffee-sel">Coffee</label>' + entitySelect('coffee', d.coffeeId, 'f-coffee-sel') + '</div>' +
-      '<div class="field"><label for="f-method-sel">Brewing method</label>' + entitySelect('method', d.methodId, 'f-method-sel') + '</div>' +
+      '<div class="field"><label for="f-roaster-sel">Roaster</label>' + formRoasterSelect(m.roaster) + '</div>' +
+      '<div class="field" id="coffeeField"><label for="f-coffee-sel">Coffee</label>' +
+        coffeeSelectHTML(m.roaster, d.coffeeId) + '</div>' +
     '</div>' +
+    '<div class="field"><label for="f-method-sel">Brewing method</label>' + entitySelect('method', d.methodId, 'f-method-sel', 'Select a method…') + '</div>' +
     '<div class="row row-2">' +
-      '<div class="field"><label for="f-grinder-sel">Grinder</label>' + entitySelect('grinder', d.grinderId, 'f-grinder-sel') + '</div>' +
+      '<div class="field"><label for="f-grinder-sel">Grinder</label>' + entitySelect('grinder', d.grinderId, 'f-grinder-sel', 'Select a grinder…') + '</div>' +
       '<div class="field"><label for="f-grind">Grind size</label>' +
         '<input class="inp" id="f-grind" value="' + esc(d.grindSize) + '" placeholder="e.g. 75 clicks" /></div>' +
     '</div>' +
-    '<div class="field"><label for="f-style-sel">Recipe style</label>' + entitySelect('style', d.styleId, 'f-style-sel') +
-      '<div class="hint">Pouring steps always follow the chosen recipe style — set the dose and water below and they scale automatically.</div></div>' +
+    '<div class="field"><label for="f-style-sel">Recipe style</label>' + entitySelect('style', d.styleId, 'f-style-sel', 'Select a style…') +
+      '<div class="hint">Pouring steps always follow the chosen recipe style. Add a style to build your own step-by-step schedule.</div></div>' +
 
     '<div class="form-sep-label">Brew parameters</div>' +
     '<div class="row row-3">' +
@@ -1517,6 +1718,18 @@ function buildRecipeForm(m) {
   el.querySelector('#f-style-sel').addEventListener('change', onStyleOrMethodChange);
   el.querySelector('#f-method-sel').addEventListener('change', onStyleOrMethodChange);
 
+  // Changing the roaster repaints just the coffee select beneath it, and drops
+  // a coffee that no longer belongs to the chosen roaster rather than leaving
+  // a selection that contradicts the field above it.
+  el.querySelector('#f-roaster-sel').addEventListener('change', function (ev) {
+    readRecipeForm(m);
+    m.roaster = ev.target.value;
+    var c = findIn('coffee', d.coffeeId);
+    if (m.roaster && (!c || c.roasterId !== m.roaster)) d.coffeeId = '';
+    var field = el.querySelector('#coffeeField');
+    field.innerHTML = '<label for="f-coffee-sel">Coffee</label>' + coffeeSelectHTML(m.roaster, d.coffeeId);
+  });
+
   return el;
 }
 
@@ -1524,6 +1737,8 @@ function readRecipeForm(m) {
   var el = m.el;
   if (!el) return;
   var d = m.draft, q = function (s) { return el.querySelector(s); };
+  var roasterSel = q('#f-roaster-sel');
+  if (roasterSel) m.roaster = roasterSel.value;
   d.coffeeId = q('#f-coffee-sel').value;
   d.methodId = q('#f-method-sel').value;
   d.grinderId = q('#f-grinder-sel').value;
@@ -1550,8 +1765,9 @@ function saveRecipe(m) {
   if (!d.coffeeId) { toast('Pick a coffee first.'); return; }
   if (!d.methodId) { toast('Pick a brewing method.'); return; }
 
-  if (hasFormula(d.styleId)) {
-    // Style-driven steps are computed live at render time — nothing to store.
+  if (styleProvidesSteps(d.styleId)) {
+    // The style owns the schedule — computed live from a formula, or written
+    // once on the style itself. Either way there's nothing to store here.
     d.steps = [];
   } else {
     d.steps = d.steps.filter(function (s) { return s.label || s.water || s.t; });
@@ -1586,24 +1802,50 @@ function saveRecipe(m) {
    10. Entity form (coffee / grinder / method / style)
    --------------------------------------------------------- */
 
-function openEntityForm(type, existing, onSaved) {
+function openEntityForm(type, existing, onSaved, prefill) {
   var def = ENTITIES[type];
+  var draft = existing ? JSON.parse(JSON.stringify(existing)) : { id: '' };
+  // The roaster is edited by name and resolved back to a record on save.
+  if (type === 'coffee') draft.roasterName = existing ? roasterNameOf(existing) : '';
+  // Adding a coffee from the recipe form carries the roaster already chosen
+  // there, so the new coffee lands inside the filter that opened this form.
+  if (!existing && prefill) {
+    for (var pk in prefill) if (Object.prototype.hasOwnProperty.call(prefill, pk)) draft[pk] = prefill[pk];
+  }
   var m = {
-    draft: existing ? JSON.parse(JSON.stringify(existing)) : { id: '' },
+    draft: draft,
     capture: function () { readEntityForm(m, def); },
     render: function () {
       var d = m.draft;
       var body = def.fields.map(function (f) {
         var val = esc(d[f.k] == null ? '' : d[f.k]);
+        var control;
+        if (f.kind === 'autocomplete') {
+          // Free text backed by a datalist of roasters already on record.
+          // Typing reuses an existing one — so the same roaster doesn't end up
+          // spelled three different ways — and an unrecognised name simply
+          // creates it on save, with no separate "add a roaster" detour.
+          var dl = 'dl-' + f.k;
+          var listOpts = allRoasters().map(function (ro) {
+            return '<option value="' + esc(ro.name) + '"></option>';
+          }).join('');
+          control = '<input class="inp" id="e-' + f.k + '" data-k="' + f.k + '" list="' + dl + '" ' +
+            'value="' + val + '" placeholder="' + esc(f.ph || '') + '" autocomplete="off" />' +
+            '<datalist id="' + dl + '">' + listOpts + '</datalist>';
+        } else if (f.area) {
+          control = '<textarea class="inp" id="e-' + f.k + '" data-k="' + f.k + '" placeholder="' + esc(f.ph || '') + '">' + val + '</textarea>';
+        } else {
+          control = '<input class="inp" id="e-' + f.k + '" data-k="' + f.k + '" value="' + val + '" placeholder="' + esc(f.ph || '') + '" />';
+        }
         return '<div class="field"><label for="e-' + f.k + '">' + esc(f.l) + (f.req ? '' : ' <span style="text-transform:none;letter-spacing:0">(optional)</span>') + '</label>' +
-          (f.area
-            ? '<textarea class="inp" id="e-' + f.k + '" data-k="' + f.k + '" placeholder="' + esc(f.ph || '') + '">' + val + '</textarea>'
-            : '<input class="inp" id="e-' + f.k + '" data-k="' + f.k + '" value="' + val + '" placeholder="' + esc(f.ph || '') + '" />') +
-          '</div>';
+          control + '</div>';
       }).join('');
+      // A style is the one entity that carries a process, not just facts —
+      // so it gets the step builder under its plain fields.
+      if (type === 'style') body += styleStepsSectionHTML(d);
       var foot = '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
         '<button class="btn btn-primary" data-action="save-entity">' + (d.id ? 'Save changes' : 'Add ' + def.label.toLowerCase()) + '</button>';
-      return sheet({ title: (d.id ? 'Edit ' : 'Add ') + def.label.toLowerCase(), body: body, foot: foot, narrow: true });
+      return sheet({ title: (d.id ? 'Edit ' : 'Add ') + def.label.toLowerCase(), body: body, foot: foot, narrow: type !== 'style' });
     },
     type: type,
     onSaved: onSaved
@@ -1613,6 +1855,17 @@ function openEntityForm(type, existing, onSaved) {
 
 function readEntityForm(m, def) {
   if (!m.el) return;
+  // Guarded on rows existing: a built-in formula style renders no builder at
+  // all, and reading it blind would wipe the steps of anything that has them.
+  var rows = m.el.querySelectorAll('.stepbuild-row');
+  if (rows.length) {
+    m.draft.steps = [].map.call(rows, function (row) {
+      return {
+        t: normTime(row.querySelector('[data-s="t"]').value),
+        label: row.querySelector('[data-s="label"]').value.trim()
+      };
+    });
+  }
   def.fields.forEach(function (f) {
     var input = m.el.querySelector('[data-k="' + f.k + '"]');
     if (input) m.draft[f.k] = input.value.trim();
@@ -1624,6 +1877,30 @@ function saveEntity(m) {
   readEntityForm(m, def);
   var d = m.draft;
   if (!d.name) { toast('Give it a name first.'); return; }
+  // Drop the blank row the builder always keeps at the end.
+  if (d.steps) d.steps = d.steps.filter(function (s) { return s.t || s.label; });
+
+  // Resolve the typed roaster name to a record: reuse an existing one when
+  // the name matches (case- and space-insensitively, so "Moka Clube" and
+  // "moka clube " are the same roaster), otherwise create it now. roasterName
+  // itself is a form-only field and never gets stored on the coffee.
+  if (m.type === 'coffee') {
+    var typed = (d.roasterName || '').trim();
+    delete d.roasterName;
+    if (!typed) {
+      d.roasterId = '';
+    } else {
+      var match = coll('roaster').filter(function (ro) {
+        return (ro.name || '').trim().toLowerCase() === typed.toLowerCase();
+      })[0];
+      if (!match) {
+        match = { id: uid('roa'), name: typed, location: '' };
+        coll('roaster').push(match);
+      }
+      d.roasterId = match.id;
+    }
+    d.roaster = typed;   // legacy mirror, kept readable by older tabs
+  }
 
   if (d.id) {
     var existing = findIn(m.type, d.id);
@@ -1661,12 +1938,13 @@ function openLibrary(tab) {
       }).join('') + '</div>';
 
       var items = list.length ? list.map(function (e) {
-        var used = state.recipes.filter(function (r) { return r[def.ref] === e.id; }).length;
+        var used = def.usedBy ? def.usedBy(e.id) : state.recipes.filter(function (r) { return r[def.ref] === e.id; }).length;
+        var noun = def.usedLabel || 'recipe';
         var meta = def.meta(e);
         return '<div class="list-item">' +
           '<div class="txt"><div class="nm">' + esc(e.name) + '</div>' +
             (meta ? '<div class="mt">' + esc(meta) + '</div>' : '') + '</div>' +
-          '<span class="cnt">' + used + ' ' + (used === 1 ? 'recipe' : 'recipes') + '</span>' +
+          '<span class="cnt">' + used + ' ' + (used === 1 ? noun : noun + 's') + '</span>' +
           '<button class="iconbtn" data-action="lib-edit" data-type="' + m.tab + '" data-id="' + esc(e.id) + '" aria-label="Edit">' + ICON.edit + '</button>' +
           '<button class="iconbtn danger" data-action="lib-del" data-type="' + m.tab + '" data-id="' + esc(e.id) + '" aria-label="Delete">' + ICON.trash + '</button>' +
         '</div>';
@@ -1686,9 +1964,10 @@ function deleteEntity(type, id) {
   var def = ENTITIES[type];
   var e = findIn(type, id);
   if (!e) return;
-  var used = state.recipes.filter(function (r) { return r[def.ref] === id; }).length;
+  var used = def.usedBy ? def.usedBy(id) : state.recipes.filter(function (r) { return r[def.ref] === id; }).length;
+  var noun = def.usedLabel || 'recipe';
   var body = '<p>Delete “' + esc(e.name) + '”?</p>' +
-    (used ? '<p>It is used by ' + used + ' ' + (used === 1 ? 'recipe' : 'recipes') +
+    (used ? '<p>It is used by ' + used + ' ' + (used === 1 ? noun : noun + 's') +
       ', which will show “—” for this field until you edit them.</p>' : '');
   confirmDanger({
     title: 'Delete ' + def.label.toLowerCase(),
@@ -1742,10 +2021,7 @@ function importData(file) {
       confirmLabel: 'Replace library',
       onConfirm: function () {
         closeModal();
-        state = data;
-        ['coffees', 'grinders', 'methods', 'styles', 'recipes'].forEach(function (k) {
-          if (!Array.isArray(state[k])) state[k] = [];
-        });
+        state = normalizeLibrary(data);
         save();
         render();
         toast('Library imported.');
@@ -1766,7 +2042,7 @@ function resetAll() {
     onConfirm: function () {
       closeModal();
       initialLibraryFor(currentUser).then(function (fresh) {
-        state = fresh;
+        state = normalizeLibrary(fresh);
         save({ keepPristine: true });
         location.hash = '#/';
         render();
@@ -1964,6 +2240,32 @@ document.addEventListener('click', function (ev) {
       renderModals();
       return;
 
+    case 'style-step-add':
+      top.capture();
+      if (!top.draft.steps) top.draft.steps = [];
+      top.draft.steps.push({ t: '', label: '' });
+      renderModals();
+      return;
+
+    case 'style-step-del':
+      top.capture();
+      top.draft.steps.splice(Number(t.getAttribute('data-i')), 1);
+      if (!top.draft.steps.length) top.draft.steps.push({ t: '', label: '' });
+      renderModals();
+      return;
+
+    case 'style-step-move':
+      top.capture();
+      var mFrom = Number(t.getAttribute('data-i'));
+      var mTo = mFrom + Number(t.getAttribute('data-dir'));
+      var mArr = top.draft.steps;
+      if (mTo < 0 || mTo >= mArr.length) return;
+      var moved = mArr[mFrom];
+      mArr[mFrom] = mArr[mTo];
+      mArr[mTo] = moved;
+      renderModals();
+      return;
+
     case 'rate':
       top.capture();
       var v = Number(t.getAttribute('data-v'));
@@ -1978,7 +2280,18 @@ document.addEventListener('click', function (ev) {
       openEntityForm(type, null, function (newId) {
         var parent = stack[stack.length - 1];
         if (parent && parent.draft) parent.draft[ENTITIES[type].ref] = newId;
-      });
+        // Follow the new coffee's roaster rather than stranding it outside
+        // the filter — saving a coffee only to watch it vanish is worse than
+        // quietly moving the filter to where the user just went.
+        if (type === 'coffee' && parent) {
+          var nc = findIn('coffee', newId);
+          parent.roaster = nc ? (nc.roasterId || '') : '';
+        }
+        // A roaster added from the recipe form becomes the active filter, so
+        // the coffee select below it is already scoped to what you just made.
+      }, type === 'coffee' && top && top.roaster
+        ? { roasterName: (findIn('roaster', top.roaster) || {}).name || '' }
+        : null);
       return;
 
     case 'lib-tab': top.tab = type; renderModals(); return;
@@ -2065,7 +2378,7 @@ function isLocalPreview() {
 
 function boot() {
   if (isLocalPreview()) {
-    state = seed();
+    state = normalizeLibrary(seed());
     authPhase = 'ready';
     render();
     return;
@@ -2094,14 +2407,14 @@ function boot() {
       var needsSeed = !data || (data.pristine && data.seedVersion !== SEED_VERSION);
       var ready = needsSeed ? initialLibraryFor(user) : Promise.resolve(data);
       return ready.then(function (lib) {
-        state = lib;
+        state = normalizeLibrary(lib);
         if (needsSeed) window.Brew.saveLibrary(user.uid, state);
         render();
       });
     }).then(function () {
       // Live sync: any change (from this device or another) re-renders.
       unsubscribeLibrary = window.Brew.subscribeLibrary(user.uid, function (remote) {
-        state = remote;
+        state = normalizeLibrary(remote);
         render();
       });
     });
