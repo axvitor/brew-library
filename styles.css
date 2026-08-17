@@ -716,6 +716,32 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .dialog-body p{margin:0}
 .dialog-foot{display:flex;justify-content:flex-end;gap:10px}
 
+/* ---------- fullscreen takeover ----------
+   For a view that wants the whole screen (currently just the brew
+   timer): .overlay-full paints the exact surface color .sheet-timer
+   itself uses, light by default and dark inside the same prefers-
+   color-scheme block that already governs it, so the overlay and the
+   sheet read as one continuous screen with no dialog seam or scrim —
+   not a card floating over a dimmed page. Two classes outrank both the
+   base .overlay rule and the mobile media query's bottom-dock override,
+   so this covers the viewport edge-to-edge at every width. */
+.overlay.overlay-full{
+  padding:0;align-items:stretch;justify-content:stretch;
+  background-color:var(--surface-card);background-image:var(--texture-paper);
+  animation:fullIn var(--dur-sheet) var(--ease-settle) both;
+}
+@keyframes fullIn{from{opacity:0;transform:scale(.99)}to{opacity:1;transform:none}}
+/* .sheet.sheet-timer (three classes), not just .overlay-full .sheet-timer,
+   so this unambiguously outranks .sheet.narrow{max-width:480px} on
+   specificity alone rather than relying on which rule comes later. */
+.overlay-full .sheet.sheet-timer{
+  width:100%;max-width:560px;height:100%;max-height:none;margin:0 auto;
+  background:transparent;border:none;box-shadow:none;border-radius:0;
+  animation:none;
+}
+.overlay-full .sheet-head{padding-top:max(16px,env(safe-area-inset-top))}
+.overlay-full .sheet-foot{padding-bottom:max(16px,env(safe-area-inset-bottom))}
+
 /* ---------- forms (v3 forms/Input) ---------- */
 .field{margin-bottom:16px}
 .field > label,.lbl{display:block;margin-bottom:6px}
@@ -812,9 +838,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    would misreport elapsed time. The roast accent (progress arc, start
    button) is the one constant between light and dark — v3 rations roast
    specifically for "the live timer" regardless of surface. */
+/* Real sizing (width/height/border/shadow) lives on .overlay-full
+   .sheet-timer below — the timer only ever renders inside that
+   fullscreen wrapper, so this rule carries just the color/texture that
+   both light and dark share. */
 .sheet-timer{
-  max-width:430px;
-  height:min(760px,calc(100vh - 66px));height:min(760px,calc(100dvh - 66px));
   background:var(--surface-card);background-image:var(--texture-paper);
   border-color:var(--border-hairline);color:var(--text-body);
 }
@@ -826,9 +854,13 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .sheet-timer .iconbtn{color:var(--text-muted)}
 .sheet-timer .iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
 
-.timer-body{display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px var(--pad-sheet) 0;overflow:hidden;min-height:0}
+.timer-body{display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px var(--pad-sheet) 0;overflow:hidden;min-height:0}
 
-.timer-ring{position:relative;width:min(232px,58vw,29vh);aspect-ratio:1;flex:none}
+/* Now that the timer is always the full screen rather than a card
+   capped by dialog chrome, the ring can claim more of that guaranteed
+   room — still bounded by vh so a short phone in landscape can't force
+   the step list off-screen. */
+.timer-ring{position:relative;width:min(272px,62vw,32vh);aspect-ratio:1;flex:none}
 .timer-ring svg{width:100%;height:100%;display:block;overflow:visible}
 .timer-ring circle{fill:none}
 .ttrack{stroke:var(--border-hairline);stroke-width:14}
@@ -887,6 +919,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 /* Dark mode: v3's own inverse-pine BrewTimer, same light-default/
    dark-override pattern every other surface in this file follows. */
 @media (prefers-color-scheme: dark){
+  .overlay-full{background-color:var(--surface-inverse);background-image:var(--texture-paper)}
   .sheet-timer{background:var(--surface-inverse);border-color:var(--pine-900);color:var(--text-on-inverse)}
   .sheet-timer .sheet-head{border-bottom-color:var(--border-inverse)}
   .sheet-timer .sheet-head h2{color:var(--paper-000)}

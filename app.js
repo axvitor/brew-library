@@ -1033,7 +1033,9 @@ function buildTimerEl(r, plan) {
   }).join('');
 
   var wrap = document.createElement('div');
-  wrap.className = 'overlay';
+  // Fullscreen, not a floating dialog — brewing wants undivided attention,
+  // not a card sharing space with the library behind it. See .overlay-full.
+  wrap.className = 'overlay overlay-full';
   wrap.innerHTML =
     '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true">' +
       '<div class="sheet-head">' +
