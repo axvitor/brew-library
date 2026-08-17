@@ -1049,38 +1049,47 @@ function buildTimerEl(r, plan) {
         '</div>' +
       '</div>' +
       '<div class="sheet-body timer-body">' +
-        '<div class="timer-ring">' +
-          '<svg viewBox="0 0 200 200" aria-hidden="true">' +
-            '<g transform="rotate(-90 100 100)">' +
-              '<circle class="ttrack" cx="100" cy="100" r="' + RING_R + '"></circle>' +
-              segHTML +
-              '<circle class="tprog" cx="100" cy="100" r="' + RING_R + '" ' +
-                'stroke-dasharray="0 ' + RING_C.toFixed(2) + '"></circle>' +
-            '</g>' +
-            '<g class="thead"><circle cx="100" cy="' + (100 - RING_R) + '" r="5.5"></circle></g>' +
-          '</svg>' +
-          '<div class="timer-face">' +
-            '<div class="timer-elapsed" role="timer" aria-live="off">00:00</div>' +
-            '<div class="timer-total">of ' + esc(mmss2(plan.total)) + '</div>' +
+        // .timer-hero and .timer-list are display:contents below the
+        // desktop breakpoint, so mobile's single vertical flow (ring,
+        // readouts, instruction, steps, next-strip) is byte-for-byte
+        // unchanged — they only become real grid columns at the width
+        // that has room for two. See the min-width:861px block.
+        '<div class="timer-hero">' +
+          '<div class="timer-ring">' +
+            '<svg viewBox="0 0 200 200" aria-hidden="true">' +
+              '<g transform="rotate(-90 100 100)">' +
+                '<circle class="ttrack" cx="100" cy="100" r="' + RING_R + '"></circle>' +
+                segHTML +
+                '<circle class="tprog" cx="100" cy="100" r="' + RING_R + '" ' +
+                  'stroke-dasharray="0 ' + RING_C.toFixed(2) + '"></circle>' +
+              '</g>' +
+              '<g class="thead"><circle cx="100" cy="' + (100 - RING_R) + '" r="5.5"></circle></g>' +
+            '</svg>' +
+            '<div class="timer-face">' +
+              '<div class="timer-elapsed" role="timer" aria-live="off">00:00</div>' +
+              '<div class="timer-total">of ' + esc(mmss2(plan.total)) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="timer-readouts">' +
+            '<div class="timer-readout">' +
+              '<span class="rv timer-left">00:00</span>' +
+              '<span class="rk">Left in this step</span>' +
+            '</div>' +
+            (plan.water
+              ? '<div class="timer-readout">' +
+                  '<span class="rv timer-poured">0<small>/ ' + plan.water + ' g</small></span>' +
+                  '<span class="rk">Water poured</span>' +
+                '</div>'
+              : '') +
+          '</div>' +
+          '<div class="timer-now"><span class="timer-now-label"></span></div>' +
+        '</div>' +
+        '<div class="timer-list">' +
+          '<ol class="timer-steps">' + rowsHTML + '</ol>' +
+          '<div class="timer-next">' + ICON.arrowDown +
+            '<span class="nx"></span><span class="nt"></span>' +
           '</div>' +
         '</div>' +
-        '<div class="timer-readouts">' +
-          '<div class="timer-readout">' +
-            '<span class="rv timer-left">00:00</span>' +
-            '<span class="rk">Left in this step</span>' +
-          '</div>' +
-          (plan.water
-            ? '<div class="timer-readout">' +
-                '<span class="rv timer-poured">0<small>/ ' + plan.water + ' g</small></span>' +
-                '<span class="rk">Water poured</span>' +
-              '</div>'
-            : '') +
-        '</div>' +
-        '<div class="timer-now"><span class="timer-now-label"></span></div>' +
-        '<ol class="timer-steps">' + rowsHTML + '</ol>' +
-      '</div>' +
-      '<div class="timer-next">' + ICON.arrowDown +
-        '<span class="nx"></span><span class="nt"></span>' +
       '</div>' +
       '<div class="sheet-foot timer-foot">' +
         '<button class="btn btn-ghost timer-side" data-action="timer-reset" aria-label="Restart" title="Restart">' + ICON.replay + '</button>' +

@@ -735,7 +735,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
    so this unambiguously outranks .sheet.narrow{max-width:480px} on
    specificity alone rather than relying on which rule comes later. */
 .overlay-full .sheet.sheet-timer{
-  width:100%;max-width:560px;height:100%;max-height:none;margin:0 auto;
+  width:100%;max-width:var(--page-max);height:100%;max-height:none;margin:0 auto;
   background:transparent;border:none;box-shadow:none;border-radius:0;
   animation:none;
 }
@@ -855,6 +855,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .sheet-timer .iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
 
 .timer-body{display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px var(--pad-sheet) 0;overflow:hidden;min-height:0}
+/* Unwrapped below the desktop breakpoint — their children flow straight
+   into .timer-body's own single flex column, so mobile's ring → readouts
+   → instruction → steps → next-strip order is completely unaffected by
+   this grouping existing in the markup. See min-width:861px below. */
+.timer-hero,.timer-list{display:contents}
 
 /* Now that the timer is always the full screen rather than a card
    capped by dialog chrome, the ring can claim more of that guaranteed
@@ -915,6 +920,34 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .timer-foot .timer-toggle:active{background:var(--roast-700)}
 .timer-foot .timer-side{width:var(--control-h-lg);min-height:var(--control-h-lg);padding:0;flex:none;background:transparent;border-color:var(--border-default);color:var(--text-muted)}
 .timer-foot .timer-side:hover{background:var(--surface-card);border-color:var(--border-strong)}
+
+/* Desktop: a fullscreen timer has real width to spend, and a single
+   column just stretched wide leaves the ring centered in a lot of bare
+   paper either side of it. Split into two: the ring/readouts/instruction
+   as a hero column that stays put, the step list as its own scrolling
+   column beside it — the same shape as a media player's now-playing
+   screen (art fixed, tracklist scrolls). 861px matches the breakpoint
+   the recipe detail page already stacks its own two-column layout at,
+   for one consistent rhythm across the app rather than a bespoke number
+   here. */
+@media(min-width:861px){
+  .timer-body{
+    display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);
+    align-items:start;gap:44px;padding-top:8px;
+  }
+  .timer-hero{display:flex;flex-direction:column;align-items:center;gap:18px}
+  /* align-items:start above (not stretch) so this sizes to its own
+     content instead of being forced to match the hero column's height —
+     stretching it was leaving a five-step recipe's "Next" strip stranded
+     far below the visible rows, with a dead gap between them where the
+     list had nothing left to show but kept the space anyway. A short
+     list now just sits at its natural height, "Next" directly under it;
+     a long one caps at max-height and scrolls within its own box instead
+     of pushing everything below it down the page. */
+  .timer-list{display:flex;flex-direction:column;gap:0}
+  .timer-steps{margin:0;flex:none;max-height:min(52vh,460px);min-height:0;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:6px}
+  .timer-ring{width:min(320px,90%)}
+}
 
 /* Dark mode: v3's own inverse-pine BrewTimer, same light-default/
    dark-override pattern every other surface in this file follows. */
