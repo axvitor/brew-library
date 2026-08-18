@@ -1671,12 +1671,13 @@ function openRecipeForm(existing) {
 function buildRecipeForm(m) {
   var d = m.draft;
   var body =
-    // Roaster first, then the coffee it roasted, then how you brew it —
-    // the order you actually decide these in, narrowing from shelf to cup.
+    // Coffee leads; roaster sits under it and stays in step both ways —
+    // picking a coffee fills the roaster in, and picking a roaster narrows
+    // the coffee list for when the library is long.
     '<div class="row row-2">' +
-      '<div class="field"><label for="f-roaster-sel">Roaster</label>' + formRoasterSelect(m.roaster) + '</div>' +
       '<div class="field" id="coffeeField"><label for="f-coffee-sel">Coffee</label>' +
         coffeeSelectHTML(m.roaster, d.coffeeId) + '</div>' +
+      '<div class="field"><label for="f-roaster-sel">Roaster</label>' + formRoasterSelect(m.roaster) + '</div>' +
     '</div>' +
     '<div class="field"><label for="f-method-sel">Brewing method</label>' + entitySelect('method', d.methodId, 'f-method-sel', 'Select a method…') + '</div>' +
     '<div class="row row-2">' +
@@ -1752,6 +1753,18 @@ function buildRecipeForm(m) {
   // Changing the roaster repaints just the coffee select beneath it, and drops
   // a coffee that no longer belongs to the chosen roaster rather than leaving
   // a selection that contradicts the field above it.
+  // Choosing a coffee fills in its roaster, so the field below never
+  // contradicts the one above it. Only the roaster select is repainted —
+  // collapsing the coffee list out from under a fresh choice is jarring.
+  el.addEventListener('change', function (ev) {
+    if (!ev.target || ev.target.id !== 'f-coffee-sel') return;
+    readRecipeForm(m);
+    var picked = findIn('coffee', d.coffeeId);
+    m.roaster = picked ? (picked.roasterId || '') : '';
+    var rs = el.querySelector('#f-roaster-sel');
+    if (rs) rs.value = m.roaster;
+  });
+
   el.querySelector('#f-roaster-sel').addEventListener('change', function (ev) {
     readRecipeForm(m);
     m.roaster = ev.target.value;
@@ -2409,20 +2422,25 @@ function isLocalPreview() {
   return isLocalHost && new URLSearchParams(location.search).has('preview');
 }
 
-/* Keeps --vv-height / --vv-top in sync with the visual viewport so open
-   sheets stay inside the area the user can actually see. The case that
-   matters is the phone keyboard: iOS doesn't shrink the layout viewport for
-   it (vh and dvh both stay at full height) and just draws the keyboard over
-   the page, which buries a sheet's Save button. visualViewport reports the
-   real visible rectangle, and offsetTop covers the browser scrolling the
-   focused field into view. No-ops on browsers without the API — the CSS
-   falls back to the full viewport, exactly the old behaviour. */
+/* Publishes --kb (pixels hidden behind the keyboard) and --vv-top (how far
+   the browser scrolled the visual viewport) so sheets can sit above the
+   keyboard. iOS doesn't shrink the layout viewport for a keyboard — vh and
+   dvh both stay at full height and the keyboard is simply drawn over the
+   page — so a sheet measured in dvh buries its Save button underneath it.
+
+   These are published as padding on the overlay rather than as its height:
+   the scrim has to keep covering the whole viewport, including the strip
+   behind the keyboard, or dismissing the keyboard reveals an unpainted gap.
+   No-ops without the API, where both fall back to 0 and nothing changes. */
 function trackVisualViewport() {
   var vv = window.visualViewport;
   if (!vv) return;
   var root = document.documentElement;
   var apply = function () {
-    root.style.setProperty('--vv-height', Math.round(vv.height) + 'px');
+    // How much of the layout viewport something (almost always the keyboard)
+    // is covering at the bottom. 0 with no keyboard up.
+    var covered = window.innerHeight - vv.height - vv.offsetTop;
+    root.style.setProperty('--kb', Math.max(0, Math.round(covered)) + 'px');
     root.style.setProperty('--vv-top', Math.round(vv.offsetTop) + 'px');
   };
   vv.addEventListener('resize', apply);

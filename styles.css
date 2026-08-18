@@ -665,9 +665,12 @@ svg.ico-fill{fill:currentColor;stroke:none}
    scrolled it by, keeping the footer above the keyboard. Both fall back to
    the full viewport wherever visualViewport isn't available. */
 .overlay{
-  position:fixed;left:0;right:0;z-index:100;background:var(--surface-scrim);
-  top:var(--vv-top,0px);height:var(--vv-height,100%);
-  display:flex;align-items:center;justify-content:center;padding:24px;
+  position:fixed;inset:0;z-index:100;background:var(--surface-scrim);
+  display:flex;align-items:center;justify-content:center;
+  /* Full-viewport scrim, with the keyboard's height (--kb) held out as
+     padding so the sheet lands above it while the scrim still paints behind
+     it. --vv-top follows the browser scrolling the focused field into view. */
+  padding:calc(24px + var(--vv-top,0px)) 24px calc(24px + var(--kb,0px));
   animation:fade var(--dur-base) var(--ease-out) both;overflow-y:auto;
 }
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -691,7 +694,13 @@ svg.ico-fill{fill:currentColor;stroke:none}
      four corners round equally. The flat 50px bottom figure is an
      unconditional safety margin: mobile browser chrome height varies
      and isn't always reflected by dvh. */
-  .overlay{padding:16px 16px 50px;align-items:flex-end}
+  /* max() keeps the flat 50px chrome margin when no keyboard is up, and
+     switches to a tight 12px gap above the keyboard when one is — stacking
+     both left a dead band between the sheet and the keys. */
+  .overlay{
+    padding:calc(16px + var(--vv-top,0px)) 16px max(50px, calc(var(--kb,0px) + 12px));
+    align-items:flex-end;
+  }
   .sheet{
     max-width:none;border-radius:var(--radius-sheet);margin:0;
     max-height:100%;
