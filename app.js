@@ -800,25 +800,25 @@ function roasterSelectHTML(value) {
     opts + '</select></div>';
 }
 
-// Cupform v3's FilterBar: "search + scrolling filter chips + sort trigger,
-// sized for one thumb… the chip rail scrolls horizontally and never wraps."
-// Brewing method is the one filter dimension that's both bounded (a handful
-// of methods, unlike the open-ended coffee/roaster lists) and the axis
-// people actually browse by first, so it's the one that earns a chip rail
-// instead of living inside a <select> under "More filters". Favourites
-// moves in alongside it as the rail's first chip.
-function methodChipsHTML() {
+// Type-to-filter, backed by a <datalist> — the same pattern the coffee
+// form already uses for its roaster field (free text, matched against
+// known names, no separate open/close interaction). Method stays out of
+// the plain <select> group and out of "More filters": it's the axis
+// people browse by first, so it's worth keeping one keystroke away
+// instead of two taps into a picker.
+function methodFilterHTML() {
   var methods = coll('method').slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
-  var html = '<div class="chip-rail" role="group" aria-label="Filter by method">' +
-    '<button class="chip' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
-      ICON.star + 'Favourites</button>';
-  methods.forEach(function (m) {
+  var current = filters.method ? findIn('method', filters.method) : null;
+  var opts = methods.map(function (m) {
     var n = state.recipes.filter(function (r) { return r.methodId === m.id; }).length;
-    if (!n) return;
-    html += '<button class="chip' + (filters.method === m.id ? ' on' : '') + '" data-action="filter-method" data-id="' +
-      esc(m.id) + '">' + esc(m.name) + '<span class="filter-count">' + n + '</span></button>';
-  });
-  return html + '</div>';
+    return '<option value="' + esc(m.name) + '"' + (n ? ' label="' + n + ' recipe' + (n === 1 ? '' : 's') + '"' : '') + '></option>';
+  }).join('');
+  return '<div class="sel searchable' + (filters.method ? ' on' : '') + '">' +
+    '<input class="inp" id="f-method" list="dl-method" type="search" ' +
+      'value="' + esc(current ? current.name : '') + '" placeholder="All methods" ' +
+      'aria-label="Filter by method" autocomplete="off" />' +
+    '<datalist id="dl-method">' + opts + '</datalist>' +
+  '</div>';
 }
 
 function renderHome() {
@@ -838,13 +838,15 @@ function renderHome() {
     '<div class="search">' + ICON.search +
       '<input id="q" type="search" placeholder="Search recipes…" value="' + esc(filters.q) + '" />' +
     '</div>' +
+    methodFilterHTML() +
+    '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
+      ICON.star + 'Favourites</button>' +
     // Mobile only (see CSS) — everything below folds under this toggle so
-    // the bar collapses to just Search and the chip rail by default.
+    // the bar collapses to just Search, Method and Favourites by default.
     '<button class="pill-toggle filters-toggle' + (moreCount ? ' on' : '') + '" data-action="toggle-more-filters" ' +
       'aria-expanded="' + filtersExpanded + '">' + ICON.sliders + 'More filters' +
       (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
     '</button>' +
-    methodChipsHTML() +
     '<div class="filters-more">' +
       selectHTML('f-coffee', 'coffee', filters.coffee) +
       roasterSelectHTML(filters.roaster) +
@@ -2519,11 +2521,6 @@ document.addEventListener('click', function (ev) {
       render();
       return;
 
-    case 'filter-method':
-      filters.method = filters.method === id ? '' : id;
-      render();
-      return;
-
     case 'toggle-more-filters':
       filtersExpanded = !filtersExpanded;
       render();
@@ -2652,6 +2649,17 @@ document.addEventListener('input', function (ev) {
 });
 
 document.addEventListener('change', function (ev) {
+  if (ev.target.id === 'f-method') {
+    // Free text, matched against known method names — same contract as
+    // the roaster autocomplete: an exact match (typed or picked from the
+    // datalist) applies the filter, anything else clears it rather than
+    // silently leaving a filter active the visible text doesn't explain.
+    var name = ev.target.value.trim().toLowerCase();
+    var match = coll('method').filter(function (m) { return m.name.toLowerCase() === name; })[0];
+    filters.method = match ? match.id : '';
+    renderHome();
+    return;
+  }
   var f = ev.target.getAttribute && ev.target.getAttribute('data-filter');
   if (!f) return;
   if (f === 'sort') filters.sort = ev.target.value;
