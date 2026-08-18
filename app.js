@@ -627,7 +627,28 @@ var ICON = {
     '<path d="M22 9l-6 6M16 9l6 6"/></svg>',
   more: '<svg viewBox="0 0 24 24" class="ico ico-fill"><circle cx="5" cy="12" r="1.6"/>' +
     '<circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
-  check: '<svg viewBox="0 0 24 24" class="ico"><path d="M20 6L9 17l-5-5"/></svg>'
+  check: '<svg viewBox="0 0 24 24" class="ico"><path d="M20 6L9 17l-5-5"/></svg>',
+  // Lucide coffee / store / cog / filter / book-open — the lead glyph in
+  // each filter's combobox names what that field searches, rather than
+  // repeating the magnifier five times across one bar.
+  coffee: '<svg viewBox="0 0 24 24" class="ico"><path d="M6 2v2M10 2v2M14 2v2"/>' +
+    '<path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/></svg>',
+  store: '<svg viewBox="0 0 24 24" class="ico"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7"/>' +
+    '<path d="M2 7h20"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>' +
+    '<path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/></svg>',
+  // disc-3 rather than a cog: a gear's teeth turn to mush at 17px, and a
+  // burr disc is the truer picture of a grinder anyway.
+  disc: '<svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="10"/>' +
+    '<circle cx="12" cy="12" r="2"/>' +
+    '<path d="M6 12c0-1.7.7-3.2 1.8-4.2M18 12c0 1.7-.7 3.2-1.8 4.2"/></svg>',
+  filter: '<svg viewBox="0 0 24 24" class="ico"><path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/></svg>',
+  book: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 7v14"/>' +
+    '<path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>'
+};
+
+// Which glyph leads each filter's combobox.
+var COMBO_ICON = {
+  coffee: 'coffee', roaster: 'store', grinder: 'disc', method: 'filter', style: 'book'
 };
 
 /* ---------------------------------------------------------
@@ -839,7 +860,7 @@ function comboHTML(type) {
   var shown = isOpen ? comboQuery : (current ? current.name : '');
   return '<div class="combo' + (filters[type] ? ' on' : '') + '">' +
     '<div class="combo-field' + (isOpen ? ' open' : '') + '">' +
-      ICON.search +
+      ICON[COMBO_ICON[type]] +
       '<input id="f-combo-' + type + '" class="combo-input" role="combobox" aria-haspopup="listbox" ' +
         'aria-expanded="' + isOpen + '" aria-label="Filter by ' + esc(ENTITIES[type].label) + '" autocomplete="off" ' +
         'placeholder="' + esc(comboLabel(type)) + '" value="' + esc(shown) + '" />' +
