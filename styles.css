@@ -407,33 +407,81 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .search input:focus{border-color:var(--border-focus);box-shadow:var(--shadow-focus)}
 
 .sel{position:relative}
-.sel select,.sel.searchable input{
+.sel select{
   appearance:none;-webkit-appearance:none;
   height:var(--control-h-md);padding:0 34px 0 14px;border-radius:var(--radius-md);
   border:var(--border-w-hairline) solid var(--border-default);background:var(--surface-card);
   font:var(--type-body-sm);color:var(--text-body);outline:none;max-width:190px;
   text-overflow:ellipsis;transition:var(--transition-control);
 }
-.sel select:hover,.sel.searchable input:hover{border-color:var(--border-strong)}
-.sel.searchable input::placeholder{color:var(--text-muted)}
-/* Native ::-webkit-search-cancel-button sits inside the same 34px the
-   chevron reserves, so a typed value gets a real clear affordance without
-   the two overlapping. */
-.sel.searchable input::-webkit-search-cancel-button{margin-right:14px}
+.sel select:hover{border-color:var(--border-strong)}
 .sel::after{
   content:"";position:absolute;right:14px;top:50%;width:7px;height:7px;
   border-right:1.6px solid var(--text-muted);border-bottom:1.6px solid var(--text-muted);
   transform:translateY(-70%) rotate(45deg);pointer-events:none;
 }
-/* A datalist-backed input already gets its own native dropdown indicator
-   (Chromium draws one automatically); our hand-drawn chevron is only for
-   the plain <select> elements, where appearance:none removes theirs. */
-.sel.searchable::after{display:none}
-.sel select:focus,.sel.searchable input:focus{border-color:var(--border-focus);box-shadow:var(--shadow-focus)}
+.sel select:focus{border-color:var(--border-focus);box-shadow:var(--shadow-focus)}
 /* Active filter = pine fill with a paper label, matching v3's selected Chip. */
-.sel.on select,.sel.on.searchable input{border-color:var(--action-primary);color:var(--action-primary-text);background:var(--action-primary);font-weight:var(--weight-semibold)}
-.sel.on.searchable input::placeholder{color:var(--action-primary-text)}
+.sel.on select{border-color:var(--action-primary);color:var(--action-primary-text);background:var(--action-primary);font-weight:var(--weight-semibold)}
 .sel.on::after{border-color:var(--action-primary-text)}
+
+/* Cupform v3.1's Combobox — "a Select once the list outgrew a list."
+   Every entity filter under "More filters" (coffee, roaster, grinder,
+   method, style) uses one — styled from the same field-chrome tokens as
+   .sel but with an owned listbox instead of the browser's native popup,
+   since it needs to filter live as you type and show a count per option. */
+.combo{position:relative;flex:1 1 180px;max-width:220px;min-width:150px}
+.combo-field{
+  display:flex;align-items:center;gap:10px;
+  height:var(--control-h-md);padding:0 10px 0 14px;border-radius:var(--radius-md);
+  border:var(--border-w-hairline) solid var(--border-default);background:var(--surface-card);
+  transition:var(--transition-control);
+}
+.combo-field:hover{border-color:var(--border-strong)}
+.combo-field.open,.combo-field:focus-within{border-color:var(--border-focus);box-shadow:var(--shadow-focus)}
+.combo-field .ico{width:17px;height:17px;color:var(--text-faint);flex:none}
+/* Active filter = pine fill with a paper label, matching v3's selected
+   Chip and .sel.on select — the field itself carries the "on" state, not
+   just its border, so it reads at a glance among the other filters. */
+.combo.on .combo-field{border-color:var(--action-primary);background:var(--action-primary)}
+.combo.on .combo-field .ico{color:var(--action-primary-text)}
+.combo-input{
+  flex:1;min-width:0;height:100%;padding:0;border:none;outline:none;
+  background:transparent;font:var(--type-body-sm);color:var(--text-title);
+}
+.combo-input::placeholder{color:var(--text-faint)}
+.combo.on .combo-input{color:var(--action-primary-text);font-weight:var(--weight-semibold)}
+.combo.on .combo-input::placeholder{color:var(--action-primary-text)}
+.combo-clear,.combo-toggle{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:26px;height:26px;padding:0;border:none;border-radius:var(--radius-full);
+  background:none;color:var(--text-muted);cursor:pointer;
+}
+.combo-clear{background:var(--surface-sunken)}
+.combo-clear .ico{width:12px;height:12px}
+.combo-toggle .ico{width:16px;height:16px;transition:transform var(--dur-base) var(--ease-standard)}
+.combo-field.open .combo-toggle .ico{transform:rotate(180deg)}
+.combo.on .combo-clear,.combo.on .combo-toggle{color:var(--action-primary-text)}
+.combo.on .combo-clear{background:rgba(255,255,255,.22)}
+.combo-list{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:22;
+  max-height:264px;overflow-y:auto;padding:4px;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border:var(--border-w-hairline) solid var(--border-default);border-radius:var(--radius-md);
+  box-shadow:var(--shadow-raised);
+  animation:menuPop var(--dur-fast) var(--ease-out) both;
+}
+.combo-opt{
+  display:flex;align-items:center;gap:10px;min-height:42px;padding:0 10px;
+  border-radius:var(--radius-sm);font:var(--type-body-sm);color:var(--text-title);
+  cursor:pointer;transition:background var(--dur-fast) var(--ease-standard);
+}
+.combo-opt:hover{background:var(--surface-sunken)}
+.combo-opt.on{font-weight:var(--weight-semibold);background:var(--surface-sunken)}
+.combo-opt-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.combo-opt-meta{font:var(--weight-medium) 12px/1 var(--font-mono);color:var(--text-faint)}
+.combo-opt .ico{width:15px;height:15px;color:var(--pine-700);flex:none}
+.combo-empty{padding:14px 10px;font:var(--type-body-sm);color:var(--text-muted)}
 
 /* v3 rounds fully in exactly two places: chips and the timer's start
    button. This is the chip. */
@@ -454,8 +502,8 @@ svg.ico-fill{fill:currentColor;stroke:none}
    toggle is hidden and .filters-more's children flow straight into the
    parent flex row (display:contents unwraps the group with no visual
    trace). Mobile hides the group behind the toggle by default so the bar
-   collapses to just Search, Method, Favourites and the toggle; see the
-   media query below. */
+   collapses to just Search, Favourites and the toggle; see the media
+   query below. */
 .filters-toggle{display:none}
 .filters-more{display:contents}
 /* Only ever rendered alongside .on (moreCount > 0 implies the pill is
@@ -471,14 +519,13 @@ svg.ico-fill{fill:currentColor;stroke:none}
   .filters{position:static;padding:12px}
   .sel select{max-width:none;width:100%}
   .sel{flex:1 1 46%}
-  /* Search and Method (the two type-in fields, most likely to be used
-     first) each take a full-width row of their own; everything else —
-     coffee, roaster, grinder, style, sort, Clear — folds under "More
-     filters" so the bar still opens small. .filters-more reverts from
-     display:contents to a real collapsed/expandable box only at this
-     width. */
-  .filters>.sel.searchable{flex:1 1 100%}
-  .filters>.sel.searchable input{max-width:none;width:100%}
+  /* Search stays put; coffee, roaster, grinder, method, style, sort and
+     Clear all fold under "More filters" so the bar still opens small.
+     .filters-more reverts from display:contents to a real
+     collapsed/expandable box only at this width — each combobox gets a
+     full-width row there, same as a type-in field wants more room than
+     a two-up plain select does. */
+  .combo{flex:1 1 100%;min-width:0;max-width:none}
   /* Favourites and More filters share the row edge-to-edge, matching the
      two-column rhythm the selects below already use, instead of sitting
      as small left-aligned pills with empty space to their right. A true

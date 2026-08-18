@@ -626,7 +626,8 @@ var ICON = {
   soundOff: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
     '<path d="M22 9l-6 6M16 9l6 6"/></svg>',
   more: '<svg viewBox="0 0 24 24" class="ico ico-fill"><circle cx="5" cy="12" r="1.6"/>' +
-    '<circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>'
+    '<circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+  check: '<svg viewBox="0 0 24 24" class="ico"><path d="M20 6L9 17l-5-5"/></svg>'
 };
 
 /* ---------------------------------------------------------
@@ -641,6 +642,15 @@ var filters = { q: '', coffee: '', roaster: '', grinder: '', method: '', style: 
 // on every keystroke and every filter change — it has to survive that.
 var filtersExpanded = false;
 
+// Cupform v3.1's Combobox: "Select for a list that outgrew a list. Typing
+// filters the options; the field still resolves to exactly one value."
+// Every entity filter (coffee, roaster, grinder, method, style) uses one —
+// only one open at a time, so a single pair of module-level slots covers
+// all of them, same reason filtersExpanded is module-level: renderHome()
+// rebuilds the whole bar on every keystroke.
+var openCombo = null; // 'coffee' | 'roaster' | 'grinder' | 'method' | 'style' | null
+var comboQuery = '';
+
 function filtersActive() {
   return !!(filters.q || filters.coffee || filters.roaster || filters.grinder || filters.method || filters.style || filters.fav);
 }
@@ -648,7 +658,7 @@ function filtersActive() {
 // How many of the filters tucked under "More filters" are set — shown as
 // a badge on the toggle so collapsing them doesn't hide that they're active.
 function moreFiltersCount() {
-  return ['coffee', 'roaster', 'grinder', 'style'].filter(function (k) { return !!filters[k]; }).length;
+  return ['coffee', 'roaster', 'grinder', 'method', 'style'].filter(function (k) { return !!filters[k]; }).length;
 }
 
 // Display name for a coffee's roaster: the linked record if it resolves,
@@ -780,44 +790,65 @@ function render() {
 
 /* ---- home ---- */
 
-function selectHTML(id, type, value) {
+// Cupform v3.1's Combobox: "Select for a list that outgrew a list. Typing
+// filters the options; the field still resolves to exactly one value."
+// One generic builder covers all five entity filters — coffee, roaster,
+// grinder, method, style — since they all resolve a recipe field to one
+// picked id the same way; only how a recipe is matched to an option
+// differs (recipes carry a roasterId only indirectly, via their coffee).
+function comboLabel(type) {
+  return 'All ' + (type === 'roaster' ? 'roasters' : ENTITIES[type].plural.toLowerCase());
+}
+function comboMatch(type, r, id) {
+  return type === 'roaster' ? roasterIdOf(r) === id : r[ENTITIES[type].ref] === id;
+}
+function comboOptions(type) {
   var list = coll(type).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
-  var opts = '<option value="">All ' + esc(ENTITIES[type].plural.toLowerCase()) + '</option>';
+  var out = [{ id: '', name: comboLabel(type), count: state.recipes.length }];
   list.forEach(function (e) {
-    opts += '<option value="' + esc(e.id) + '"' + (e.id === value ? ' selected' : '') + '>' + esc(e.name) + '</option>';
+    var n = state.recipes.filter(function (r) { return comboMatch(type, r, e.id); }).length;
+    if (n) out.push({ id: e.id, name: e.name, count: n });
   });
-  return '<div class="sel' + (value ? ' on' : '') + '"><select id="' + id + '" data-filter="' + type + '" aria-label="Filter by ' +
-    esc(ENTITIES[type].label) + '">' + opts + '</select></div>';
+  return out;
 }
 
-function roasterSelectHTML(value) {
-  var list = allRoasters();
-  var opts = '<option value="">All roasters</option>';
-  list.forEach(function (ro) {
-    opts += '<option value="' + esc(ro.id) + '"' + (ro.id === value ? ' selected' : '') + '>' + esc(ro.name) + '</option>';
-  });
-  return '<div class="sel' + (value ? ' on' : '') + '"><select id="f-roaster" data-filter="roaster" aria-label="Filter by roaster">' +
-    opts + '</select></div>';
+function comboListHTML(type) {
+  var term = comboQuery.trim().toLowerCase();
+  var opts = comboOptions(type);
+  var shown = term ? opts.filter(function (o) { return o.name.toLowerCase().indexOf(term) !== -1; }) : opts;
+  var html = '<div class="combo-list" role="listbox" aria-label="' + esc(ENTITIES[type].label) + '">';
+  if (!shown.length) {
+    html += '<div class="combo-empty">Nothing matches “' + esc(comboQuery.trim()) + '”</div>';
+  } else {
+    shown.forEach(function (o) {
+      var on = (filters[type] || '') === o.id;
+      html += '<div class="combo-opt' + (on ? ' on' : '') + '" role="option" aria-selected="' + on +
+        '" data-action="combo-pick" data-type="' + type + '" data-id="' + esc(o.id) + '">' +
+        '<span class="combo-opt-label">' + esc(o.name) + '</span>' +
+        (o.id ? '<span class="combo-opt-meta">' + o.count + '</span>' : '') +
+        (on ? ICON.check : '') +
+      '</div>';
+    });
+  }
+  return html + '</div>';
 }
 
-// Type-to-filter, backed by a <datalist> — the same pattern the coffee
-// form already uses for its roaster field (free text, matched against
-// known names, no separate open/close interaction). Method stays out of
-// the plain <select> group and out of "More filters": it's the axis
-// people browse by first, so it's worth keeping one keystroke away
-// instead of two taps into a picker.
-function methodFilterHTML() {
-  var methods = coll('method').slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
-  var current = filters.method ? findIn('method', filters.method) : null;
-  var opts = methods.map(function (m) {
-    var n = state.recipes.filter(function (r) { return r.methodId === m.id; }).length;
-    return '<option value="' + esc(m.name) + '"' + (n ? ' label="' + n + ' recipe' + (n === 1 ? '' : 's') + '"' : '') + '></option>';
-  }).join('');
-  return '<div class="sel searchable' + (filters.method ? ' on' : '') + '">' +
-    '<input class="inp" id="f-method" list="dl-method" type="search" ' +
-      'value="' + esc(current ? current.name : '') + '" placeholder="All methods" ' +
-      'aria-label="Filter by method" autocomplete="off" />' +
-    '<datalist id="dl-method">' + opts + '</datalist>' +
+function comboHTML(type) {
+  var isOpen = openCombo === type;
+  var current = filters[type] ? findIn(type, filters[type]) : null;
+  var shown = isOpen ? comboQuery : (current ? current.name : '');
+  return '<div class="combo' + (filters[type] ? ' on' : '') + '">' +
+    '<div class="combo-field' + (isOpen ? ' open' : '') + '">' +
+      ICON.search +
+      '<input id="f-combo-' + type + '" class="combo-input" role="combobox" aria-haspopup="listbox" ' +
+        'aria-expanded="' + isOpen + '" aria-label="Filter by ' + esc(ENTITIES[type].label) + '" autocomplete="off" ' +
+        'placeholder="' + esc(comboLabel(type)) + '" value="' + esc(shown) + '" />' +
+      (isOpen && comboQuery ? '<button class="combo-clear" data-action="combo-clear" aria-label="Clear search">' +
+        ICON.close + '</button>' : '') +
+      '<button class="combo-toggle" data-action="combo-toggle" data-type="' + type + '" aria-label="Show all ' +
+        esc(ENTITIES[type].plural.toLowerCase()) + '">' + ICON.chevDown + '</button>' +
+    '</div>' +
+    (isOpen ? comboListHTML(type) : '') +
   '</div>';
 }
 
@@ -838,20 +869,20 @@ function renderHome() {
     '<div class="search">' + ICON.search +
       '<input id="q" type="search" placeholder="Search recipes…" value="' + esc(filters.q) + '" />' +
     '</div>' +
-    methodFilterHTML() +
     '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
       ICON.star + 'Favourites</button>' +
     // Mobile only (see CSS) — everything below folds under this toggle so
-    // the bar collapses to just Search, Method and Favourites by default.
+    // the bar collapses to just Search, Favourites and the toggle.
     '<button class="pill-toggle filters-toggle' + (moreCount ? ' on' : '') + '" data-action="toggle-more-filters" ' +
       'aria-expanded="' + filtersExpanded + '">' + ICON.sliders + 'More filters' +
       (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
     '</button>' +
     '<div class="filters-more">' +
-      selectHTML('f-coffee', 'coffee', filters.coffee) +
-      roasterSelectHTML(filters.roaster) +
-      selectHTML('f-grinder', 'grinder', filters.grinder) +
-      selectHTML('f-style', 'style', filters.style) +
+      comboHTML('coffee') +
+      comboHTML('roaster') +
+      comboHTML('grinder') +
+      comboHTML('method') +
+      comboHTML('style') +
       '<div class="sel"><select id="f-sort" data-filter="sort" aria-label="Sort recipes">' +
         '<option value="new"' + (filters.sort === 'new' ? ' selected' : '') + '>Newest first</option>' +
         '<option value="old"' + (filters.sort === 'old' ? ' selected' : '') + '>Oldest first</option>' +
@@ -2513,6 +2544,7 @@ document.addEventListener('click', function (ev) {
     case 'clear-filters':
       filters.q = ''; filters.coffee = ''; filters.roaster = ''; filters.grinder = '';
       filters.method = ''; filters.style = ''; filters.fav = false;
+      openCombo = null; comboQuery = '';
       render();
       return;
 
@@ -2523,6 +2555,27 @@ document.addEventListener('click', function (ev) {
 
     case 'toggle-more-filters':
       filtersExpanded = !filtersExpanded;
+      render();
+      return;
+
+    case 'combo-toggle':
+      openCombo = openCombo === type ? null : type;
+      comboQuery = '';
+      renderHome();
+      if (openCombo) { var cf = document.getElementById('f-combo-' + openCombo); if (cf) cf.focus(); }
+      return;
+
+    case 'combo-clear':
+      comboQuery = '';
+      renderHome();
+      var cc = document.getElementById('f-combo-' + openCombo);
+      if (cc) cc.focus();
+      return;
+
+    case 'combo-pick':
+      filters[type] = id;
+      openCombo = null;
+      comboQuery = '';
       render();
       return;
 
@@ -2645,21 +2698,44 @@ document.addEventListener('input', function (ev) {
     renderHome();
     var again = document.getElementById('q');
     if (again) { again.focus(); again.setSelectionRange(pos, pos); }
+    return;
+  }
+  if (ev.target.id && ev.target.id.indexOf('f-combo-') === 0) {
+    // Typing filters the option list live, same as the search field —
+    // the value itself only ever gets set by picking an option.
+    openCombo = ev.target.id.slice('f-combo-'.length);
+    comboQuery = ev.target.value;
+    var mpos = ev.target.selectionStart;
+    renderHome();
+    var mAgain = document.getElementById('f-combo-' + openCombo);
+    if (mAgain) { mAgain.focus(); mAgain.setSelectionRange(mpos, mpos); }
   }
 });
 
+// Focusing a field opens its list — starting from a blank query, same as
+// Cupform's Combobox, so the full option set is there to browse.
+document.addEventListener('focusin', function (ev) {
+  if (!ev.target.id || ev.target.id.indexOf('f-combo-') !== 0) return;
+  var type = ev.target.id.slice('f-combo-'.length);
+  if (openCombo === type) return;
+  openCombo = type;
+  comboQuery = '';
+  renderHome();
+  var mf = document.getElementById('f-combo-' + type);
+  if (mf) mf.focus();
+});
+
+// Clicking anywhere outside the open combobox closes it, same as the
+// account and detail overflow menus.
+document.addEventListener('click', function (ev) {
+  if (!openCombo) return;
+  if (ev.target.closest('.combo')) return;
+  openCombo = null;
+  comboQuery = '';
+  renderHome();
+});
+
 document.addEventListener('change', function (ev) {
-  if (ev.target.id === 'f-method') {
-    // Free text, matched against known method names — same contract as
-    // the roaster autocomplete: an exact match (typed or picked from the
-    // datalist) applies the filter, anything else clears it rather than
-    // silently leaving a filter active the visible text doesn't explain.
-    var name = ev.target.value.trim().toLowerCase();
-    var match = coll('method').filter(function (m) { return m.name.toLowerCase() === name; })[0];
-    filters.method = match ? match.id : '';
-    renderHome();
-    return;
-  }
   var f = ev.target.getAttribute && ev.target.getAttribute('data-filter');
   if (!f) return;
   if (f === 'sort') filters.sort = ev.target.value;
@@ -2668,6 +2744,12 @@ document.addEventListener('change', function (ev) {
 });
 
 document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape' && openCombo) {
+    openCombo = null;
+    comboQuery = '';
+    renderHome();
+    return;
+  }
   if (ev.key === 'Escape' && stack.length) { closeModal(); return; }
   if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey) && stack.length) {
     var top = stack[stack.length - 1];
