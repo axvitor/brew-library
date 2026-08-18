@@ -78,6 +78,47 @@ function initialLibraryFor(user) {
    2. Seed data — the reusable entities
    --------------------------------------------------------- */
 
+/* Built-in recipe styles, defined outside seed() so an existing library can
+   be topped up with newly added ones without regenerating everything else.
+   Returns a fresh deep copy each call — these get edited in place once they
+   land in a user's library, and a shared reference would leak one account's
+   edits into the next seed. */
+function builtinStyles() {
+  return JSON.parse(JSON.stringify([
+    { id: 'st-hoffmann', name: 'James Hoffmann', author: 'James Hoffmann',
+      notes: 'Ultimate V60 technique — bloom, two pours, swirl, even drawdown.' },
+    { id: 'st-tetsu-sweet', name: 'Tetsu Kasuya — Sweet', author: 'Tetsu Kasuya',
+      notes: '4:6 method. A smaller first pour pushes the cup toward sweetness.' },
+    { id: 'st-tetsu-acid', name: 'Tetsu Kasuya — Acid', author: 'Tetsu Kasuya',
+      notes: '4:6 method. A larger first pour brings out acidity and brightness.' },
+    { id: 'st-tetsu-strength', name: 'Tetsu Kasuya — Strength', author: 'Tetsu Kasuya',
+      notes: '4:6 method. Balanced first 40%, then the remaining 60% split into three pours for a stronger cup.' },
+    { id: 'st-espresso', name: 'Espresso', author: '',
+      notes: 'A pressure shot rather than a pour: dial in with dose, grind and shot time instead of a pour schedule.' },
+    // The one seeded style with written steps rather than a built-in formula,
+    // which is exactly what makes it editable: hasFormula() is false for it,
+    // so it opens in the step builder like any style you'd write yourself.
+    // Figures are his published Ultimate Pour Over at a 20 g dose — the pours
+    // are cumulative totals, not per-pour amounts.
+    { id: 'st-hedrick', name: 'Lance Hedrick — Ultimate', author: 'Lance Hedrick',
+      notes: 'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, ' +
+        'and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. ' +
+        'Water 100°C for light roasts, 92°C medium, 85°C dark.',
+      steps: [
+        { t: '0:00', label: 'Bloom to 60 g — three times the dose. Swirl gently to wet every ground.' },
+        { t: '0:30', label: 'Pour to 100 g total in a slow, steady circle.' },
+        { t: '1:00', label: 'Pour to 200 g total.' },
+        { t: '1:30', label: 'Pour to 300 g total, or your target weight.' },
+        { t: '2:00', label: 'Let it draw down — aim to finish around 3:00.' }
+      ] }
+  ]));
+}
+
+/* Bump when a new built-in style is added. Tracked per library so the
+   backfill runs exactly once: a style the user then deletes stays deleted
+   rather than reappearing on every load. */
+var BUILTIN_STYLES_VERSION = 1;
+
 function seed() {
   var coffees = [
     { id: "cof-patrick", name: "Patrick", roaster: "", origin: '', process: '', roast: '', varietal: '', notes: '' },
@@ -159,34 +200,7 @@ function seed() {
     { id: 'me-filtro-oster', name: 'Filtro Oster', kind: 'Drip filter', ratio: '', notes: '' }
   ];
 
-  var styles = [
-    { id: 'st-hoffmann', name: 'James Hoffmann', author: 'James Hoffmann',
-      notes: 'Ultimate V60 technique — bloom, two pours, swirl, even drawdown.' },
-    { id: 'st-tetsu-sweet', name: 'Tetsu Kasuya — Sweet', author: 'Tetsu Kasuya',
-      notes: '4:6 method. A smaller first pour pushes the cup toward sweetness.' },
-    { id: 'st-tetsu-acid', name: 'Tetsu Kasuya — Acid', author: 'Tetsu Kasuya',
-      notes: '4:6 method. A larger first pour brings out acidity and brightness.' },
-    { id: 'st-tetsu-strength', name: 'Tetsu Kasuya — Strength', author: 'Tetsu Kasuya',
-      notes: '4:6 method. Balanced first 40%, then the remaining 60% split into three pours for a stronger cup.' },
-    { id: 'st-espresso', name: 'Espresso', author: '',
-      notes: 'A pressure shot rather than a pour: dial in with dose, grind and shot time instead of a pour schedule.' },
-    // The one seeded style with written steps rather than a built-in formula,
-    // which is exactly what makes it editable: hasFormula() is false for it,
-    // so it opens in the step builder like any style you'd write yourself.
-    // Figures are his published Ultimate Pour Over at a 20 g dose — the pours
-    // are cumulative totals, not per-pour amounts.
-    { id: 'st-hedrick', name: 'Lance Hedrick — Ultimate', author: 'Lance Hedrick',
-      notes: 'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, ' +
-        'and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. ' +
-        'Water 100°C for light roasts, 92°C medium, 85°C dark.',
-      steps: [
-        { t: '0:00', label: 'Bloom to 60 g — three times the dose. Swirl gently to wet every ground.' },
-        { t: '0:30', label: 'Pour to 100 g total in a slow, steady circle.' },
-        { t: '1:00', label: 'Pour to 200 g total.' },
-        { t: '1:30', label: 'Pour to 300 g total, or your target weight.' },
-        { t: '2:00', label: 'Let it draw down — aim to finish around 3:00.' }
-      ] }
-  ];
+  var styles = builtinStyles();
 
   var now = Date.now();
   var recipes = [];
@@ -381,11 +395,31 @@ var ENTITIES = {
    The legacy `coffee.roaster` string is deliberately left in place rather
    than deleted: it costs nothing, and it means a library written by this
    version still opens correctly in a tab running the previous one. */
+var libraryMigrated = false;
+
 function normalizeLibrary(lib) {
   if (!lib) return lib;
+  libraryMigrated = false;
   ['coffees', 'grinders', 'methods', 'styles', 'recipes', 'roasters'].forEach(function (k) {
     if (!Array.isArray(lib[k])) lib[k] = [];
   });
+
+  /* Add built-in styles the library doesn't have yet. The SEED_VERSION path
+     can't do this: it only re-seeds *pristine* libraries, and any account
+     that has ever saved anything is no longer pristine — so a style added
+     after someone started using the app would never reach them. This is
+     additive and never removes or overwrites, and the version marker means
+     it runs once per library, so deleting a style you don't want makes it
+     stay gone. */
+  if ((lib.builtinStylesVersion || 0) < BUILTIN_STYLES_VERSION) {
+    var haveStyle = {};
+    lib.styles.forEach(function (st) { haveStyle[st.id] = true; });
+    builtinStyles().forEach(function (st) {
+      if (!haveStyle[st.id]) lib.styles.push(st);
+    });
+    lib.builtinStylesVersion = BUILTIN_STYLES_VERSION;
+    libraryMigrated = true;
+  }
 
   var byName = {};
   lib.roasters.forEach(function (ro) { byName[(ro.name || '').trim().toLowerCase()] = ro; });
@@ -404,6 +438,7 @@ function normalizeLibrary(lib) {
       byName[key] = found;
     }
     c.roasterId = found.id;
+    libraryMigrated = true;
   });
 
   return lib;
@@ -1161,8 +1196,26 @@ function timerAudio() {
   try {
     var Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return null;
-    if (!timerAudioCtx) timerAudioCtx = new Ctx();
-    if (timerAudioCtx.state === 'suspended') timerAudioCtx.resume();
+    if (!timerAudioCtx) {
+      // iPhones silence Web Audio entirely when the ringer switch is off,
+      // which is exactly how a phone sitting on a kitchen counter tends to
+      // be. Declaring the page as playback audio opts out of that (Safari
+      // 16.4+); without it the timer is inaudible on the device it was
+      // built for, with no error to explain why.
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* older Safari */ }
+      timerAudioCtx = new Ctx();
+      // A single silent buffer completes the unlock on iOS, which otherwise
+      // reports a running context that produces nothing.
+      try {
+        var src = timerAudioCtx.createBufferSource();
+        src.buffer = timerAudioCtx.createBuffer(1, 1, 22050);
+        src.connect(timerAudioCtx.destination);
+        src.start(0);
+      } catch (e) { /* priming is best-effort */ }
+    }
+    // Re-checked on every cue, not just at unlock: iOS suspends the context
+    // whenever the app is backgrounded, and a brew outlasts a glance away.
+    if (timerAudioCtx.state !== 'running') timerAudioCtx.resume();
     return timerAudioCtx;
   } catch (e) { return null; }
 }
@@ -1330,7 +1383,7 @@ function openTimer(id) {
   timer = {
     plan: plan, el: buildTimerEl(r, plan), sheet: null,
     elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null,
-    cueSeg: null, warned: false
+    cueSeg: null, warned: false, tick: 0
   };
   timer.sheet = timer.el.querySelector('.sheet-timer');
 
@@ -1415,9 +1468,11 @@ function timerPaint() {
   timer.sheet.classList.add('pulse');
 }
 
-function timerFrame(now) {
+/* One tick of the brew: advance the clock, fire any cue this moment has
+   earned, repaint. Driven from two places on purpose — see timerRun. */
+function timerTick() {
   if (!timer || !timer.running) return;
-  timer.elapsed = timer.from + (now - timer.at) / 1000;
+  timer.elapsed = timer.from + (performance.now() - timer.at) / 1000;
   if (timer.elapsed >= timer.plan.total) {
     timer.elapsed = timer.plan.total;
     timerRun(false);
@@ -1432,7 +1487,14 @@ function timerFrame(now) {
   }
   timerRunCues();
   timerPaint();
-  timer.raf = requestAnimationFrame(timerFrame);
+}
+
+// The smooth half: repaints at display rate, and stops dead when the page is
+// hidden — which is fine, because nothing is visible to paint.
+function timerFrame() {
+  if (!timer || !timer.running) return;
+  timerTick();
+  if (timer && timer.running) timer.raf = requestAnimationFrame(timerFrame);
 }
 
 function timerRun(on) {
@@ -1444,9 +1506,20 @@ function timerRun(on) {
     // Pressing play is the gesture browsers require before audio may start.
     timerAudio();
     timer.raf = requestAnimationFrame(timerFrame);
+    /* The reliable half. requestAnimationFrame is suspended entirely while
+       the page is hidden — a dimmed screen, a lock, another tab — so a
+       timer driven by it alone stops counting and silently skips every cue
+       the moment you put the phone down, which is precisely when you were
+       relying on being told. An interval keeps ticking (throttled, but a
+       brew cue does not need sub-second precision), and elapsed time is
+       read from the wall clock either way, so the two can never disagree. */
+    clearInterval(timer.tick);
+    timer.tick = setInterval(timerTick, 250);
     timerWake(true);
   } else {
     cancelAnimationFrame(timer.raf);
+    clearInterval(timer.tick);
+    timer.tick = 0;
     timerWake(false);
   }
   timerControls();
@@ -1494,6 +1567,7 @@ function timerReset(andRun) {
 function stopTimer() {
   if (!timer) return;
   cancelAnimationFrame(timer.raf);
+  clearInterval(timer.tick);
   timerWake(false);
   timer = null;
 }
@@ -2668,6 +2742,7 @@ function boot() {
       return ready.then(function (lib) {
         state = normalizeLibrary(lib);
         if (needsSeed) window.Brew.saveLibrary(user.uid, state);
+        else if (libraryMigrated) save({ keepPristine: true });
         render();
       });
     }).then(function () {
@@ -2679,6 +2754,16 @@ function boot() {
     });
   });
 }
+
+/* Coming back to a hidden page: restart the paint loop rAF abandoned, and
+   resync immediately rather than waiting up to a quarter second, so the
+   clock is already correct by the time it is looked at. */
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden || !timer || !timer.running) return;
+  timerTick();
+  cancelAnimationFrame(timer.raf);
+  timer.raf = requestAnimationFrame(timerFrame);
+});
 
 trackVisualViewport();
 boot();
