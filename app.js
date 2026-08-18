@@ -585,7 +585,13 @@ var ICON = {
   sliders: '<svg viewBox="0 0 24 24" class="ico"><path d="M21 4H14M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3"/>' +
     '<circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="20" r="2"/></svg>',
   chevUp: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 15l-6-6-6 6"/></svg>',
-  chevDown: '<svg viewBox="0 0 24 24" class="ico"><path d="M6 9l6 6 6-6"/></svg>'
+  chevDown: '<svg viewBox="0 0 24 24" class="ico"><path d="M6 9l6 6 6-6"/></svg>',
+  soundOn: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
+    '<path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 5.2a9 9 0 0 1 0 13.6"/></svg>',
+  soundOff: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
+    '<path d="M22 9l-6 6M16 9l6 6"/></svg>',
+  more: '<svg viewBox="0 0 24 24" class="ico ico-fill"><circle cx="5" cy="12" r="1.6"/>' +
+    '<circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>'
 };
 
 /* ---------------------------------------------------------
@@ -997,16 +1003,28 @@ function renderDetail(id) {
           (c && c.origin ? '<span class="dot"></span><span>' + esc(c.origin) + '</span>' : '') +
         '</div>' +
       '</div>' +
+      // Brewing is what this page is for, so Start timer is the one filled
+      // button and wears the same roast the timer's own control does — the
+      // brew action looks identical everywhere it appears. Edit drops to a
+      // ghost, and the two destructive-adjacent verbs move into an overflow
+      // so four admin controls stop outranking the reason you opened this.
       '<div class="detail-actions">' +
         (timerPlan(r)
-          ? '<button class="btn btn-ghost btn-sm action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
+          ? '<button class="btn btn-accent btn-sm action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
             ICON.play + '<span>Start timer</span></button>'
           : '') +
         '<button class="btn btn-ghost btn-sm fav-desktop" data-action="fav" data-id="' + esc(r.id) + '">' +
           ICON.star + '<span>' + (r.fav ? 'Favourited' : 'Favourite') + '</span></button>' +
-        '<button class="btn btn-ghost btn-sm action-dup" data-action="duplicate" data-id="' + esc(r.id) + '">' + ICON.copy + '<span>Duplicate</span></button>' +
-        '<button class="btn btn-ghost btn-sm btn-danger action-del" data-action="delete" data-id="' + esc(r.id) + '">' + ICON.trash + '<span>Delete</span></button>' +
-        '<button class="btn btn-primary btn-sm action-edit" data-action="edit" data-id="' + esc(r.id) + '">' + ICON.edit + '<span>Edit</span></button>' +
+        '<button class="btn btn-ghost btn-sm action-edit" data-action="edit" data-id="' + esc(r.id) + '">' + ICON.edit + '<span>Edit</span></button>' +
+        '<div class="menu-holder detail-more">' +
+          '<button class="btn btn-ghost btn-sm btn-icon" data-action="toggle-detail-menu" ' +
+            'aria-haspopup="true" aria-expanded="false" aria-label="More actions">' + ICON.more + '</button>' +
+          '<div class="menu" id="detailMenu" hidden>' +
+            '<button data-action="duplicate" data-id="' + esc(r.id) + '">Duplicate</button>' +
+            '<div class="menu-sep"></div>' +
+            '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">Delete recipe…</button>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
     '</div>' +
 
@@ -1115,6 +1133,101 @@ function mmss2(sec) {
 
 var timer = null;
 
+/* ---- brewing cues -------------------------------------------------
+   A brew timer you have to watch is barely a timer: the whole point of
+   the ring, the countdown and the wake lock is to let you keep your eyes
+   on the bed and one hand on the kettle. So each step boundary is
+   announced three ways at once — a tone, a buzz, and a live-region
+   update — because at any given moment one of those is unavailable:
+   the phone is face-down, or on silent, or its owner is using a screen
+   reader. A soft tone lands three seconds early as a "get ready", the
+   firmer one on the boundary itself.
+
+   Tones are synthesized with the Web Audio API rather than shipped as
+   files, which keeps the app's no-build, no-assets shape intact. */
+var timerMuted = (function () {
+  try { return localStorage.getItem('brewTimerMuted') === '1'; } catch (e) { return false; }
+})();
+var timerAudioCtx = null;
+
+function saveTimerMuted() {
+  try { localStorage.setItem('brewTimerMuted', timerMuted ? '1' : '0'); } catch (e) { /* private mode */ }
+}
+
+// Browsers only allow audio to start from a user gesture, so this is called
+// from Start/Resume and from unmuting — never on load.
+function timerAudio() {
+  if (timerMuted) return null;
+  try {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!timerAudioCtx) timerAudioCtx = new Ctx();
+    if (timerAudioCtx.state === 'suspended') timerAudioCtx.resume();
+    return timerAudioCtx;
+  } catch (e) { return null; }
+}
+
+function timerTone(freq, dur, peak, delay) {
+  var ctx = timerAudio();
+  if (!ctx) return;
+  try {
+    var t0 = ctx.currentTime + (delay || 0);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    // Short attack, exponential tail — a soft mallet rather than a beep.
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(peak, t0 + 0.014);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.03);
+  } catch (e) { /* audio unavailable — the buzz and live region still fire */ }
+}
+
+function timerBuzz(pattern) {
+  if (timerMuted) return;
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* unsupported */ }
+}
+
+function timerCue(kind) {
+  if (timerMuted) return;
+  if (kind === 'warn') {
+    timerTone(620, 0.11, 0.055);
+    timerBuzz(60);
+  } else if (kind === 'step') {
+    timerTone(880, 0.16, 0.10);
+    timerTone(1175, 0.18, 0.085, 0.10);
+    timerBuzz(120);
+  } else if (kind === 'done') {
+    timerTone(880, 0.18, 0.10);
+    timerTone(1175, 0.18, 0.10, 0.16);
+    timerTone(1568, 0.34, 0.11, 0.32);
+    timerBuzz([120, 70, 200]);
+  }
+}
+
+// Fired from the animation loop, so only ever while the brew is running.
+function timerRunCues() {
+  var plan = timer.plan, e = timer.elapsed, i = 0, k;
+  for (k = 0; k < plan.segs.length; k++) if (e >= plan.segs[k].start) i = k;
+
+  if (timer.cueSeg == null) timer.cueSeg = i;
+  if (i !== timer.cueSeg) {
+    timer.cueSeg = i;
+    timer.warned = false;
+    timerCue('step');
+  }
+
+  var left = plan.segs[i].end - e;
+  if (!timer.warned && left > 0 && left <= 3) {
+    timer.warned = true;
+    timerCue('warn');
+  }
+}
+
 function buildTimerEl(r, plan) {
   var segHTML = plan.segs.map(function (s, i) {
     var len = (s.end - s.start) / plan.total * RING_C;
@@ -1143,7 +1256,10 @@ function buildTimerEl(r, plan) {
       '<div class="sheet-head">' +
         '<div class="timer-head-row">' +
           '<h2>' + esc(titleOf(r)) + '</h2>' +
-          '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+          '<span class="timer-head-actions">' +
+            '<button class="iconbtn timer-mute" data-action="timer-mute"></button>' +
+            '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+          '</span>' +
         '</div>' +
         '<div class="timer-head-row">' +
           '<span class="timer-eyebrow"></span>' +
@@ -1185,6 +1301,7 @@ function buildTimerEl(r, plan) {
               : '') +
           '</div>' +
           '<div class="timer-now"><span class="timer-now-label"></span></div>' +
+        '<p class="sr-only timer-announce" role="status" aria-live="polite"></p>' +
         '</div>' +
         '<div class="timer-list">' +
           '<ol class="timer-steps">' + rowsHTML + '</ol>' +
@@ -1212,7 +1329,8 @@ function openTimer(id) {
   stopTimer();
   timer = {
     plan: plan, el: buildTimerEl(r, plan), sheet: null,
-    elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null
+    elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null,
+    cueSeg: null, warned: false
   };
   timer.sheet = timer.el.querySelector('.sheet-timer');
 
@@ -1287,6 +1405,8 @@ function timerPaint() {
     rows[k].classList.toggle('is-past', k < i);
   }
   el.querySelector('.timer-now-label').textContent = plan.segs[i].label;
+  var say = el.querySelector('.timer-announce');
+  if (say) say.textContent = 'Step ' + (i + 1) + ' of ' + plan.segs.length + '. ' + plan.segs[i].label;
   if (rows[i]) rows[i].scrollIntoView({ block: 'nearest' });
 
   // Restart the attention pulse from the top on every step change.
@@ -1304,9 +1424,13 @@ function timerFrame(now) {
     timerPaint();
     timer.sheet.classList.add('is-done');
     timer.el.querySelector('.timer-now-label').textContent = 'Brew complete.';
+    var say = timer.el.querySelector('.timer-announce');
+    if (say) say.textContent = 'Brew complete.';
+    timerCue('done');
     timerControls();
     return;
   }
+  timerRunCues();
   timerPaint();
   timer.raf = requestAnimationFrame(timerFrame);
 }
@@ -1317,6 +1441,8 @@ function timerRun(on) {
   if (on) {
     timer.from = timer.elapsed;
     timer.at = performance.now();
+    // Pressing play is the gesture browsers require before audio may start.
+    timerAudio();
     timer.raf = requestAnimationFrame(timerFrame);
     timerWake(true);
   } else {
@@ -1336,6 +1462,17 @@ function timerControls() {
     : timer.elapsed > 0 ? 'Resume' : 'Start brewing';
   btn.innerHTML = (done ? ICON.replay : timer.running ? ICON.pause : ICON.play) +
     '<span>' + label + '</span>';
+
+  var mute = timer.el.querySelector('.timer-mute');
+  if (mute) {
+    mute.innerHTML = timerMuted ? ICON.soundOff : ICON.soundOn;
+    mute.setAttribute('aria-pressed', timerMuted ? 'true' : 'false');
+    var ml = timerMuted ? 'Unmute step cues' : 'Mute step cues';
+    mute.setAttribute('aria-label', ml);
+    mute.setAttribute('title', ml);
+    mute.classList.toggle('is-muted', timerMuted);
+  }
+
   timer.sheet.classList.toggle('is-running', timer.running);
 }
 
@@ -1347,6 +1484,8 @@ function timerReset(andRun) {
   timerRun(false);
   timer.elapsed = 0;
   timer.seg = -1;
+  timer.cueSeg = null;
+  timer.warned = false;
   timer.sheet.classList.remove('is-done');
   timerPaint();
   if (resume) timerRun(true); else timerControls();
@@ -2116,11 +2255,22 @@ function resetAll() {
    13. Events
    --------------------------------------------------------- */
 
-function closeMenu() { document.getElementById('appMenu').hidden = true; }
+// Both popovers dismiss on any click outside themselves. The detail menu is
+// rebuilt by render(), so it's looked up fresh rather than cached.
+function closeMenu() {
+  var app = document.getElementById('appMenu');
+  if (app) app.hidden = true;
+  var detail = document.getElementById('detailMenu');
+  if (detail) {
+    detail.hidden = true;
+    var trigger = document.querySelector('[data-action="toggle-detail-menu"]');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+  }
+}
 
 document.addEventListener('click', function (ev) {
   var t = ev.target.closest('[data-action]');
-  var menu = ev.target.closest('#appMenu, [data-action="toggle-menu"]');
+  var menu = ev.target.closest('#appMenu, [data-action="toggle-menu"], #detailMenu, [data-action="toggle-detail-menu"]');
   if (!menu) closeMenu();
   if (!t) return;
 
@@ -2136,6 +2286,14 @@ document.addEventListener('click', function (ev) {
       ev.preventDefault();
       var mn = document.getElementById('appMenu');
       mn.hidden = !mn.hidden;
+      return;
+
+    case 'toggle-detail-menu':
+      ev.preventDefault();
+      var dm = document.getElementById('detailMenu');
+      if (!dm) return;
+      dm.hidden = !dm.hidden;
+      t.setAttribute('aria-expanded', dm.hidden ? 'false' : 'true');
       return;
 
     case 'new-recipe':
@@ -2186,6 +2344,16 @@ document.addEventListener('click', function (ev) {
       timerReset();
       return;
 
+    case 'timer-mute':
+      ev.preventDefault();
+      timerMuted = !timerMuted;
+      saveTimerMuted();
+      // Unmuting is itself a gesture, so take it as permission to start audio
+      // and confirm with the cue the user just re-enabled.
+      if (!timerMuted) { timerAudio(); timerCue('warn'); }
+      timerControls();
+      return;
+
     // v3's BrewTimer offers a skip — you're ahead of the schedule and
     // want the next instruction now, not in twenty seconds.
     case 'timer-skip':
@@ -2196,6 +2364,7 @@ document.addEventListener('click', function (ev) {
       timer.elapsed = Math.min(timer.plan.total, seg.end);
       timer.from = timer.elapsed;
       timer.at = performance.now();
+      timer.warned = false;
       timerPaint();
       if (timer.elapsed >= timer.plan.total) {
         timerRun(false);
@@ -2212,6 +2381,7 @@ document.addEventListener('click', function (ev) {
 
     case 'duplicate':
       ev.preventDefault();
+      closeMenu();
       var src = recipeById(id);
       if (!src) return;
       var copy = JSON.parse(JSON.stringify(src));
@@ -2227,6 +2397,7 @@ document.addEventListener('click', function (ev) {
 
     case 'delete':
       ev.preventDefault();
+      closeMenu();
       var dr = recipeById(id);
       if (!dr) return;
       confirmDanger({
