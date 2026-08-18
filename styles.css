@@ -440,11 +440,36 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .pill-toggle .ico{width:15px;height:15px}
 .filters .spacer{flex:1}
 
+/* Cupform v3's FilterBar: "search + scrolling filter chips + sort
+   trigger… the chip rail scrolls horizontally and never wraps." Same
+   chip look as .pill-toggle (v3 rounds fully in exactly two places),
+   just laid out in a non-wrapping scroller sized for one thumb. */
+.chip-rail{
+  display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;
+  flex:1 1 100%;order:3;padding-bottom:2px;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.chip-rail::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;height:var(--control-h-md);padding:0 15px;border-radius:var(--radius-full);
+  border:var(--border-w-hairline) solid var(--border-default);
+  background:var(--surface-card);font:var(--type-label);letter-spacing:var(--tracking-label);
+  color:var(--text-body);display:inline-flex;align-items:center;gap:7px;
+  transition:var(--transition-control);white-space:nowrap;
+}
+.chip:hover{background:var(--surface-sunken)}
+.chip.on{border-color:var(--action-primary);background:var(--action-primary);color:var(--action-primary-text)}
+.chip:active{transform:scale(var(--press-scale))}
+.chip .ico{width:15px;height:15px}
+.chip .filter-count{background:rgba(28,23,19,.08);color:inherit}
+.chip.on .filter-count{background:rgba(255,255,255,.22)}
+
 /* "More filters" — desktop shows every filter inline as always, so the
    toggle is hidden and .filters-more's children flow straight into the
    parent flex row (display:contents unwraps the group with no visual
    trace). Mobile hides the group behind the toggle by default so the bar
-   collapses to just Search and Favourites; see the media query below. */
+   collapses to just Search, the chip rail and the toggle; see the media
+   query below. */
 .filters-toggle{display:none}
 .filters-more{display:contents}
 /* Only ever rendered alongside .on (moreCount > 0 implies the pill is
@@ -460,17 +485,17 @@ svg.ico-fill{fill:currentColor;stroke:none}
   .filters{position:static;padding:12px}
   .sel select{max-width:none;width:100%}
   .sel{flex:1 1 46%}
-  /* Search and Favourites stay put; everything else — coffee, roaster,
-     grinder, method, style, sort, Clear — folds under "More filters" so
-     the bar opens small. .filters-more reverts from display:contents to
-     a real collapsed/expandable box only at this width. */
-  /* Favourites and More filters share the row edge-to-edge, matching the
-     two-column rhythm the selects below already use, instead of sitting
-     as small left-aligned pills with empty space to their right. A true
-     999px capsule reads fine at a chip's normal compact width (that's
-     v3's Chip spec, kept as-is on desktop) but stretched across half the
-     row it becomes an elongated stadium shape rather than a button —
-     scaled down to radius-lg here, at full width only. */
+  /* Search, the chip rail (Favourites + method) and "More filters" stay
+     put; everything else — coffee, roaster, grinder, style, sort, Clear —
+     folds under "More filters" so the bar opens small. .filters-more
+     reverts from display:contents to a real collapsed/expandable box
+     only at this width. */
+  /* "More filters" fills the row edge-to-edge next to Search, instead of
+     sitting as a small left-aligned pill with empty space to its right.
+     A true 999px capsule reads fine at a chip's normal compact width
+     (that's v3's Chip spec, kept as-is on desktop) but stretched across
+     half the row it becomes an elongated stadium shape rather than a
+     button — scaled down to radius-lg here, at full width only. */
   .filters>.pill-toggle{flex:1 1 0;justify-content:center;border-radius:var(--radius-lg)}
   .filters-toggle{display:inline-flex}
   .filters-more{

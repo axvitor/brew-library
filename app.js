@@ -648,7 +648,7 @@ function filtersActive() {
 // How many of the filters tucked under "More filters" are set — shown as
 // a badge on the toggle so collapsing them doesn't hide that they're active.
 function moreFiltersCount() {
-  return ['coffee', 'roaster', 'grinder', 'method', 'style'].filter(function (k) { return !!filters[k]; }).length;
+  return ['coffee', 'roaster', 'grinder', 'style'].filter(function (k) { return !!filters[k]; }).length;
 }
 
 // Display name for a coffee's roaster: the linked record if it resolves,
@@ -800,6 +800,27 @@ function roasterSelectHTML(value) {
     opts + '</select></div>';
 }
 
+// Cupform v3's FilterBar: "search + scrolling filter chips + sort trigger,
+// sized for one thumb… the chip rail scrolls horizontally and never wraps."
+// Brewing method is the one filter dimension that's both bounded (a handful
+// of methods, unlike the open-ended coffee/roaster lists) and the axis
+// people actually browse by first, so it's the one that earns a chip rail
+// instead of living inside a <select> under "More filters". Favourites
+// moves in alongside it as the rail's first chip.
+function methodChipsHTML() {
+  var methods = coll('method').slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+  var html = '<div class="chip-rail" role="group" aria-label="Filter by method">' +
+    '<button class="chip' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
+      ICON.star + 'Favourites</button>';
+  methods.forEach(function (m) {
+    var n = state.recipes.filter(function (r) { return r.methodId === m.id; }).length;
+    if (!n) return;
+    html += '<button class="chip' + (filters.method === m.id ? ' on' : '') + '" data-action="filter-method" data-id="' +
+      esc(m.id) + '">' + esc(m.name) + '<span class="filter-count">' + n + '</span></button>';
+  });
+  return html + '</div>';
+}
+
 function renderHome() {
   var list = visibleRecipes();
   var total = state.recipes.length;
@@ -817,19 +838,17 @@ function renderHome() {
     '<div class="search">' + ICON.search +
       '<input id="q" type="search" placeholder="Search recipes…" value="' + esc(filters.q) + '" />' +
     '</div>' +
-    '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
-      ICON.star + 'Favourites</button>' +
     // Mobile only (see CSS) — everything below folds under this toggle so
-    // the bar collapses to just Search and Favourites by default.
+    // the bar collapses to just Search and the chip rail by default.
     '<button class="pill-toggle filters-toggle' + (moreCount ? ' on' : '') + '" data-action="toggle-more-filters" ' +
       'aria-expanded="' + filtersExpanded + '">' + ICON.sliders + 'More filters' +
       (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
     '</button>' +
+    methodChipsHTML() +
     '<div class="filters-more">' +
       selectHTML('f-coffee', 'coffee', filters.coffee) +
       roasterSelectHTML(filters.roaster) +
       selectHTML('f-grinder', 'grinder', filters.grinder) +
-      selectHTML('f-method', 'method', filters.method) +
       selectHTML('f-style', 'style', filters.style) +
       '<div class="sel"><select id="f-sort" data-filter="sort" aria-label="Sort recipes">' +
         '<option value="new"' + (filters.sort === 'new' ? ' selected' : '') + '>Newest first</option>' +
@@ -2497,6 +2516,11 @@ document.addEventListener('click', function (ev) {
 
     case 'toggle-fav-filter':
       filters.fav = !filters.fav;
+      render();
+      return;
+
+    case 'filter-method':
+      filters.method = filters.method === id ? '' : id;
       render();
       return;
 
