@@ -1383,21 +1383,52 @@ function closeModal(force) {
   renderModals();
 }
 function renderModals() {
+  // Every re-render throws the sheets away and builds fresh ones, which resets
+  // their scroll to the top. Adding or removing a step near the bottom of a
+  // long form would otherwise fling you back to the first field, so carry each
+  // sheet's scroll position across the rebuild.
+  var scrolls = stack.map(function (m) {
+    var body = m.el && m.el.querySelector('.sheet-body');
+    return body ? body.scrollTop : 0;
+  });
+
   modalRoot.innerHTML = '';
-  stack.forEach(function (m) {
+  stack.forEach(function (m, i) {
     var el = m.render();
     m.el = el;
     modalRoot.appendChild(el);
+    if (scrolls[i]) {
+      var body = el.querySelector('.sheet-body');
+      if (body) body.scrollTop = scrolls[i];
+    }
   });
+
   document.body.style.overflow = stack.length ? 'hidden' : '';
   var last = stack[stack.length - 1];
-  if (last && last.el) {
+  // Only on the way in. Re-focusing the first field on every re-render is the
+  // other half of the same jump — the browser scrolls whatever it focuses into
+  // view, so editing a step at the bottom would drag the form back to the top.
+  if (last && last.el && !last.focused) {
+    last.focused = true;
     // Confirmation dialogs have no field to land on — fall back to Cancel,
     // the safe default action, so a keyboard user can hit Enter to back
     // out immediately instead of landing nowhere.
     var focusable = last.el.querySelector('input,select,textarea,.dialog .btn-ghost');
     if (focusable && !('ontouchstart' in window)) focusable.focus();
   }
+}
+
+// You pressed "Add step" because you have a step to write — put the cursor in
+// it. Scrolls the fresh row into view too, which is the one case where moving
+// the view is what you actually asked for.
+function focusLastStep(m, rowSelector) {
+  if (!m.el) return;
+  var rows = m.el.querySelectorAll(rowSelector);
+  if (!rows.length) return;
+  var input = rows[rows.length - 1].querySelector('input');
+  if (!input) return;
+  input.focus();
+  if (input.scrollIntoView) input.scrollIntoView({ block: 'nearest' });
 }
 
 function sheet(opts) {
@@ -2231,6 +2262,7 @@ document.addEventListener('click', function (ev) {
       top.capture();
       top.draft.steps.push({ t: '', label: '', water: '' });
       renderModals();
+      focusLastStep(top, '.steprow');
       return;
 
     case 'del-step':
@@ -2245,6 +2277,7 @@ document.addEventListener('click', function (ev) {
       if (!top.draft.steps) top.draft.steps = [];
       top.draft.steps.push({ t: '', label: '' });
       renderModals();
+      focusLastStep(top, '.stepbuild-row');
       return;
 
     case 'style-step-del':
@@ -2376,6 +2409,27 @@ function isLocalPreview() {
   return isLocalHost && new URLSearchParams(location.search).has('preview');
 }
 
+/* Keeps --vv-height / --vv-top in sync with the visual viewport so open
+   sheets stay inside the area the user can actually see. The case that
+   matters is the phone keyboard: iOS doesn't shrink the layout viewport for
+   it (vh and dvh both stay at full height) and just draws the keyboard over
+   the page, which buries a sheet's Save button. visualViewport reports the
+   real visible rectangle, and offsetTop covers the browser scrolling the
+   focused field into view. No-ops on browsers without the API — the CSS
+   falls back to the full viewport, exactly the old behaviour. */
+function trackVisualViewport() {
+  var vv = window.visualViewport;
+  if (!vv) return;
+  var root = document.documentElement;
+  var apply = function () {
+    root.style.setProperty('--vv-height', Math.round(vv.height) + 'px');
+    root.style.setProperty('--vv-top', Math.round(vv.offsetTop) + 'px');
+  };
+  vv.addEventListener('resize', apply);
+  vv.addEventListener('scroll', apply);
+  apply();
+}
+
 function boot() {
   if (isLocalPreview()) {
     state = normalizeLibrary(seed());
@@ -2421,6 +2475,7 @@ function boot() {
   });
 }
 
+trackVisualViewport();
 boot();
 
 })();

@@ -657,8 +657,16 @@ svg.ico-fill{fill:currentColor;stroke:none}
 /* ---------- modal / sheet ----------
    Scrim only, no blur. Mobile keeps the floating-with-margin
    treatment decided earlier rather than v3's docked BottomSheet. */
+/* Sized to the *visual* viewport (see trackVisualViewport in app.js), not the
+   layout viewport. When a phone keyboard opens, iOS leaves dvh/vh at their
+   full height and simply covers the bottom of the page with the keyboard — so
+   a sheet measured in dvh puts its Save button underneath it. --vv-height
+   tracks the actually-visible area and --vv-top the offset the browser
+   scrolled it by, keeping the footer above the keyboard. Both fall back to
+   the full viewport wherever visualViewport isn't available. */
 .overlay{
-  position:fixed;inset:0;z-index:100;background:var(--surface-scrim);
+  position:fixed;left:0;right:0;z-index:100;background:var(--surface-scrim);
+  top:var(--vv-top,0px);height:var(--vv-height,100%);
   display:flex;align-items:center;justify-content:center;padding:24px;
   animation:fade var(--dur-base) var(--ease-out) both;overflow-y:auto;
 }
@@ -668,7 +676,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
   background:var(--surface-card);background-image:var(--texture-paper);
   border-radius:var(--radius-lg);
   box-shadow:var(--shadow-raised);border:var(--border-w-hairline) solid var(--border-hairline);
-  max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);
+  max-height:100%;
   display:flex;flex-direction:column;
   animation:pop var(--dur-base) var(--ease-out) both;margin:auto;
 }
@@ -686,7 +694,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
   .overlay{padding:16px 16px 50px;align-items:flex-end}
   .sheet{
     max-width:none;border-radius:var(--radius-sheet);margin:0;
-    max-height:calc(100vh - 66px);max-height:calc(100dvh - 66px);
+    max-height:100%;
     animation:up var(--dur-sheet) var(--ease-settle) both;
   }
   .sheet-foot{border-radius:0 0 var(--radius-sheet) var(--radius-sheet);padding-bottom:max(14px,env(safe-area-inset-bottom))}
@@ -708,7 +716,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
   border-top:3px solid var(--state-error);
   border-radius:var(--radius-lg);box-shadow:var(--shadow-raised);
   padding:var(--pad-sheet);display:flex;flex-direction:column;gap:12px;
-  max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);overflow-y:auto;
+  max-height:100%;overflow-y:auto;
   animation:pop var(--dur-base) var(--ease-out) both;
 }
 .dialog h2{font:var(--weight-regular) 22px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
