@@ -54,7 +54,7 @@ Five **reusable entities** live independently of the recipes that reference them
 | Coffee | three example coffees — edit or delete them |
 | Grinder | KINGrinder, Starseeker, Timemore C2 |
 | Brewing method | V60, Origami, AeroPress, Timemore B75, Moka Pot, Espresso, Espresso — DEX basket, Espresso — 3Bomber (18g basket), Filtro Oster |
-| Recipe style | James Hoffmann, Tetsu Kasuya (Sweet / Acid / Strength), Espresso |
+| Recipe style | James Hoffmann, Tetsu Kasuya (Sweet / Acid / Strength), Espresso, Lance Hedrick — Ultimate |
 
 Manage all four under **Library** in the header, or add one inline with the `+` button
 next to any selector in the recipe form. A recipe stores only the *id* of each entity,
@@ -89,6 +89,10 @@ automatically; there's nothing to keep in sync by hand.
 - **Espresso** — a pressure shot, not a pour: dialled in by dose, grind and shot time,
   so it deliberately has no pour schedule. Every recipe on an espresso method uses
   this style.
+- **Lance Hedrick — Ultimate** — his catch-all pour over: bloom to 3x the dose, then
+  cumulative pours to 100 g, 200 g and 300 g, finishing the drawdown around 3:00.
+  Unlike the others it ships as *written steps* rather than a formula, so it opens in
+  the step builder and can be edited or re-timed like any style you write yourself.
 
 Styles you add yourself get a **step builder** instead of a formula: add Time +
 Instruction pairs, reorder them, and see the whole brew as a timeline before you

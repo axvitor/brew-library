@@ -14,7 +14,7 @@ var state = null;
 // Bump whenever the built-in starter library below changes. A stored library
 // that is still untouched starter data picks the new version up automatically;
 // once you edit anything, your data is yours and is never replaced.
-var SEED_VERSION = 5;
+var SEED_VERSION = 6;
 
 // The one account that starts with the full 101-recipe starter library.
 // Everyone else invited to the app starts blank — your personal coffee list
@@ -169,7 +169,23 @@ function seed() {
     { id: 'st-tetsu-strength', name: 'Tetsu Kasuya — Strength', author: 'Tetsu Kasuya',
       notes: '4:6 method. Balanced first 40%, then the remaining 60% split into three pours for a stronger cup.' },
     { id: 'st-espresso', name: 'Espresso', author: '',
-      notes: 'A pressure shot rather than a pour: dial in with dose, grind and shot time instead of a pour schedule.' }
+      notes: 'A pressure shot rather than a pour: dial in with dose, grind and shot time instead of a pour schedule.' },
+    // The one seeded style with written steps rather than a built-in formula,
+    // which is exactly what makes it editable: hasFormula() is false for it,
+    // so it opens in the step builder like any style you'd write yourself.
+    // Figures are his published Ultimate Pour Over at a 20 g dose — the pours
+    // are cumulative totals, not per-pour amounts.
+    { id: 'st-hedrick', name: 'Lance Hedrick — Ultimate', author: 'Lance Hedrick',
+      notes: 'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, ' +
+        'and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. ' +
+        'Water 100°C for light roasts, 92°C medium, 85°C dark.',
+      steps: [
+        { t: '0:00', label: 'Bloom to 60 g — three times the dose. Swirl gently to wet every ground.' },
+        { t: '0:30', label: 'Pour to 100 g total in a slow, steady circle.' },
+        { t: '1:00', label: 'Pour to 200 g total.' },
+        { t: '1:30', label: 'Pour to 300 g total, or your target weight.' },
+        { t: '2:00', label: 'Let it draw down — aim to finish around 3:00.' }
+      ] }
   ];
 
   var now = Date.now();
