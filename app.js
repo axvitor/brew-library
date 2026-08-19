@@ -2333,7 +2333,9 @@ var PROCESS_TERMS = [
   ['Induced fermentation', ['fermentacao induzida', 'induced fermentation', 'koji', 'lactic fermentation']]
 ];
 
-var VARIETAL_TERMS = ['Bourbon', 'Yellow Bourbon', 'Red Bourbon', 'Caturra', 'Catuaí', 'Catucaí',
+var VARIETAL_TERMS = ['Bourbon Amarelo', 'Bourbon Vermelho', 'Bourbon Rosa',
+  'Catuaí Amarelo', 'Catuaí Vermelho', 'Catucaí Amarelo', 'Catucaí Vermelho',
+  'Bourbon', 'Yellow Bourbon', 'Red Bourbon', 'Caturra', 'Catuaí', 'Catucaí',
   'Mundo Novo', 'Typica', 'Geisha', 'Gesha', 'SL28', 'SL34', 'Heirloom', 'Pacamara', 'Maragogipe',
   'Icatu', 'Obatã', 'Arara', 'Acaiá', 'Topázio', 'Paraíso', 'Ouro Amarelo', 'Sarchimor', 'Villa Sarchi',
   'Pacas', 'Castillo', 'Caturrão', 'Rubi', 'Tupi', 'Laurina', 'Pink Bourbon'];
@@ -2449,7 +2451,13 @@ function matchVarietals(hay) {
   VARIETAL_TERMS.forEach(function (v) {
     if (termRe(scanNorm(v)).test(hay) && hits.indexOf(v) === -1) hits.push(v);
   });
-  return hits.slice(0, 3).join(', ');
+  // "Bourbon Amarelo" also matches "Bourbon"; report the fuller name only,
+  // or the variety reads as a list of one variety twice over.
+  var kept = hits.filter(function (v) {
+    var n = scanNorm(v);
+    return !hits.some(function (o) { return o !== v && scanNorm(o).indexOf(n) !== -1; });
+  });
+  return kept.slice(0, 3).join(', ');
 }
 
 /* "São João Del Rei - MG" is a place, not a coffee. Recognising the
@@ -2500,6 +2508,15 @@ function regionMatch(text) {
   return null;
 }
 
+/* Bags routinely print the height and the town on one line — "1250M |
+   Carmo De Minas - MG". Lift the height out so the origin is just a place. */
+function stripAltitude(text) {
+  var span = findAltitudeSpan(text);
+  if (!span) return text;
+  return (text.slice(0, span.start) + ' ' + text.slice(span.end))
+    .replace(/\|/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function titleCaseRegion(term) {
   var small = { de: 1, do: 1, da: 1, das: 1, dos: 1, e: 1 };
   return term.split(' ').map(function (w, i) {
@@ -2528,6 +2545,7 @@ var FLAVOUR_TERMS = ['chocolate', 'cacau', 'caramelo', 'caramelizad', 'melado', 
   'avela', 'amendoa', 'amendoim', 'castanha', 'noz', 'nozes', 'baunilha', 'especiaria',
   'rapadura', 'melaco', 'melado', 'nibs', 'pistache', 'tamarindo', 'cupuacu', 'jabuticaba',
   'maracuja', 'goiaba', 'caju', 'acerola', 'graviola', 'pitanga', 'ameixa', 'figo',
+  'toranja', 'bergamota', 'lichia', 'melancia', 'coco', 'amora', 'cereja', 'pera',
   'frutas', 'frutado', 'fruta', 'citrico', 'citrica', 'laranja', 'limao', 'tangerina', 'abacaxi',
   'maca', 'pessego', 'damasco', 'uva', 'morango', 'framboesa', 'banana', 'mamao', 'manga',
   'floral', 'jasmim', 'flores', 'acucar', 'doce', 'cremoso', 'encorpado',
@@ -2578,14 +2596,21 @@ function splitGluedE(frag) {
 /* Puts note fragments back in order. The two passes often disagree about
    which came first, but Portuguese settles it: the "e ..." clause ends the
    list, wherever OCR happened to report it. */
+/* A lone letter with punctuation in front of the list is OCR debris, not a
+   note. Real notes never open on a single letter, and requiring the
+   punctuation keeps "Amêndoas…" and "LARANJA,…" intact. */
+function cleanNoteText(f) {
+  return String(f).replace(/^[A-Za-zÀ-ɏ]\s*[,.;:]\s+/, '').trim();
+}
+
 function assembleNotes(frags) {
   var head = [], tail = [];
   frags.forEach(function (f) {
-    f = splitGluedE(String(f).trim());
+    f = cleanNoteText(splitGluedE(String(f).trim()));
     if (!f) return;
     if (/^e\s/.test(scanNorm(f))) tail.push(f); else head.push(f);
   });
-  return head.concat(tail).join(' ').replace(/\s+/g, ' ').trim();
+  return trimEdges(head.concat(tail).join(' ').replace(/\s+/g, ' '));
 }
 
 function looksLikeNotes(line) {
@@ -2820,6 +2845,8 @@ function parseLabel(data) {
     // and first-wins picks the garbled one as often as the good one. Gather
     // every candidate and settle it once, on evidence, further down.
     if (field === 'origin') {
+      value = trimEdges(stripAltitude(value));
+      if (!value) return;
       if (originCands.indexOf(value) === -1) { originCands.push(value); originWhy[value] = reason; }
       return;
     }
@@ -2900,7 +2927,7 @@ function parseLabel(data) {
     // word is enough here — the stricter test is for finding notes with no
     // label at all.
     if (field === 'notes') {
-      if (flavourHits(val)) { take(); put('notes', trimEdges(val), reason); }
+      if (flavourHits(val)) { take(); put('notes', trimEdges(cleanNoteText(val)), reason); }
       return;
     }
     take();
@@ -2996,7 +3023,7 @@ function parseLabel(data) {
         best = line; bestNoise = noise;
       }
     });
-    if (best) put('notes', trimEdges(best), 'reads as a list of tasting notes');
+    if (best) put('notes', trimEdges(cleanNoteText(best)), 'reads as a list of tasting notes');
   }
 
   // Roaster: match against roasters already in the library first. That is
