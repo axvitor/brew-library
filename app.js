@@ -2359,6 +2359,11 @@ var FIELD_LABELS = [
   // ("Fazenda Samambaia", "Sítio Palmito"). Treating them as labels both
   // stole the name and filed a truncated value under Origin.
   ['producer', ['produtor', 'producer']],
+  // Recognised so they terminate a neighbouring value and never pose as a
+  // coffee name, but mapped to nothing — the app has no field for them.
+  ['skip', ['pontuacao', 'score', 'finalizacao', 'finalizaco', 'safra', 'secagem',
+    'peneira', 'torrefacao', 'validade', 'lote/torrado em', 'lote', 'peso liquido',
+    'peso', 'conteudo', 'moagem', 'embalado em']],
   ['notes', ['notas sensoriais', 'notas de degustacao', 'notas', 'tasting notes', 'sensory', 'descritores', 'sabor', 'aroma', 'notes']]
 ];
 
@@ -2457,6 +2462,7 @@ function looksLikePlace(line) { return PLACE_RE.test(String(line).trim()); }
    two-column panel puts the value nowhere near it. */
 var FLAVOUR_TERMS = ['chocolate', 'cacau', 'caramelo', 'caramelizad', 'melado', 'mel', 'panela',
   'avela', 'amendoa', 'amendoim', 'castanha', 'noz', 'nozes', 'baunilha', 'especiaria',
+  'rapadura', 'melaco', 'melado', 'nibs', 'pistache', 'tamarindo', 'cupuacu', 'jabuticaba',
   'frutas', 'frutado', 'fruta', 'citrico', 'citrica', 'laranja', 'limao', 'tangerina', 'abacaxi',
   'maca', 'pessego', 'damasco', 'uva', 'morango', 'framboesa', 'banana', 'mamao', 'manga',
   'floral', 'jasmim', 'flores', 'acucar', 'doce', 'cremoso', 'encorpado',
@@ -2521,6 +2527,9 @@ function labelHits(line) {
     entry[1].forEach(function (syn) {
       var from = 0, at;
       while ((at = flat.indexOf(syn, from)) !== -1) {
+        // Right boundary as well as left: without it "torra" matches the
+        // start of "torrado em grãos" and invents a roast label.
+        if (/[a-z]/.test(flat.charAt(at + syn.length))) { from = at + syn.length; continue; }
         // Must start on a word boundary, or "notas" matches inside a word.
         if (at === 0 || !/[a-z0-9]/.test(flat.charAt(at - 1))) {
           hits.push({ field: entry[0], label: syn, start: at, end: at + syn.length });
@@ -2544,6 +2553,65 @@ function labelHits(line) {
 function labelAt(line) {
   var hits = labelHits(line);
   return hits.length ? hits[0] : null;
+}
+
+// Where a vocabulary term sits inside a string, so it can be lifted out.
+function findTermSpan(text, table) {
+  var flat = normKeepLen(text);
+  for (var i = 0; i < table.length; i++) {
+    var spellings = table[i][1];
+    for (var j = 0; j < spellings.length; j++) {
+      var t = spellings[j], at = flat.indexOf(t);
+      while (at !== -1) {
+        var okL = at === 0 || !/[a-z0-9]/.test(flat.charAt(at - 1));
+        var okR = !/[a-z0-9]/.test(flat.charAt(at + t.length));
+        if (okL && okR) return { start: at, end: at + t.length, value: table[i][0] };
+        at = flat.indexOf(t, at + 1);
+      }
+    }
+  }
+  return null;
+}
+
+function findAltitudeSpan(text) {
+  var re = /(\d{1,2}[.,]?\d{3}|\d{3,4})\s*(?:m\b|mts|metros|msnm|masl)/i;
+  var m = re.exec(text);
+  if (!m) return null;
+  var v = parseAltitude(m[0]);
+  return v ? { start: m.index, end: m.index + m[0].length, value: v } : null;
+}
+
+/* A very common bag layout stacks a row of labels above a row of values:
+
+     variedade torra          região altitude
+     CATUCAI 24/137 MEDIA     MANTIQUEIRA DE MINAS  1150M
+
+   Splitting that row by position is guesswork, but the tight vocabularies
+   make it unnecessary: lift out the parts that can be identified — the
+   altitude, the roast, the process — and whatever text is left belongs to
+   the label that has no vocabulary to check against. Here "MEDIA" and
+   "1150M" are claimed, leaving exactly "CATUCAI 24/137" and "MANTIQUEIRA
+   DE MINAS" for variedade and região. */
+function distributeRow(hits, valueLine) {
+  var text = valueLine, out = {};
+  [['altitude', findAltitudeSpan],
+   ['roast', function (t) { return findTermSpan(t, ROAST_TERMS); }],
+   ['process', function (t) { return findTermSpan(t, PROCESS_TERMS); }]
+  ].forEach(function (ex) {
+    var idx = -1;
+    hits.forEach(function (h, i) { if (h.field === ex[0] && out[i] === undefined) idx = i; });
+    if (idx === -1) return;
+    var span = ex[1](text);
+    if (!span) return;
+    out[idx] = span.value;
+    text = text.slice(0, span.start) + ' ' + text.slice(span.end);
+  });
+  // Everything unclaimed goes to the first label still waiting for a value.
+  var leftover = text.replace(/\s+/g, ' ').trim();
+  hits.forEach(function (h, i) {
+    if (out[i] === undefined && leftover) { out[i] = leftover; leftover = ''; }
+  });
+  return out;
 }
 
 /* Tesseract hands back per-word bounding boxes, which is the only real
@@ -2597,45 +2665,94 @@ function parseLabel(data) {
     why[field] = reason;
   }
 
+  // Raw text that tier 1 turned into a value. Tracked separately from the
+  // values themselves because a vocabulary rewrites what it matched:
+  // "FERMENTAÇÃO ANAERÓBICA 72H" becomes "Anaerobic", and without the
+  // original recorded here that line stays free to be picked as the name.
+  var consumed = [];
+  function consume(text) {
+    var n = scanNorm(text);
+    if (n && consumed.indexOf(n) === -1) consumed.push(n);
+  }
+
+  // Notes routinely wrap. Keep pulling in following lines while the text so
+  // far ends mid-list, which is precise enough not to swallow the next
+  // section: "LARANJA, FRUTAS AMARELAS," continues, "…& ESPECIARIAS" stops.
+  function withContinuation(val, from) {
+    var out = val;
+    for (var j = from + 1; j < lines.length; j++) {
+      if (!/[,&]$|\se$/.test(out.trim())) break;
+      var nxt = lines[j].trim();
+      if (!nxt || labelHits(nxt).length) break;
+      out += ' ' + nxt;
+      consume(nxt);
+    }
+    return out;
+  }
+
+  function assign(field, val, reason, srcLine) {
+    if (!val) return;
+    if (field === 'skip') return;
+    consume(val);
+    if (srcLine) consume(srcLine);
+    // Where a field has a vocabulary, the labelled text has to produce a
+    // known term to be believed. A label says where to look; only the
+    // vocabulary says whether what's there is valid. "Torra: CAE 5" is
+    // exactly the case — labelled, confident, and pure OCR noise, while
+    // the real "Média" sat elsewhere in the text waiting for tier 2.
+    if (field === 'process') {
+      var pv = matchTerms(scanNorm(val), PROCESS_TERMS);
+      if (pv) put('process', pv, reason);
+      return;
+    }
+    if (field === 'roast') {
+      var rv = matchTerms(scanNorm(val), ROAST_TERMS);
+      if (rv) put('roast', rv, reason);
+      return;
+    }
+    if (field === 'notes') { if (looksLikeNotes(val)) put('notes', val, reason); return; }
+    if (field === 'altitude') put('altitude', parseAltitudeLoose(val) || val, reason);
+    else if (field === 'producer') put('origin', val, reason);
+    else put(field, val, reason);
+  }
+
   // Tier 1 — labelled lines. Most reliable, so it runs first and wins.
   lines.forEach(function (line, i) {
     var hits = labelHits(line);
     if (!hits.length) return;
-    hits.forEach(function (hit, k) {
-      // A value runs to the next label on the same line, or to its end.
+
+    var inline = hits.map(function (hit, k) {
       var stop = (k + 1 < hits.length) ? hits[k + 1].start : line.length;
       var val = line.slice(hit.end, stop).replace(/^\s*[:；;：\-–—]?\s*/, '').trim();
       // OCR mangles label wording constantly, so a short synonym can match
       // half of a longer label and leave the rest looking like a value.
-      if (looksLikeLabelTail(val)) val = '';
-      // Only the last label on a line may borrow the line below, and only
-      // when that line isn't a label itself.
-      if (!val && k === hits.length - 1) {
-        var next = (lines[i + 1] || '').trim();
-        if (next && !labelHits(next).length) val = next;
-      }
-      if (!val) return;
-      var reason = 'from the “' + hit.label + '” line';
+      return looksLikeLabelTail(val) ? '' : val;
+    });
 
-      // Where a field has a vocabulary, the labelled text has to produce a
-      // known term to be believed. A label says where to look; only the
-      // vocabulary says whether what's there is valid. "Torra: CAE 5" is
-      // exactly the case — labelled, confident, and pure OCR noise, while
-      // the real "Média" sat elsewhere in the text waiting for tier 2.
-      if (hit.field === 'process') {
-        var pv = matchTerms(scanNorm(val), PROCESS_TERMS);
-        if (pv) put('process', pv, reason);
-        return;
-      }
-      if (hit.field === 'roast') {
-        var rv = matchTerms(scanNorm(val), ROAST_TERMS);
-        if (rv) put('roast', rv, reason);
-        return;
-      }
-      if (hit.field === 'notes' && !looksLikeNotes(val)) return;
-      if (hit.field === 'altitude') put('altitude', parseAltitudeLoose(val) || val, reason);
-      else if (hit.field === 'producer') put('origin', val, reason);
-      else put(hit.field, val, reason);
+    var anyInline = inline.some(function (v) { return !!v; });
+    var next = (lines[i + 1] || '').trim();
+    var nextIsValues = next && !labelHits(next).length;
+
+    // A whole row of labels with nothing beside them means the values are
+    // on the row below — pair them up rather than letting only the last
+    // label reach down for the lot.
+    if (!anyInline && nextIsValues) {
+      var share = distributeRow(hits, next);
+      consume(next);
+      hits.forEach(function (hit, k) {
+        if (share[k] === undefined) return;
+        var v = (hit.field === 'notes') ? withContinuation(share[k], i + 1) : share[k];
+        assign(hit.field, v, 'labelled “' + hit.label + '” on the line above', next);
+      });
+      return;
+    }
+
+    hits.forEach(function (hit, k) {
+      var val = inline[k];
+      if (!val && k === hits.length - 1 && nextIsValues) val = next;
+      if (!val) return;
+      if (hit.field === 'notes') val = withContinuation(val, val === next ? i + 1 : i);
+      assign(hit.field, val, 'from the “' + hit.label + '” line', line);
     });
   });
 
@@ -2691,8 +2808,8 @@ function parseLabel(data) {
   // Name: the tallest line that isn't a label, a weight, or boilerplate,
   // and isn't something already claimed by another field. Without the last
   // check the town-and-state line wins on height and becomes the name.
-  var taken = [];
-  ['roasterName', 'origin', 'notes', 'varietal', 'process', 'roast'].forEach(function (k) {
+  var taken = consumed.slice();
+  ['roasterName', 'origin', 'notes', 'varietal', 'process', 'roast', 'altitude'].forEach(function (k) {
     if (found[k]) taken.push(scanNorm(found[k]));
   });
   var tall = linesByHeight(data);
