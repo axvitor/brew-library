@@ -347,6 +347,7 @@ var ENTITIES = {
       { k: 'name', l: 'Name', ph: 'Ethiopia Guji', req: true },
       { k: 'roasterName', l: 'Roaster', ph: 'Start typing — reuses a roaster or creates it', kind: 'autocomplete' },
       { k: 'origin', l: 'Origin', ph: 'Region, country' },
+      { k: 'altitude', l: 'Altitude', ph: '1,200 m' },
       { k: 'process', l: 'Process', ph: 'Washed / Natural / Honey' },
       { k: 'roast', l: 'Roast level', ph: 'Light / Medium / Dark' },
       { k: 'varietal', l: 'Varietal', ph: 'Caturra, Geisha…' },
@@ -647,7 +648,9 @@ var ICON = {
     '<path d="M6.5 15.5h11"/></svg>',
   filter: '<svg viewBox="0 0 24 24" class="ico"><path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/></svg>',
   book: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 7v14"/>' +
-    '<path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>'
+    '<path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 8.7A1.7 1.7 0 0 1 4.7 7h2a1 1 0 0 0 .83-.45l.94-1.4A1 1 0 0 1 9.3 4.7h5.4a1 1 0 0 1 .83.45l.94 1.4A1 1 0 0 0 17.3 7h2A1.7 1.7 0 0 1 21 8.7v8.6a1.7 1.7 0 0 1-1.7 1.7H4.7A1.7 1.7 0 0 1 3 17.3z"/>' +
+    '<circle cx="12" cy="13" r="3.4"/></svg>'
 };
 
 // Which glyph leads each filter's combobox.
@@ -1087,7 +1090,8 @@ function renderDetail(id) {
     var ro = c.roasterId ? findIn('roaster', c.roasterId) : null;
     spec('Roaster', roasterNameOf(c));
     if (ro && ro.location) spec('Roastery', ro.location);
-    spec('Origin', c.origin); spec('Process', c.process); spec('Roast', c.roast); spec('Varietal', c.varietal);
+    spec('Origin', c.origin); spec('Altitude', c.altitude);
+    spec('Process', c.process); spec('Roast', c.roast); spec('Varietal', c.varietal);
   }
   spec('Grinder', gr ? gr.name : '—');
   spec('Grind size', r.grindSize);
@@ -2149,6 +2153,501 @@ function saveRecipe(m) {
 }
 
 /* ---------------------------------------------------------
+   9b. Label scan — read a coffee bag with on-device OCR
+
+   Everything here runs in the browser: Tesseract is fetched from a CDN
+   the first time Scan is tapped (never on cold start) and its language
+   data is cached in IndexedDB afterwards, so no photo and no key ever
+   leaves the device.
+
+   OCR gives back raw text, not fields, so the value of this section is
+   the parsing below it. Two tiers: labelled lines ("Processo: Natural")
+   are read directly, and whatever is left is matched against the closed
+   vocabularies a coffee bag actually uses. Anything it can't place is
+   still shown as raw text to copy from, and nothing is written to the
+   form until it's confirmed.
+   --------------------------------------------------------- */
+
+var TESSERACT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+var tesseractLoad = null;
+
+function loadTesseract() {
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  if (tesseractLoad) return tesseractLoad;
+  tesseractLoad = new Promise(function (resolve, reject) {
+    var s = document.createElement('script');
+    s.src = TESSERACT_SRC;
+    s.async = true;
+    s.onload = function () {
+      if (window.Tesseract) resolve(window.Tesseract);
+      else reject(new Error('tesseract-missing'));
+    };
+    // Null the cache on failure so a later tap retries rather than
+    // resolving against a promise that already rejected.
+    s.onerror = function () { tesseractLoad = null; reject(new Error('tesseract-network')); };
+    document.head.appendChild(s);
+  });
+  return tesseractLoad;
+}
+
+/* A phone photo of a bag is the worst case for OCR: 12 megapixels of
+   curved foil, often with light type on a dark background. Scaling down,
+   flattening to grey, stretching the contrast to the full range and
+   inverting dark bags so the engine always sees dark-on-light buys more
+   accuracy than any engine setting does. */
+var SCAN_MAX_EDGE = 1600;
+
+function prepScanImage(file) {
+  return new Promise(function (resolve, reject) {
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var scale = Math.min(1, SCAN_MAX_EDGE / Math.max(img.width, img.height));
+      var w = Math.max(1, Math.round(img.width * scale));
+      var h = Math.max(1, Math.round(img.height * scale));
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      var ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      var data, px;
+      try {
+        data = ctx.getImageData(0, 0, w, h);
+      } catch (e) {
+        // Shouldn't happen for a local file, but never fail the scan over
+        // preprocessing — the untouched canvas still reads.
+        resolve({ canvas: cv, inverted: false });
+        return;
+      }
+      px = data.data;
+      var i, lum, min = 255, max = 0, sum = 0, n = px.length / 4;
+      for (i = 0; i < px.length; i += 4) {
+        lum = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) | 0;
+        px[i] = px[i + 1] = px[i + 2] = lum;
+        if (lum < min) min = lum;
+        if (lum > max) max = lum;
+        sum += lum;
+      }
+      var span = Math.max(1, max - min);
+      // A mostly-dark frame means a dark bag with light type on it.
+      var invert = (sum / n) < 115;
+      for (i = 0; i < px.length; i += 4) {
+        lum = ((px[i] - min) * 255 / span) | 0;
+        if (invert) lum = 255 - lum;
+        px[i] = px[i + 1] = px[i + 2] = lum;
+      }
+      ctx.putImageData(data, 0, 0);
+      resolve({ canvas: cv, inverted: invert });
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('decode')); };
+    img.src = url;
+  });
+}
+
+/* eng+por because this library is overwhelmingly Brazilian — without por
+   the accented words on most of these bags come back mangled. */
+function runScanOCR(canvas, onProgress) {
+  return loadTesseract().then(function (T) {
+    var worker;
+    return T.createWorker('eng+por', 1, {
+      logger: function (msg) {
+        if (msg.status === 'recognizing text' && onProgress) onProgress(msg.progress || 0);
+      }
+    }).then(function (w) {
+      worker = w;
+      return worker.recognize(canvas);
+    }).then(function (res) {
+      var data = res.data;
+      // Auto layout analysis assumes a page of prose and can find almost
+      // nothing on a bag whose text sits in scattered blocks. When that
+      // happens, retry in sparse mode rather than reporting failure.
+      if ((data.text || '').replace(/\s+/g, '').length >= 24) return data;
+      return worker.setParameters({ tessedit_pageseg_mode: '11' })
+        .then(function () { return worker.recognize(canvas); })
+        .then(function (retry) {
+          var a = (data.text || '').replace(/\s+/g, '').length;
+          var b = (retry.data.text || '').replace(/\s+/g, '').length;
+          return b > a ? retry.data : data;
+        });
+    }).then(function (data) {
+      return worker.terminate().then(function () { return data; });
+    }, function (err) {
+      if (worker) { try { worker.terminate(); } catch (e) { /* already gone */ } }
+      throw err;
+    });
+  });
+}
+
+/* ---- parsing ---- */
+
+function deaccent(s) {
+  s = String(s == null ? '' : s);
+  return s.normalize ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : s;
+}
+function scanNorm(s) { return deaccent(s).toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+// Canonical value first, then every spelling worth matching, English and
+// Portuguese. Order is significant: the first hit wins, so the compound
+// terms have to sit above the single words they contain.
+var PROCESS_TERMS = [
+  ['Anaerobic natural', ['anaerobic natural', 'natural anaerobico', 'natural anaerobio']],
+  ['Anaerobic', ['anaerobic', 'anaerobico', 'anaerobia', 'anaerobiose', 'fermentacao anaerobica']],
+  ['Carbonic maceration', ['carbonic maceration', 'maceracao carbonica']],
+  ['Pulped natural', ['pulped natural', 'cereja descascado', 'despolpado', 'descascado', 'semi-washed', 'semi washed']],
+  ['Wet hulled', ['wet hulled', 'giling basah']],
+  ['Washed', ['fully washed', 'washed', 'lavado', 'lavada', 'via umida']],
+  ['Honey', ['yellow honey', 'red honey', 'black honey', 'white honey', 'honey']],
+  ['Natural', ['natural', 'via seca', 'dry process']],
+  ['Induced fermentation', ['fermentacao induzida', 'induced fermentation', 'koji', 'lactic fermentation']]
+];
+
+var VARIETAL_TERMS = ['Bourbon', 'Yellow Bourbon', 'Red Bourbon', 'Caturra', 'Catuaí', 'Catucaí',
+  'Mundo Novo', 'Typica', 'Geisha', 'Gesha', 'SL28', 'SL34', 'Heirloom', 'Pacamara', 'Maragogipe',
+  'Icatu', 'Obatã', 'Arara', 'Acaiá', 'Topázio', 'Paraíso', 'Ouro Amarelo', 'Sarchimor', 'Villa Sarchi',
+  'Pacas', 'Castillo', 'Caturrão', 'Rubi', 'Tupi', 'Laurina', 'Pink Bourbon'];
+
+var ROAST_TERMS = [
+  ['Light', ['light roast', 'light', 'torra clara', 'clara']],
+  ['Medium-dark', ['medium-dark', 'medium dark', 'torra media escura']],
+  ['Medium', ['medium roast', 'medium', 'torra media', 'media']],
+  ['Dark', ['dark roast', 'dark', 'torra escura', 'escura']],
+  ['Omni', ['omni roast', 'omni']]
+];
+
+// Labels a bag prints beside a value, in either language. Matched at the
+// start of a line, so "Processo: Natural" and "Altitude 1.200m" both read.
+var FIELD_LABELS = [
+  ['altitude', ['altitude media', 'altitude', 'elevation', 'elevacao', 'msnm', 'masl']],
+  ['process', ['processamento', 'processo', 'process', 'preparo', 'metodo']],
+  ['varietal', ['variedades', 'variedade', 'varietals', 'varietal', 'variety', 'cultivares', 'cultivar']],
+  ['roast', ['nivel de torra', 'perfil de torra', 'torra', 'roast level', 'roast']],
+  ['origin', ['origem', 'origin', 'regiao', 'region', 'terroir', 'municipio']],
+  // Deliberately not 'fazenda' / 'sitio' / 'farm': on Brazilian bags those
+  // open the coffee's own name far more often than they label a producer
+  // ("Fazenda Samambaia", "Sítio Palmito"). Treating them as labels both
+  // stole the name and filed a truncated value under Origin.
+  ['producer', ['produtor', 'producer']],
+  ['notes', ['notas sensoriais', 'notas de degustacao', 'notas', 'tasting notes', 'sensory', 'descritores', 'sabor', 'aroma', 'notes']]
+];
+
+// Words that look like a headline on a bag but are never the coffee's name.
+var NOT_A_NAME = ['cafe especial', 'especial', 'specialty coffee', 'specialty', 'arabica', '100% arabica',
+  'cafe arabica', 'torrado e moido', 'torrado', 'moido', 'graos', 'grao', 'whole bean', 'beans',
+  'single origin', 'microlote', 'micro lote', 'net wt', 'peso liquido', 'cafe', 'coffee', 'blend',
+  'organico', 'organic', 'premium', 'gourmet', 'produto do brasil', 'brasil', 'brazil'];
+
+function fmtMeters(n) {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/* Altitudes print as "1.200m", "1,200 masl", "1100-1300 m" and every
+   variant between. Pull the numbers, undo whichever thousands separator
+   was used, and keep only values that are plausible for coffee. */
+function parseAltitude(text) {
+  var re = /(\d{1,2}[.,]?\d{3}|\d{3,4})\s*(?:m|metros)?\s*(?:a|à|-|–|—|to|até|ate)\s*(\d{1,2}[.,]?\d{3}|\d{3,4})\s*(?:m\b|mts|metros|msnm|masl|m\.a\.s\.l)/i;
+  var one = /(\d{1,2}[.,]\d{3}|\d{3,4})\s*(?:m\b|mts|metros|msnm|masl|m\.a\.s\.l)/i;
+  function toNum(s) {
+    var n = parseInt(String(s).replace(/[.,]/g, ''), 10);
+    return isNaN(n) ? 0 : n;
+  }
+  function ok(n) { return n >= 200 && n <= 3000; }
+
+  var m = text.match(re);
+  if (m) {
+    var lo = toNum(m[1]), hi = toNum(m[2]);
+    if (ok(lo) && ok(hi) && hi >= lo) return fmtMeters(lo) + '–' + fmtMeters(hi) + ' m';
+  }
+  m = text.match(one);
+  if (m) {
+    var v = toNum(m[1]);
+    if (ok(v)) return fmtMeters(v) + ' m';
+  }
+  return '';
+}
+
+function matchTerms(hay, table) {
+  for (var i = 0; i < table.length; i++) {
+    var spellings = table[i][1];
+    for (var j = 0; j < spellings.length; j++) {
+      if (hay.indexOf(spellings[j]) !== -1) return table[i][0];
+    }
+  }
+  return '';
+}
+
+function matchVarietals(hay) {
+  var hits = [];
+  VARIETAL_TERMS.forEach(function (v) {
+    var n = scanNorm(v);
+    // Word-boundary-ish: avoid "Pacas" firing inside another word.
+    var re = new RegExp('(^|[^a-z0-9])' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z0-9]|$)');
+    if (re.test(hay) && hits.indexOf(v) === -1) hits.push(v);
+  });
+  return hits.slice(0, 3).join(', ');
+}
+
+/* Splits a labelled line into its value, handling both "Label: value" and
+   the just-as-common layout where the value sits on the line below. */
+function labelledValue(lines, idx, label) {
+  var raw = lines[idx];
+  var after = raw.slice(label.length).replace(/^\s*[:：\-–—]?\s*/, '').trim();
+  if (after) return after;
+  var next = (lines[idx + 1] || '').trim();
+  // Only borrow the next line if it isn't itself a label.
+  if (next && !labelAt(scanNorm(next))) return next;
+  return '';
+}
+
+function labelAt(normLine) {
+  for (var i = 0; i < FIELD_LABELS.length; i++) {
+    var syns = FIELD_LABELS[i][1];
+    for (var j = 0; j < syns.length; j++) {
+      if (normLine.indexOf(syns[j]) === 0) return { field: FIELD_LABELS[i][0], label: syns[j] };
+    }
+  }
+  return null;
+}
+
+/* Tesseract hands back per-word bounding boxes, which is the only real
+   signal available for "which line is the coffee's name": on a bag, the
+   name is set biggest. Returns lines sorted by cap height, tallest first. */
+function linesByHeight(data) {
+  var out = [];
+  var lines = (data && data.lines) || [];
+  lines.forEach(function (ln) {
+    var text = (ln.text || '').trim();
+    if (!text) return;
+    var h = 0;
+    if (ln.bbox) h = ln.bbox.y1 - ln.bbox.y0;
+    out.push({ text: text, h: h, conf: ln.confidence || 0 });
+  });
+  out.sort(function (a, b) { return b.h - a.h; });
+  return out;
+}
+
+function looksLikeName(line) {
+  var n = scanNorm(line);
+  if (n.length < 3 || n.length > 44) return false;
+  if (!/[a-z]/.test(n)) return false;               // pure numbers / weights
+  if (/\d+\s*(g|kg|gr|ml)\b/.test(n)) return false; // "250 g"
+  if (NOT_A_NAME.indexOf(n) !== -1) return false;
+  if (labelAt(n)) return false;
+  return true;
+}
+
+/* Turns OCR output into proposed field values. Each result carries a short
+   `why` so the review sheet can say where the guess came from — a guess you
+   can't audit is worse than no guess. */
+function parseLabel(data) {
+  var raw = (data && data.text) || '';
+  var lines = raw.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+  var hay = scanNorm(raw);
+  var found = {};
+  var why = {};
+
+  function put(field, value, reason) {
+    value = String(value || '').trim().replace(/\s+/g, ' ');
+    if (!value || found[field]) return;
+    found[field] = value;
+    why[field] = reason;
+  }
+
+  // Tier 1 — labelled lines. Most reliable, so it runs first and wins.
+  lines.forEach(function (line, i) {
+    var hit = labelAt(scanNorm(line));
+    if (!hit) return;
+    var val = labelledValue(lines, i, hit.label);
+    if (!val) return;
+    if (hit.field === 'altitude') put('altitude', parseAltitude(val) || val, 'from the “' + hit.label + '” line');
+    else if (hit.field === 'producer') put('origin', val, 'from the “' + hit.label + '” line');
+    else put(hit.field, val, 'from the “' + hit.label + '” line');
+  });
+
+  // Tier 2 — vocabulary and pattern matching over everything else.
+  if (!found.altitude) {
+    var alt = parseAltitude(raw);
+    if (alt) put('altitude', alt, 'a height in metres appears on the label');
+  }
+  if (!found.process) {
+    var proc = matchTerms(hay, PROCESS_TERMS);
+    if (proc) put('process', proc, 'the label mentions this process');
+  }
+  if (!found.varietal) {
+    var vars = matchVarietals(hay);
+    if (vars) put('varietal', vars, 'recognised variety name on the label');
+  }
+  if (!found.roast) {
+    var roast = matchTerms(hay, ROAST_TERMS);
+    if (roast) put('roast', roast, 'the label mentions this roast level');
+  }
+
+  // Roaster: match against roasters already in the library first. That is
+  // by far the strongest signal available — OCR rarely reads a logo well,
+  // but it usually gets enough characters for an existing name to match.
+  var roasters = coll('roaster');
+  for (var r = 0; r < roasters.length; r++) {
+    var rn = scanNorm(roasters[r].name);
+    if (rn.length >= 3 && hay.indexOf(rn) !== -1) {
+      put('roasterName', roasters[r].name, 'matches a roaster already in your library');
+      break;
+    }
+  }
+
+  // Name: the tallest line that isn't a label, a weight, or boilerplate —
+  // and isn't the roaster we just matched.
+  var tall = linesByHeight(data);
+  for (var t = 0; t < tall.length; t++) {
+    var cand = tall[t].text.replace(/[|_~"'`]+/g, '').trim();
+    if (!looksLikeName(cand)) continue;
+    if (found.roasterName && scanNorm(cand) === scanNorm(found.roasterName)) continue;
+    put('name', cand, 'the largest text on the label');
+    break;
+  }
+
+  return { found: found, why: why, raw: raw };
+}
+
+/* ---- scan UI ---- */
+
+// Which proposed fields the review sheet offers, in the order the form
+// itself asks for them.
+var SCAN_FIELDS = [
+  ['name', 'Name'], ['roasterName', 'Roaster'], ['origin', 'Origin'],
+  ['altitude', 'Altitude'], ['process', 'Process'], ['roast', 'Roast level'],
+  ['varietal', 'Varietal'], ['notes', 'Tasting notes']
+];
+
+function scanBlockHTML(state) {
+  var inner;
+  if (state && state.busy) {
+    var frac = Math.max(0, Math.min(1, state.progress || 0));
+    inner = '<div class="scan-busy"><div class="scan-bar">' +
+      '<i style="transform:scaleX(' + frac.toFixed(3) + ')"></i></div>' +
+      '<p>' + esc(state.label || 'Reading the label…') + '</p></div>';
+  } else if (state && state.error) {
+    inner = '<p class="scan-err">' + esc(state.error) + '</p>' +
+      '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + 'Try again</button>';
+  } else {
+    inner = '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + 'Scan label</button>' +
+      '<p>Photograph the bag and the fields below fill themselves. Nothing leaves your device.</p>';
+  }
+  return '<div class="scan">' + inner + '</div>';
+}
+
+// Repaints just the scan block. A full renderModals() would throw away
+// whatever is half-typed in the form, and this runs on every progress tick.
+function paintScan(m, state) {
+  if (!m || !m.el) return;
+  var block = m.el.querySelector('.scan');
+  if (!block || !block.isConnected) return;
+  var fresh = document.createElement('div');
+  fresh.innerHTML = scanBlockHTML(state);
+  block.replaceWith(fresh.firstChild);
+}
+
+function pickImage() {
+  return new Promise(function (resolve) {
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    // No `capture` attribute on purpose: leaving it off lets the phone
+    // offer both the camera and an existing photo, which matters for a bag
+    // already drunk and thrown away.
+    inp.addEventListener('change', function () {
+      resolve(inp.files && inp.files[0] ? inp.files[0] : null);
+    });
+    inp.click();
+  });
+}
+
+function startLabelScan(m) {
+  if (!m || m.type !== 'coffee') return;
+  pickImage().then(function (file) {
+    if (!file) return;
+    paintScan(m, { busy: true, progress: 0, label: 'Preparing the photo…' });
+    return prepScanImage(file).then(function (prepped) {
+      paintScan(m, { busy: true, progress: 0, label: 'Loading the reader…' });
+      return runScanOCR(prepped.canvas, function (p) {
+        paintScan(m, { busy: true, progress: p, label: 'Reading the label…' });
+      });
+    }).then(function (data) {
+      // The sheet may have been closed while OCR ran; writing into a
+      // discarded draft would silently lose the result.
+      if (stack.indexOf(m) === -1) return;
+      paintScan(m, null);
+      var parsed = parseLabel(data);
+      var any = false, k;
+      for (k in parsed.found) if (Object.prototype.hasOwnProperty.call(parsed.found, k)) { any = true; break; }
+      if (!any && !parsed.raw.trim()) {
+        paintScan(m, { error: 'Couldn’t read any text. Try filling the frame with the label, in even light.' });
+        return;
+      }
+      openScanReview(m, parsed);
+    });
+  }).catch(function (err) {
+    var msg = 'Something went wrong reading that photo.';
+    if (err && err.message === 'tesseract-network') {
+      msg = 'Couldn’t load the text reader — check your connection and try again.';
+    } else if (err && err.message === 'decode') {
+      msg = 'That file didn’t open as an image.';
+    }
+    paintScan(m, { error: msg });
+  });
+}
+
+/* The review step. Nothing the scanner found is written to the form until
+   it's confirmed here: OCR on a curved foil bag is wrong often enough that
+   silently overwriting typed fields would be the worst possible behaviour.
+   Each row can be unticked, and every value stays editable. */
+function openScanReview(parent, parsed) {
+  var review = {
+    render: function () {
+      var rows = '';
+      SCAN_FIELDS.forEach(function (pair) {
+        var k = pair[0];
+        var val = parsed.found[k];
+        if (!val) return;
+        var current = (parent.draft[k] || '').trim();
+        var clash = current && current.toLowerCase() !== val.toLowerCase();
+        rows += '<div class="scan-row">' +
+          '<label class="scan-take"><input type="checkbox" data-take="' + k + '" checked />' +
+            '<span>' + esc(pair[1]) + '</span></label>' +
+          '<input class="inp" data-val="' + k + '" value="' + esc(val) + '" />' +
+          '<p class="scan-why">' + esc(parsed.why[k] || '') +
+            (clash ? ' · replaces “' + esc(current) + '”' : '') + '</p>' +
+        '</div>';
+      });
+      if (!rows) {
+        rows = '<p class="scan-none">Text came through, but none of it matched a field. ' +
+          'The full reading is below — copy anything useful.</p>';
+      }
+      var body = '<div class="scan-review">' + rows +
+        '<details class="scan-raw"><summary>Everything it read</summary>' +
+        '<pre>' + esc(parsed.raw.trim() || '—') + '</pre></details></div>';
+      var foot = '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+        '<button class="btn btn-primary" data-action="apply-scan">Fill fields</button>';
+      return sheet({ title: 'What the label says', body: body, foot: foot, narrow: true });
+    },
+    applyScan: function () {
+      var el = review.el;
+      if (!el) return;
+      SCAN_FIELDS.forEach(function (pair) {
+        var k = pair[0];
+        var take = el.querySelector('[data-take="' + k + '"]');
+        var val = el.querySelector('[data-val="' + k + '"]');
+        if (take && take.checked && val && val.value.trim()) parent.draft[k] = val.value.trim();
+      });
+      // closeModal re-renders the stack, and the parent form builds from
+      // its draft — so the filled values appear without disturbing
+      // anything already typed into it.
+      closeModal();
+    }
+  };
+  openModal(review);
+}
+
+/* ---------------------------------------------------------
    10. Entity form (coffee / grinder / method / style)
    --------------------------------------------------------- */
 
@@ -2190,6 +2689,9 @@ function openEntityForm(type, existing, onSaved, prefill) {
         return '<div class="field"><label for="e-' + f.k + '">' + esc(f.l) + (f.req ? '' : ' <span style="text-transform:none;letter-spacing:0">(optional)</span>') + '</label>' +
           control + '</div>';
       }).join('');
+      // Only coffees have a printed label to read, so only coffees get the
+      // scanner — and it sits above the fields, since it fills them.
+      if (type === 'coffee') body = scanBlockHTML() + body;
       // A style is the one entity that carries a process, not just facts —
       // so it gets the step builder under its plain fields.
       if (type === 'style') body += styleStepsSectionHTML(d);
@@ -2681,6 +3183,16 @@ document.addEventListener('click', function (ev) {
 
     case 'save-recipe': saveRecipe(top); return;
     case 'save-entity': saveEntity(top); return;
+
+    // Capture first: the scan and its review both re-render the form, and
+    // anything already typed has to survive that round trip.
+    case 'scan-label':
+      if (top && top.capture) top.capture();
+      startLabelScan(top);
+      return;
+    case 'apply-scan':
+      if (top && top.applyScan) top.applyScan();
+      return;
 
     case 'quick-add':
       openEntityForm(type, null, function (newId) {

@@ -855,6 +855,52 @@ svg.ico-fill{fill:currentColor;stroke:none}
   transition:var(--transition-control);
 }
 .inp:hover:not(:focus){border-color:var(--border-strong)}
+
+/* ---------- label scan (on-device OCR) ---------- */
+/* Sits above the coffee form's fields because it fills them. Dashed, like
+   .empty, so it reads as an offer rather than a field you must complete. */
+.scan{
+  margin-bottom:20px;padding:16px;text-align:center;
+  border:var(--border-w-hairline) dashed var(--border-default);
+  border-radius:var(--radius-lg);background:var(--surface-sunken);
+}
+.scan p{margin-top:9px;color:var(--text-muted);font:var(--type-body-sm)}
+.scan .btn .ico{width:16px;height:16px}
+.scan-err{color:var(--state-error);margin-bottom:11px}
+.scan-busy p{margin-top:10px}
+.scan-bar{height:5px;border-radius:var(--radius-full);background:var(--border-hairline);overflow:hidden}
+/* scaleX rather than width: the bar repaints many times a second while
+   OCR runs, and animating width relayouts the sheet on every tick. */
+.scan-bar i{
+  display:block;height:100%;width:100%;background:var(--action-primary);border-radius:inherit;
+  transform-origin:left center;transform:scaleX(0);
+  transition:transform var(--dur-base) var(--ease-out);
+}
+
+/* One proposed value per row: tick to take it, and edit before you do —
+   OCR is right often enough to be useful and wrong often enough that the
+   value has to stay editable here. */
+.scan-row{
+  padding:12px 0;border-bottom:var(--border-w-hairline) solid var(--border-hairline);
+}
+.scan-row:last-of-type{border-bottom:0}
+.scan-take{display:flex;align-items:center;gap:9px;margin-bottom:7px;cursor:pointer}
+.scan-take input{width:17px;height:17px;accent-color:var(--action-primary);flex:none}
+.scan-take span{font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-title)}
+.scan-why{margin-top:6px;color:var(--text-faint);font:var(--type-caption)}
+.scan-none{color:var(--text-muted);font:var(--type-body-sm);margin-bottom:6px}
+.scan-raw{margin-top:16px}
+.scan-raw summary{
+  cursor:pointer;color:var(--text-muted);font:var(--type-body-sm);
+  padding:8px 0;list-style-position:inside;
+}
+.scan-raw summary:hover{color:var(--text-title)}
+.scan-raw pre{
+  margin-top:8px;padding:12px;max-height:210px;overflow:auto;
+  background:var(--surface-sunken);border-radius:var(--radius-md);
+  font:var(--weight-regular) 12px/1.55 var(--font-mono);color:var(--text-muted);
+  white-space:pre-wrap;word-break:break-word;
+}
 textarea.inp{height:auto;min-height:92px;padding:12px 14px;resize:vertical;line-height:var(--leading-body)}
 select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   background-image:linear-gradient(45deg,transparent 50%,var(--text-muted) 50%),linear-gradient(135deg,var(--text-muted) 50%,transparent 50%);
