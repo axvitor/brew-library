@@ -2195,7 +2195,14 @@ function loadTesseract() {
    flattening to grey, stretching the contrast to the full range and
    inverting dark bags so the engine always sees dark-on-light buys more
    accuracy than any engine setting does. */
-var SCAN_MAX_EDGE = 1600;
+/* Tesseract wants roughly 30px of cap height. The spec panel on a bag is
+   often 2mm type, so the frame is what decides whether it is readable at
+   all: fill it with the label and 2mm lands near 40px here; include the
+   whole bag and the shelf behind it and the same text falls under 15px,
+   which no engine setting recovers. Raised from 1600 for a little more
+   headroom, but kept well short of the original photo — the cost is paid
+   twice now that two layout passes run. */
+var SCAN_MAX_EDGE = 2000;
 
 function prepScanImage(file) {
   return new Promise(function (resolve, reject) {
@@ -2245,31 +2252,55 @@ function prepScanImage(file) {
   });
 }
 
-/* eng+por because this library is overwhelmingly Brazilian — without por
-   the accented words on most of these bags come back mangled. */
+/* Portuguese only. Pairing it with eng made the two dictionaries compete
+   over the same Latin script and cost accuracy on the 95% of these bags
+   that are Portuguese; an English bag still reads, just without a
+   matching dictionary behind it. */
+var SCAN_LANG = 'por';
+
+function inkLength(data) {
+  return ((data && data.text) || '').replace(/\s+/g, '').length;
+}
+
+/* Two layout passes, always — not one with a fallback.
+
+   A bag is not a page of prose: auto analysis (PSM 3) groups lines well,
+   which is what picking the name out by text height depends on, while
+   sparse mode (PSM 11) finds scattered small print that auto misses
+   entirely — and on these bags the altitude, process and variety are
+   exactly that small print. Running only the first, as this did, meant
+   the fields most worth having were the ones most likely to be dropped.
+
+   The passes are combined rather than chosen between: line structure
+   comes from whichever read more, and the text of both is concatenated so
+   vocabulary matching gets every character either pass managed to see. */
 function runScanOCR(canvas, onProgress) {
+  function report(pass, p) {
+    if (onProgress) onProgress(pass * 0.5 + Math.max(0, Math.min(1, p || 0)) * 0.5);
+  }
   return loadTesseract().then(function (T) {
-    var worker;
-    return T.createWorker('eng+por', 1, {
+    var worker, autoData;
+    var pass = 0;
+    return T.createWorker(SCAN_LANG, 1, {
       logger: function (msg) {
-        if (msg.status === 'recognizing text' && onProgress) onProgress(msg.progress || 0);
+        if (msg.status === 'recognizing text') report(pass, msg.progress);
       }
     }).then(function (w) {
       worker = w;
       return worker.recognize(canvas);
     }).then(function (res) {
-      var data = res.data;
-      // Auto layout analysis assumes a page of prose and can find almost
-      // nothing on a bag whose text sits in scattered blocks. When that
-      // happens, retry in sparse mode rather than reporting failure.
-      if ((data.text || '').replace(/\s+/g, '').length >= 24) return data;
-      return worker.setParameters({ tessedit_pageseg_mode: '11' })
-        .then(function () { return worker.recognize(canvas); })
-        .then(function (retry) {
-          var a = (data.text || '').replace(/\s+/g, '').length;
-          var b = (retry.data.text || '').replace(/\s+/g, '').length;
-          return b > a ? retry.data : data;
-        });
+      autoData = res.data;
+      pass = 1;
+      return worker.setParameters({ tessedit_pageseg_mode: '11' });
+    }).then(function () {
+      return worker.recognize(canvas);
+    }).then(function (res) {
+      var sparse = res.data;
+      var best = inkLength(sparse) > inkLength(autoData) ? sparse : autoData;
+      return {
+        text: ((autoData && autoData.text) || '') + '\n' + ((sparse && sparse.text) || ''),
+        lines: (best && best.lines) || []
+      };
     }).then(function (data) {
       return worker.terminate().then(function () { return data; });
     }, function (err) {
@@ -2344,26 +2375,45 @@ function fmtMeters(n) {
 /* Altitudes print as "1.200m", "1,200 masl", "1100-1300 m" and every
    variant between. Pull the numbers, undo whichever thousands separator
    was used, and keep only values that are plausible for coffee. */
+function altNum(s) {
+  var n = parseInt(String(s).replace(/[.,]/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+}
+function altPlausible(n) { return n >= 200 && n <= 3000; }
+
 function parseAltitude(text) {
   var re = /(\d{1,2}[.,]?\d{3}|\d{3,4})\s*(?:m|metros)?\s*(?:a|à|-|–|—|to|até|ate)\s*(\d{1,2}[.,]?\d{3}|\d{3,4})\s*(?:m\b|mts|metros|msnm|masl|m\.a\.s\.l)/i;
   var one = /(\d{1,2}[.,]\d{3}|\d{3,4})\s*(?:m\b|mts|metros|msnm|masl|m\.a\.s\.l)/i;
-  function toNum(s) {
-    var n = parseInt(String(s).replace(/[.,]/g, ''), 10);
-    return isNaN(n) ? 0 : n;
-  }
-  function ok(n) { return n >= 200 && n <= 3000; }
 
   var m = text.match(re);
   if (m) {
-    var lo = toNum(m[1]), hi = toNum(m[2]);
-    if (ok(lo) && ok(hi) && hi >= lo) return fmtMeters(lo) + '–' + fmtMeters(hi) + ' m';
+    var lo = altNum(m[1]), hi = altNum(m[2]);
+    if (altPlausible(lo) && altPlausible(hi) && hi >= lo) return fmtMeters(lo) + '–' + fmtMeters(hi) + ' m';
   }
   m = text.match(one);
   if (m) {
-    var v = toNum(m[1]);
-    if (ok(v)) return fmtMeters(v) + ' m';
+    var v = altNum(m[1]);
+    if (altPlausible(v)) return fmtMeters(v) + ' m';
   }
   return '';
+}
+
+/* Used only on a line already known to be an altitude, where the unit is
+   often left off ("Altitude: 1.100 a 1.300") or lost to OCR. Bare numbers
+   can be trusted here precisely because the label vouched for them. */
+function parseAltitudeLoose(text) {
+  var strict = parseAltitude(text);
+  if (strict) return strict;
+  var nums = String(text).match(/\d{1,2}[.,]\d{3}|\d{3,4}/g) || [];
+  var vals = [];
+  nums.forEach(function (raw) {
+    var n = altNum(raw);
+    if (altPlausible(n) && vals.indexOf(n) === -1) vals.push(n);
+  });
+  if (!vals.length) return '';
+  vals.sort(function (a, b) { return a - b; });
+  if (vals.length === 1) return fmtMeters(vals[0]) + ' m';
+  return fmtMeters(vals[0]) + '–' + fmtMeters(vals[vals.length - 1]) + ' m';
 }
 
 function matchTerms(hay, table) {
@@ -2387,26 +2437,45 @@ function matchVarietals(hay) {
   return hits.slice(0, 3).join(', ');
 }
 
-/* Splits a labelled line into its value, handling both "Label: value" and
-   the just-as-common layout where the value sits on the line below. */
-function labelledValue(lines, idx, label) {
-  var raw = lines[idx];
-  var after = raw.slice(label.length).replace(/^\s*[:：\-–—]?\s*/, '').trim();
-  if (after) return after;
-  var next = (lines[idx + 1] || '').trim();
-  // Only borrow the next line if it isn't itself a label.
-  if (next && !labelAt(scanNorm(next))) return next;
-  return '';
+/* Deaccented and lowercased but NOT whitespace-collapsed, so offsets into
+   the result still line up with the original string and a value can be
+   sliced out of it. */
+function normKeepLen(s) { return deaccent(s).toLowerCase(); }
+
+/* Every label on one line, in order. Matching anywhere rather than only at
+   the start matters because OCR regularly runs a two-column spec panel
+   together — "Processo Natural Variedade Catuai" is one line, and anchoring
+   at position 0 threw away everything after the first label. */
+function labelHits(line) {
+  var flat = normKeepLen(line);
+  var hits = [];
+  FIELD_LABELS.forEach(function (entry) {
+    entry[1].forEach(function (syn) {
+      var from = 0, at;
+      while ((at = flat.indexOf(syn, from)) !== -1) {
+        // Must start on a word boundary, or "notas" matches inside a word.
+        if (at === 0 || !/[a-z0-9]/.test(flat.charAt(at - 1))) {
+          hits.push({ field: entry[0], label: syn, start: at, end: at + syn.length });
+        }
+        from = at + syn.length;
+      }
+    });
+  });
+  hits.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
+  // Drop any hit sitting inside an earlier, longer one ("notas" within
+  // "notas sensoriais").
+  var out = [];
+  hits.forEach(function (h) {
+    var last = out[out.length - 1];
+    if (last && h.start < last.end) return;
+    out.push(h);
+  });
+  return out;
 }
 
-function labelAt(normLine) {
-  for (var i = 0; i < FIELD_LABELS.length; i++) {
-    var syns = FIELD_LABELS[i][1];
-    for (var j = 0; j < syns.length; j++) {
-      if (normLine.indexOf(syns[j]) === 0) return { field: FIELD_LABELS[i][0], label: syns[j] };
-    }
-  }
-  return null;
+function labelAt(line) {
+  var hits = labelHits(line);
+  return hits.length ? hits[0] : null;
 }
 
 /* Tesseract hands back per-word bounding boxes, which is the only real
@@ -2432,7 +2501,11 @@ function looksLikeName(line) {
   if (!/[a-z]/.test(n)) return false;               // pure numbers / weights
   if (/\d+\s*(g|kg|gr|ml)\b/.test(n)) return false; // "250 g"
   if (NOT_A_NAME.indexOf(n) !== -1) return false;
-  if (labelAt(n)) return false;
+  // Only a label that *opens* the line disqualifies it. Rejecting any line
+  // that merely contains a label word would throw away real names — plenty
+  // of coffees are called something like "Notas de Cacau".
+  var hits = labelHits(line);
+  if (hits.length && hits[0].start === 0) return false;
   return true;
 }
 
@@ -2455,13 +2528,24 @@ function parseLabel(data) {
 
   // Tier 1 — labelled lines. Most reliable, so it runs first and wins.
   lines.forEach(function (line, i) {
-    var hit = labelAt(scanNorm(line));
-    if (!hit) return;
-    var val = labelledValue(lines, i, hit.label);
-    if (!val) return;
-    if (hit.field === 'altitude') put('altitude', parseAltitude(val) || val, 'from the “' + hit.label + '” line');
-    else if (hit.field === 'producer') put('origin', val, 'from the “' + hit.label + '” line');
-    else put(hit.field, val, 'from the “' + hit.label + '” line');
+    var hits = labelHits(line);
+    if (!hits.length) return;
+    hits.forEach(function (hit, k) {
+      // A value runs to the next label on the same line, or to its end.
+      var stop = (k + 1 < hits.length) ? hits[k + 1].start : line.length;
+      var val = line.slice(hit.end, stop).replace(/^\s*[:：\-–—]?\s*/, '').trim();
+      // Only the last label on a line may borrow the line below, and only
+      // when that line isn't a label itself.
+      if (!val && k === hits.length - 1) {
+        var next = (lines[i + 1] || '').trim();
+        if (next && !labelHits(next).length) val = next;
+      }
+      if (!val) return;
+      var reason = 'from the “' + hit.label + '” line';
+      if (hit.field === 'altitude') put('altitude', parseAltitudeLoose(val) || val, reason);
+      else if (hit.field === 'producer') put('origin', val, reason);
+      else put(hit.field, val, reason);
+    });
   });
 
   // Tier 2 — vocabulary and pattern matching over everything else.
@@ -2530,7 +2614,9 @@ function scanBlockHTML(state) {
       '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + 'Try again</button>';
   } else {
     inner = '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + 'Scan label</button>' +
-      '<p>Photograph the bag and the fields below fill themselves. Nothing leaves your device.</p>';
+      '<p>Fill the frame with the panel that lists origin, altitude and process — ' +
+      'usually the back. Small print needs a close, straight, evenly lit shot. ' +
+      'Nothing leaves your device.</p>';
   }
   return '<div class="scan">' + inner + '</div>';
 }
