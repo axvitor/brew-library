@@ -2364,7 +2364,9 @@ var FIELD_LABELS = [
   ['skip', ['pontuacao', 'score', 'finalizacao', 'finalizaco', 'safra', 'secagem',
     'peneira', 'torrefacao', 'validade', 'lote/torrado em', 'lote', 'peso liquido',
     'peso', 'conteudo', 'moagem', 'embalado em']],
-  ['notes', ['notas sensoriais', 'notas de degustacao', 'notas', 'tasting notes', 'sensory', 'descritores', 'sabor', 'aroma', 'notes']]
+  ['notes', ['perfil sensorial', 'perfil aromatico', 'notas sensoriais',
+    'notas de degustacao', 'notas', 'tasting notes', 'sensory', 'descritores',
+    'sabor', 'aroma', 'notes']]
 ];
 
 // Words that look like a headline on a bag but are never the coffee's name.
@@ -2457,12 +2459,34 @@ var BR_STATES = 'AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|
 var PLACE_RE = new RegExp('\\s[-–—/]\\s*(' + BR_STATES + ')\\s*$', 'i');
 function looksLikePlace(line) { return PLACE_RE.test(String(line).trim()); }
 
+/* The growing regions, few enough to name. Both OCR passes often read the
+   origin differently — one cleanly, one as nonsense ("Cerrado Mineiro" vs
+   "cCerodo Míteio") — and neither carries the debris a noise count could
+   separate. Recognising the actual region is what tells them apart. */
+var REGION_TERMS = ['cerrado mineiro', 'sul de minas', 'mantiqueira de minas', 'matas de minas',
+  'campo das vertentes', 'chapada diamantina', 'alta mogiana', 'mogiana', 'oeste da bahia',
+  'montanhas do espirito santo', 'caparao', 'jequitinhonha', 'chapada de minas',
+  'alto paranaiba', 'zona da mata'];
+// Deliberately absent: "Serra da Canastra", "Guji", "Yirgacheffe", "Huila".
+// They are genuine regions, but on a bag they are usually part of the
+// coffee's own name — and two of them are coffee names in this library, so
+// listing them made the origin swallow the name.
+
+function regionScore(text) {
+  var n = scanNorm(text);
+  for (var i = 0; i < REGION_TERMS.length; i++) {
+    if (n.indexOf(REGION_TERMS[i]) !== -1) return REGION_TERMS[i].length;
+  }
+  return 0;
+}
+
 /* Tasting notes are recognisable by what they are made of, which matters
    because their label is often mangled ("Notas Sencoriais") and the
    two-column panel puts the value nowhere near it. */
 var FLAVOUR_TERMS = ['chocolate', 'cacau', 'caramelo', 'caramelizad', 'melado', 'mel', 'panela',
   'avela', 'amendoa', 'amendoim', 'castanha', 'noz', 'nozes', 'baunilha', 'especiaria',
   'rapadura', 'melaco', 'melado', 'nibs', 'pistache', 'tamarindo', 'cupuacu', 'jabuticaba',
+  'maracuja', 'goiaba', 'caju', 'acerola', 'graviola', 'pitanga', 'ameixa', 'figo',
   'frutas', 'frutado', 'fruta', 'citrico', 'citrica', 'laranja', 'limao', 'tangerina', 'abacaxi',
   'maca', 'pessego', 'damasco', 'uva', 'morango', 'framboesa', 'banana', 'mamao', 'manga',
   'floral', 'jasmim', 'flores', 'acucar', 'doce', 'cremoso', 'encorpado',
@@ -2485,6 +2509,14 @@ function trimEdges(s) {
     .replace(/^[^A-Za-zÀ-ɏ0-9]+/, '')
     .replace(/[^A-Za-zÀ-ɏ0-9)]+$/, '')
     .trim();
+}
+
+function flavourHits(line) {
+  var n = scanNorm(line), hits = 0;
+  for (var i = 0; i < FLAVOUR_TERMS.length; i++) {
+    if (n.indexOf(FLAVOUR_TERMS[i]) !== -1) hits++;
+  }
+  return hits;
 }
 
 function looksLikeNotes(line) {
@@ -2538,6 +2570,9 @@ function labelHits(line) {
       }
     });
   });
+  // Nothing matched exactly, so allow for OCR having damaged the label.
+  if (!hits.length) hits = fuzzyLabelHits(flat);
+
   hits.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
   // Drop any hit sitting inside an earlier, longer one ("notas" within
   // "notas sensoriais").
@@ -2548,6 +2583,57 @@ function labelHits(line) {
     out.push(h);
   });
   return out;
+}
+
+function editDistance(a, b) {
+  var m = a.length, n = b.length, prev = [], cur = [], i, j;
+  if (Math.abs(m - n) > 2) return 99;
+  for (j = 0; j <= n; j++) prev[j] = j;
+  for (i = 1; i <= m; i++) {
+    cur[0] = i;
+    for (j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1,
+        prev[j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+    }
+    for (j = 0; j <= n; j++) prev[j] = cur[j];
+  }
+  return prev[n];
+}
+
+/* Damage to a label is relentless and almost always a single character:
+   "Região" arrives as "Regiõo", "Processo" as "Trocesso", "Sensoriais" as
+   "Sencoriais". Enumerating those misspellings is hopeless; allowing one
+   slip is not. Only used when nothing matched exactly, and only on labels
+   long enough that a near-miss means something. */
+function fuzzyLabelHits(flat) {
+  var words = [], re = /[^\s]+/g, m;
+  while ((m = re.exec(flat)) !== null) {
+    words.push({ text: m[0].replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, ''), start: m.index, end: m.index + m[0].length });
+  }
+  var hits = [];
+  FIELD_LABELS.forEach(function (entry) {
+    entry[1].forEach(function (syn) {
+      var budget = fuzzyBudget(syn.length);
+      if (!budget) return;
+      var span = syn.split(' ').length;
+      for (var i = 0; i + span <= words.length; i++) {
+        var text = [], k;
+        for (k = 0; k < span; k++) text.push(words[i + k].text);
+        var joined = text.join(' ');
+        if (!joined) continue;
+        if (editDistance(joined, syn) <= budget) {
+          hits.push({ field: entry[0], label: syn, start: words[i].start, end: words[i + span - 1].end });
+          return; // one fuzzy hit per synonym is plenty
+        }
+      }
+    });
+  });
+  return hits;
+}
+
+function fuzzyBudget(len) {
+  if (len < 6) return 0;
+  return len >= 9 ? 2 : 1;
 }
 
 function labelAt(line) {
@@ -2660,9 +2746,30 @@ function parseLabel(data) {
 
   function put(field, value, reason) {
     value = String(value || '').trim().replace(/\s+/g, ' ');
-    if (!value || found[field]) return;
+    if (!value) return;
+    // Origin is the one field the two OCR passes routinely disagree on,
+    // and first-wins picks the garbled one as often as the good one. Gather
+    // every candidate and settle it once, on evidence, further down.
+    if (field === 'origin') {
+      if (originCands.indexOf(value) === -1) { originCands.push(value); originWhy[value] = reason; }
+      return;
+    }
+    if (found[field]) return;
     found[field] = value;
     why[field] = reason;
+  }
+  var originCands = [], originWhy = {};
+
+  /* Settle origin: a named region beats a town-and-state, which beats bare
+     text; cleaner beats noisier; longer breaks the tie. */
+  function resolveOrigin() {
+    var best = null, bestScore = -Infinity;
+    originCands.forEach(function (c) {
+      var score = (looksLikePlace(c) ? 500 : 0) + regionScore(c) * 10
+        - noiseCount(c) * 2 - (/\d/.test(c) ? 40 : 0) + c.length * 0.1;
+      if (score > bestScore) { bestScore = score; best = c; }
+    });
+    if (best) { found.origin = trimEdges(best); why.origin = originWhy[best]; }
   }
 
   // Raw text that tier 1 turned into a value. Tracked separately from the
@@ -2679,13 +2786,18 @@ function parseLabel(data) {
   // far ends mid-list, which is precise enough not to swallow the next
   // section: "LARANJA, FRUTAS AMARELAS," continues, "…& ESPECIARIAS" stops.
   function withContinuation(val, from) {
-    var out = val;
-    for (var j = from + 1; j < lines.length; j++) {
-      if (!/[,&]$|\se$/.test(out.trim())) break;
+    var out = val, added = 0;
+    for (var j = from + 1; j < lines.length && added < 3; j++) {
       var nxt = lines[j].trim();
       if (!nxt || labelHits(nxt).length) break;
+      // Continue either when the text so far stops mid-list, or when the
+      // next line is plainly more flavours — OCR splits notes both ways
+      // ("LARANJA, FRUTAS AMARELAS," / "ECARAMELO" then "MARACUJÁ DO CERRADO").
+      var midList = /[,&]$|\se$/.test(out.trim());
+      if (!midList && !flavourHits(nxt)) break;
       out += ' ' + nxt;
       consume(nxt);
+      added++;
     }
     return out;
   }
@@ -2693,8 +2805,13 @@ function parseLabel(data) {
   function assign(field, val, reason, srcLine) {
     if (!val) return;
     if (field === 'skip') return;
-    consume(val);
-    if (srcLine) consume(srcLine);
+    // Only text that is actually accepted counts as consumed. Marking it
+    // up front meant a value the vocabulary went on to reject still burned
+    // the line, and it could no longer be offered as the coffee's name.
+    function take() {
+      consume(val);
+      if (srcLine) consume(srcLine);
+    }
     // Where a field has a vocabulary, the labelled text has to produce a
     // known term to be believed. A label says where to look; only the
     // vocabulary says whether what's there is valid. "Torra: CAE 5" is
@@ -2702,18 +2819,25 @@ function parseLabel(data) {
     // the real "Média" sat elsewhere in the text waiting for tier 2.
     if (field === 'process') {
       var pv = matchTerms(scanNorm(val), PROCESS_TERMS);
-      if (pv) put('process', pv, reason);
+      if (pv) { take(); put('process', pv, reason); }
       return;
     }
     if (field === 'roast') {
       var rv = matchTerms(scanNorm(val), ROAST_TERMS);
-      if (rv) put('roast', rv, reason);
+      if (rv) { take(); put('roast', rv, reason); }
       return;
     }
-    if (field === 'notes') { if (looksLikeNotes(val)) put('notes', val, reason); return; }
+    // A label already vouches that this is a tasting note, so one flavour
+    // word is enough here — the stricter test is for finding notes with no
+    // label at all.
+    if (field === 'notes') {
+      if (flavourHits(val)) { take(); put('notes', trimEdges(val), reason); }
+      return;
+    }
+    take();
     if (field === 'altitude') put('altitude', parseAltitudeLoose(val) || val, reason);
-    else if (field === 'producer') put('origin', val, reason);
-    else put(field, val, reason);
+    else if (field === 'producer') put('origin', trimEdges(val), reason);
+    else put(field, trimEdges(val), reason);
   }
 
   // Tier 1 — labelled lines. Most reliable, so it runs first and wins.
@@ -2726,7 +2850,11 @@ function parseLabel(data) {
       var val = line.slice(hit.end, stop).replace(/^\s*[:；;：\-–—]?\s*/, '').trim();
       // OCR mangles label wording constantly, so a short synonym can match
       // half of a longer label and leave the rest looking like a value.
-      return looksLikeLabelTail(val) ? '' : val;
+      if (looksLikeLabelTail(val)) return '';
+      // Punctuation debris is not a value. Treating it as one also stopped
+      // the label reaching down to the real value on the next line.
+      if (!/[A-Za-zÀ-ɏ0-9]/.test(val)) return '';
+      return val;
     });
 
     var anyInline = inline.some(function (v) { return !!v; });
@@ -2738,7 +2866,6 @@ function parseLabel(data) {
     // label reach down for the lot.
     if (!anyInline && nextIsValues) {
       var share = distributeRow(hits, next);
-      consume(next);
       hits.forEach(function (hit, k) {
         if (share[k] === undefined) return;
         var v = (hit.field === 'notes') ? withContinuation(share[k], i + 1) : share[k];
@@ -2758,8 +2885,14 @@ function parseLabel(data) {
 
   // Tier 2 — vocabulary and pattern matching over everything else.
   if (!found.altitude) {
-    var alt = parseAltitude(raw);
-    if (alt) put('altitude', alt, 'a height in metres appears on the label');
+    for (var ai = 0; ai < lines.length; ai++) {
+      var alt = parseAltitude(lines[ai]);
+      if (alt) {
+        put('altitude', alt, 'a height in metres appears on the label');
+        consume(lines[ai]);
+        break;
+      }
+    }
   }
   if (!found.process) {
     var proc = matchTerms(hay, PROCESS_TERMS);
@@ -2773,9 +2906,13 @@ function parseLabel(data) {
     var roast = matchTerms(hay, ROAST_TERMS);
     if (roast) put('roast', roast, 'the label mentions this roast level');
   }
-  if (!found.origin) {
-    for (var pi = 0; pi < lines.length; pi++) {
-      if (looksLikePlace(lines[pi])) { put('origin', lines[pi], 'reads as a town and state'); break; }
+  for (var pi = 0; pi < lines.length; pi++) {
+    // Skip anything tier 1 already carved up, or the un-split row comes
+    // back and beats the clean half taken out of it.
+    if (consumed.indexOf(scanNorm(lines[pi])) !== -1) continue;
+    if (looksLikePlace(lines[pi])) put('origin', lines[pi], 'reads as a town and state');
+    else if (regionScore(lines[pi]) && !labelHits(lines[pi]).length) {
+      put('origin', lines[pi], 'names a known growing region');
     }
   }
   if (!found.notes) {
@@ -2808,6 +2945,8 @@ function parseLabel(data) {
   // Name: the tallest line that isn't a label, a weight, or boilerplate,
   // and isn't something already claimed by another field. Without the last
   // check the town-and-state line wins on height and becomes the name.
+  resolveOrigin();
+
   var taken = consumed.slice();
   ['roasterName', 'origin', 'notes', 'varietal', 'process', 'roast', 'altitude'].forEach(function (k) {
     if (found[k]) taken.push(scanNorm(found[k]));
