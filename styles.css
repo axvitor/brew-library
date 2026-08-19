@@ -449,6 +449,12 @@ svg.ico-fill{fill:currentColor;stroke:none}
   flex:1;min-width:0;height:100%;padding:0;border:none;outline:none;
   background:transparent;font:var(--type-body-sm);color:var(--text-title);
 }
+/* The wrapper is the control here, and it already draws the focus ring
+   via :focus-within — so the input inside must not draw its own, or the
+   global :focus-visible ring stacks a second one around just the text.
+   Most visible on an active (pine-filled) filter, where the ring's inner
+   paper band cuts a bright rectangle across the fill. */
+.combo-input:focus,.combo-input:focus-visible{box-shadow:none}
 .combo-input::placeholder{color:var(--text-faint)}
 .combo.on .combo-input{color:var(--action-primary-text);font-weight:var(--weight-semibold)}
 .combo.on .combo-input::placeholder{color:var(--action-primary-text)}
