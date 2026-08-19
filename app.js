@@ -2473,11 +2473,52 @@ var REGION_TERMS = ['cerrado mineiro', 'sul de minas', 'mantiqueira de minas', '
 // listing them made the origin swallow the name.
 
 function regionScore(text) {
-  var n = scanNorm(text);
-  for (var i = 0; i < REGION_TERMS.length; i++) {
-    if (n.indexOf(REGION_TERMS[i]) !== -1) return REGION_TERMS[i].length;
+  var hit = regionMatch(text);
+  // A fuzzy hit still counts, just for less than a clean one.
+  return hit ? hit.term.length * (hit.exact ? 1 : 0.7) : 0;
+}
+
+/* Finds a growing region in a string, allowing for OCR damage: "Motos de
+   Minos" is "Matas de Minas" with three characters knocked out. The region
+   list is short and the names are long and distinctive, so a near miss is
+   safe to trust — unlike varietals, where Catuaí and Catucaí are one
+   character apart and a fuzzy match could silently swap one for the other. */
+function regionMatch(text) {
+  var origWords = String(text).split(/\s+/);
+  var normWords = origWords.map(function (w) { return scanNorm(w); });
+  for (var t = 0; t < REGION_TERMS.length; t++) {
+    var term = REGION_TERMS[t], parts = term.split(' '), span = parts.length;
+    var budget = term.length >= 12 ? 3 : (term.length >= 8 ? 2 : 0);
+    for (var i = 0; i + span <= normWords.length; i++) {
+      var joined = normWords.slice(i, i + span).join(' ');
+      if (joined === term) return { term: term, exact: true, at: i, span: span, words: origWords };
+      if (budget && editDistance(joined, term) <= budget) {
+        return { term: term, exact: false, at: i, span: span, words: origWords };
+      }
+    }
   }
-  return 0;
+  return null;
+}
+
+function titleCaseRegion(term) {
+  var small = { de: 1, do: 1, da: 1, das: 1, dos: 1, e: 1 };
+  return term.split(' ').map(function (w, i) {
+    if (i && small[w]) return w;
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  }).join(' ');
+}
+
+/* Restores the real spelling of a mangled region while leaving the rest of
+   the line alone, so "Motos de Minos - MG" becomes "Matas de Minas - MG".
+   Only rewrites what OCR got wrong: an exact match is returned untouched,
+   which keeps a bag's own capitalisation intact. */
+function correctRegion(text) {
+  var hit = regionMatch(text);
+  if (!hit || hit.exact) return text;
+  return hit.words.slice(0, hit.at)
+    .concat([titleCaseRegion(hit.term)])
+    .concat(hit.words.slice(hit.at + hit.span))
+    .join(' ');
 }
 
 /* Tasting notes are recognisable by what they are made of, which matters
@@ -2517,6 +2558,34 @@ function flavourHits(line) {
     if (n.indexOf(FLAVOUR_TERMS[i]) !== -1) hits++;
   }
   return hits;
+}
+
+/* OCR glues the list's final conjunction onto the word after it, so
+   "E CARAMELO" arrives as "ECARAMELO". Only split when what follows the E
+   is itself a flavour, which leaves words that merely start with E —
+   "ESPECIARIAS" — alone. */
+function splitGluedE(frag) {
+  var n = scanNorm(frag);
+  if (n.length > 2 && n.charAt(0) === 'e' && n.charAt(1) !== ' ') {
+    var rest = n.slice(1);
+    for (var i = 0; i < FLAVOUR_TERMS.length; i++) {
+      if (rest.indexOf(FLAVOUR_TERMS[i]) === 0) return frag.charAt(0) + ' ' + frag.slice(1);
+    }
+  }
+  return frag;
+}
+
+/* Puts note fragments back in order. The two passes often disagree about
+   which came first, but Portuguese settles it: the "e ..." clause ends the
+   list, wherever OCR happened to report it. */
+function assembleNotes(frags) {
+  var head = [], tail = [];
+  frags.forEach(function (f) {
+    f = splitGluedE(String(f).trim());
+    if (!f) return;
+    if (/^e\s/.test(scanNorm(f))) tail.push(f); else head.push(f);
+  });
+  return head.concat(tail).join(' ').replace(/\s+/g, ' ').trim();
 }
 
 function looksLikeNotes(line) {
@@ -2706,12 +2775,12 @@ function distributeRow(hits, valueLine) {
 function linesByHeight(data) {
   var out = [];
   var lines = (data && data.lines) || [];
-  lines.forEach(function (ln) {
+  lines.forEach(function (ln, i) {
     var text = (ln.text || '').trim();
     if (!text) return;
     var h = 0;
     if (ln.bbox) h = ln.bbox.y1 - ln.bbox.y0;
-    out.push({ text: text, h: h, conf: ln.confidence || 0 });
+    out.push({ text: text, h: h, conf: ln.confidence || 0, at: i });
   });
   out.sort(function (a, b) { return b.h - a.h; });
   return out;
@@ -2769,7 +2838,7 @@ function parseLabel(data) {
         - noiseCount(c) * 2 - (/\d/.test(c) ? 40 : 0) + c.length * 0.1;
       if (score > bestScore) { bestScore = score; best = c; }
     });
-    if (best) { found.origin = trimEdges(best); why.origin = originWhy[best]; }
+    if (best) { found.origin = correctRegion(trimEdges(best)); why.origin = originWhy[best]; }
   }
 
   // Raw text that tier 1 turned into a value. Tracked separately from the
@@ -2786,20 +2855,20 @@ function parseLabel(data) {
   // far ends mid-list, which is precise enough not to swallow the next
   // section: "LARANJA, FRUTAS AMARELAS," continues, "…& ESPECIARIAS" stops.
   function withContinuation(val, from) {
-    var out = val, added = 0;
+    var frags = [val], added = 0;
     for (var j = from + 1; j < lines.length && added < 3; j++) {
       var nxt = lines[j].trim();
       if (!nxt || labelHits(nxt).length) break;
       // Continue either when the text so far stops mid-list, or when the
       // next line is plainly more flavours — OCR splits notes both ways
       // ("LARANJA, FRUTAS AMARELAS," / "ECARAMELO" then "MARACUJÁ DO CERRADO").
-      var midList = /[,&]$|\se$/.test(out.trim());
+      var midList = /[,&]$|\se$/.test(frags[frags.length - 1].trim());
       if (!midList && !flavourHits(nxt)) break;
-      out += ' ' + nxt;
+      frags.push(nxt);
       consume(nxt);
       added++;
     }
-    return out;
+    return assembleNotes(frags);
   }
 
   function assign(field, val, reason, srcLine) {
@@ -2952,10 +3021,22 @@ function parseLabel(data) {
     if (found[k]) taken.push(scanNorm(found[k]));
   });
   var tall = linesByHeight(data);
+  var byPos = {};
+  tall.forEach(function (l) { byPos[l.at] = l; });
   for (var t = 0; t < tall.length; t++) {
-    var cand = tall[t].text.replace(/[|_~"'`]+/g, '').trim();
+    var cand = trimEdges(tall[t].text.replace(/[|_~"'`]+/g, ''));
     if (!looksLikeName(cand)) continue;
     if (taken.indexOf(scanNorm(cand)) !== -1) continue;
+    // Names are often set over two lines ("família" above "carolino").
+    // Join the next one when it is the same size and reads as a name too —
+    // a real second line matches in height; the next section never does.
+    var nxt = byPos[tall[t].at + 1];
+    if (nxt && tall[t].h > 0 && nxt.h / tall[t].h >= 0.75) {
+      var join = trimEdges(nxt.text.replace(/[|_~"'`]+/g, ''));
+      if (join && looksLikeName(join) && taken.indexOf(scanNorm(join)) === -1) {
+        cand = cand + ' ' + join;
+      }
+    }
     put('name', cand, 'the largest text on the label');
     break;
   }
