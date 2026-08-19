@@ -636,11 +636,15 @@ var ICON = {
   store: '<svg viewBox="0 0 24 24" class="ico"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7"/>' +
     '<path d="M2 7h20"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>' +
     '<path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/></svg>',
-  // disc-3 rather than a cog: a gear's teeth turn to mush at 17px, and a
-  // burr disc is the truer picture of a grinder anyway.
-  disc: '<svg viewBox="0 0 24 24" class="ico"><circle cx="12" cy="12" r="10"/>' +
-    '<circle cx="12" cy="12" r="2"/>' +
-    '<path d="M6 12c0-1.7.7-3.2 1.8-4.2M18 12c0 1.7-.7 3.2-1.8 4.2"/></svg>',
+  // A hand grinder, drawn from its one unmistakable feature: the crank on
+  // top. Every grinder in this library but the Oster is a hand grinder.
+  // Earlier attempts failed for want of a silhouette — a burr disc reads
+  // as a CD, a cog turns to mush at 17px, a hopper reads as a trash can,
+  // and a funnel would collide with Method's own glyph. Body plus catch-cup
+  // seam plus crank survives the size and looks like nothing else here.
+  grinder: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 8.5V5h6"/><path d="M18 5v3"/>' +
+    '<rect x="6.5" y="8.5" width="11" height="12.5" rx="2.5"/>' +
+    '<path d="M6.5 15.5h11"/></svg>',
   filter: '<svg viewBox="0 0 24 24" class="ico"><path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/></svg>',
   book: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 7v14"/>' +
     '<path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>'
@@ -648,7 +652,7 @@ var ICON = {
 
 // Which glyph leads each filter's combobox.
 var COMBO_ICON = {
-  coffee: 'coffee', roaster: 'store', grinder: 'disc', method: 'filter', style: 'book'
+  coffee: 'coffee', roaster: 'store', grinder: 'grinder', method: 'filter', style: 'book'
 };
 
 /* ---------------------------------------------------------
