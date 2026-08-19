@@ -3328,10 +3328,31 @@ window.addEventListener('hashchange', render);
 // query flag must be present. Edits work (favouriting, adding recipes,
 // etc.) but save() no-ops since currentUser stays null — nothing persists,
 // a reload always comes back to the clean starter library.
+// Private addresses count as local too, so the app can be opened on a
+// phone over the Wi-Fi it shares with the machine serving it — a camera
+// feature proves very little tested on a desktop browser. Still gated on
+// ?preview as well as the address, and no public host matches either
+// half: the live site is a github.io name, never a private IP.
 function isLocalPreview() {
   var host = location.hostname;
-  var isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '';
-  return isLocalHost && new URLSearchParams(location.search).has('preview');
+  // .local is reserved for mDNS and can't be registered publicly, so
+  // matching its suffix is safe.
+  var local = host === 'localhost' || host === '' || /\.local$/i.test(host);
+  if (!local) {
+    // Must be a complete IPv4 literal. Anchoring only the prefix would let
+    // an ordinary registrable name — "10.evil.com", "192.168.1.19.evil.com"
+    // — pose as a LAN address and open preview mode on a public site.
+    var m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+    if (m) {
+      var a = +m[1], b = +m[2];
+      local = a === 127 ||                          // loopback
+        a === 10 ||                                 // 10.0.0.0/8
+        (a === 192 && b === 168) ||                 // 192.168.0.0/16
+        (a === 172 && b >= 16 && b <= 31) ||        // 172.16.0.0/12
+        (a === 169 && b === 254);                   // link-local
+    }
+  }
+  return local && new URLSearchParams(location.search).has('preview');
 }
 
 /* Publishes --kb (pixels hidden behind the keyboard) and --vv-top (how far
