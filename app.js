@@ -642,7 +642,6 @@ var TRANSLATIONS = {
     'Nothing matches': 'Nada corresponde a',
     // --- filter fields ---
     'All coffees': 'Todos os cafés',
-    'All roasters': 'Todas as torrefações',
     'All grinders': 'Todos os moedores',
     'All methods': 'Todos os métodos',
     'All recipe styles': 'Todos os estilos',
@@ -755,7 +754,6 @@ var TRANSLATIONS = {
     'New recipe': 'Nova receita',
     'Edit recipe': 'Editar receita',
     'Save changes': 'Salvar alterações',
-    'Recipes': 'Receitas',
     // --- forms and scanning ---
     'Recipes': 'Receitas',
     'Cancel': 'Cancelar',
@@ -803,24 +801,6 @@ var TRANSLATIONS = {
     'This recipe style has no built-in formula — write the steps by hand.': 'Este estilo de receita não tem fórmula própria — escreva as etapas à mão.',
     'Pouring steps always follow the chosen recipe style. Add a style to build your own step-by-step schedule.': 'As etapas de despejo sempre seguem o estilo de receita escolhido. Adicione um estilo para montar seu próprio cronograma.',
     // --- built-in pouring steps (data, but ours) ---
-    'Bloom to 60 g — three times the dose. Swirl gently to wet every ground.': 'Florada até 60 g — três vezes a dose. Gire suavemente para molhar todo o pó.',
-    'Pour to 100 g total in a slow, steady circle.': 'Despeje até 100 g no total, em círculos lentos e constantes.',
-    'Pour to 200 g total.': 'Despeje até 200 g no total.',
-    'Pour to 300 g total, or your target weight.': 'Despeje até 300 g no total, ou até o peso desejado.',
-    'Let it draw down — aim to finish around 3:00.': 'Deixe escoar — mire terminar por volta de 3:00.',
-    'Bloom — pour the first fifth of the water.': 'Florada — despeje o primeiro quinto da água.',
-    'Pour the second fifth.': 'Despeje o segundo quinto.',
-    'Pour the third fifth.': 'Despeje o terceiro quinto.',
-    'Pour the fourth fifth.': 'Despeje o quarto quinto.',
-    'Pour the final fifth, then let it draw down — no stirring needed.': 'Despeje o último quinto e deixe escoar — não precisa mexer.',
-    'Pour 1 — the first 40% shapes the flavour balance.': 'Despejo 1 — os primeiros 40% definem o equilíbrio de sabor.',
-    'Pour 2 — completes the first 40%.': 'Despejo 2 — completa os primeiros 40%.',
-    'Add the coffee, then pour all the water in one go.': 'Adicione o café e despeje toda a água de uma vez.',
-    'Insert the plunger just enough to seal, then leave it alone.': 'Encaixe o êmbolo só o suficiente para vedar e deixe descansar.',
-    'Press slowly and evenly — about 30 seconds.': 'Pressione devagar e por igual — cerca de 30 segundos.',
-    'Remove the plunger and swirl gently to settle the bed.': 'Retire o êmbolo e gire suavemente para assentar a cama de café.',
-    'Pull the shot.': 'Extraia o shot.',
-    'Get set up.': 'Prepare tudo.',
     'Preparing the photo…': 'Preparando a foto…',
     'Loading the reader…': 'Carregando o leitor…',
     'Reading the label…': 'Lendo o rótulo…',
@@ -837,7 +817,6 @@ var TRANSLATIONS = {
     'Details': 'Detalhes',
     'About this style': 'Sobre este estilo',
     'ratio': 'proporção',
-    'A pressure shot rather than a pour: dial in with dose, grind and shot time instead of a pour schedule.': 'Um shot sob pressão, não um coado: ajuste por dose, moagem e tempo de extração em vez de um cronograma de despejos.',
     // --- remaining interface ---
     'Action': 'Ação',
     'Time': 'Tempo',
@@ -881,6 +860,11 @@ var TRANSLATIONS = {
     'Hand grinder': 'Moedor manual',
     'Electric grinder': 'Moedor elétrico',
     'in': 'em',
+    'Espresso is dialled in by dose, grind and shot time rather than a pour schedule — the numbers above are the recipe.': 'O espresso é ajustado pela dose, moagem e tempo de extração, não por um cronograma de despejos — os números acima são a receita.',
+    'This method': 'Este método',
+    'doesn’t use a pour schedule — nothing to show here.': 'não usa cronograma de despejos — nada a mostrar aqui.',
+    'Defaults to the coffee name': 'Usa o nome do café por padrão',
+    'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. Water 100°C for light roasts, 92°C medium, 85°C dark.': 'Coado versátil que serve a qualquer suporte e qualquer torra. Nivele o leito antes da pré-infusão e despeje devagar — despejos agressivos agitam demais o pó e deixam a xícara amarga. Água a 100°C para torras claras, 92°C médias, 85°C escuras.',
     // --- messages ---
     'Recipe saved.': 'Receita salva.',
     'Recipe deleted.': 'Receita excluída.',
@@ -1411,10 +1395,10 @@ function timelineHTML(steps) {
 // a saved recipe or a form draft — both carry styleId/methodId.
 function noStepsMessage(r) {
   if (r.styleId === 'st-espresso') {
-    return 'Espresso is dialled in by dose, grind and shot time rather than a pour schedule — the numbers above are the recipe.';
+    return t('Espresso is dialled in by dose, grind and shot time rather than a pour schedule — the numbers above are the recipe.');
   }
   var me = findIn('method', r.methodId);
-  return (me ? me.name : 'This method') + ' doesn’t use a pour schedule — nothing to show here.';
+  return (me ? me.name : t('This method')) + ' ' + t('doesn’t use a pour schedule — nothing to show here.');
 }
 
 // Caption under a style-derived schedule. The Hoffmann bloom is 2x the dose, so
@@ -2550,7 +2534,7 @@ function buildRecipeForm(m) {
       '<textarea class="inp" id="f-notes" placeholder="What worked, what to change next time…">' + esc(d.notes) + '</textarea></div>' +
     '<div class="row row-2">' +
       '<div class="field"><label for="f-name">' + esc(t('Custom title (optional)')) + '</label>' +
-        '<input class="inp" id="f-name" value="' + esc(d.name) + '" placeholder="Defaults to the coffee name" /></div>' +
+        '<input class="inp" id="f-name" value="' + esc(d.name) + '" placeholder="' + esc(t('Defaults to the coffee name')) + '" /></div>' +
       '<div class="field"><label>' + esc(t('Cup score')) + '</label>' +
         '<div class="rate" id="rateWrap">' +
           [1, 2, 3, 4, 5].map(function (i) {
