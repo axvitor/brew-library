@@ -2588,19 +2588,7 @@ function matchTerms(hay, table) {
   return '';
 }
 
-function matchVarietals(hay) {
-  var hits = [];
-  VARIETAL_TERMS.forEach(function (v) {
-    if (termRe(scanNorm(v)).test(hay) && hits.indexOf(v) === -1) hits.push(v);
-  });
-  // "Bourbon Amarelo" also matches "Bourbon"; report the fuller name only,
-  // or the variety reads as a list of one variety twice over.
-  var kept = hits.filter(function (v) {
-    var n = scanNorm(v);
-    return !hits.some(function (o) { return o !== v && scanNorm(o).indexOf(n) !== -1; });
-  });
-  return kept.slice(0, 3).join(', ');
-}
+var VARIETAL_TABLE = VARIETAL_TERMS.map(function (v) { return [v, [scanNorm(v)]]; });
 
 /* "São João Del Rei - MG" is a place, not a coffee. Recognising the
    city-state form keeps it out of the name and puts it where it belongs:
@@ -2933,6 +2921,10 @@ function findAltitudeSpan(text) {
    DE MINAS" for variedade and região. */
 function distributeRow(hits, valueLine) {
   var text = valueLine, out = {};
+  // Nothing to divide: one label owns the whole line, and lifting out only
+  // the part a vocabulary recognised would truncate it — "FERMENTAÇÃO
+  // ANAERÓBICA 72H" would lose its 72H.
+  if (hits.length === 1) { out[0] = valueLine.replace(/\s+/g, ' ').trim(); return out; }
   [['altitude', findAltitudeSpan],
    ['roast', function (t) { return findTermSpan(t, ROAST_TERMS); }],
    ['process', function (t) { return findTermSpan(t, PROCESS_TERMS); }]
@@ -2942,7 +2934,7 @@ function distributeRow(hits, valueLine) {
     if (idx === -1) return;
     var span = ex[1](text);
     if (!span) return;
-    out[idx] = span.value;
+    out[idx] = trimEdges(text.slice(span.start, span.end));
     text = text.slice(0, span.start) + ' ' + text.slice(span.end);
   });
   // Everything unclaimed goes to the first label still waiting for a value.
@@ -3085,14 +3077,16 @@ function parseLabel(data) {
     // vocabulary says whether what's there is valid. "Torra: CAE 5" is
     // exactly the case — labelled, confident, and pure OCR noise, while
     // the real "Média" sat elsewhere in the text waiting for tier 2.
+    // The vocabulary decides whether this is a real process or roast; it
+    // does not decide how to say it. "Média" is stored as "Média" and
+    // "Cereja descascado" as "Cereja descascado" — the label's own words,
+    // not an English translation of them.
     if (field === 'process') {
-      var pv = matchTerms(scanNorm(val), PROCESS_TERMS);
-      if (pv) { take(); put('process', pv, reason); }
+      if (matchTerms(scanNorm(val), PROCESS_TERMS)) { take(); put('process', trimEdges(val), reason); }
       return;
     }
     if (field === 'roast') {
-      var rv = matchTerms(scanNorm(val), ROAST_TERMS);
-      if (rv) { take(); put('roast', rv, reason); }
+      if (matchTerms(scanNorm(val), ROAST_TERMS)) { take(); put('roast', trimEdges(val), reason); }
       return;
     }
     // A label already vouches that this is a tasting note, so one flavour
@@ -3226,18 +3220,22 @@ function parseLabel(data) {
       }
     }
   }
-  if (!found.process) {
-    var proc = matchTerms(hay, PROCESS_TERMS);
-    if (proc) put('process', proc, 'the label mentions this process');
+  /* Unlabelled fields are found by looking for a known term line by line,
+     rather than across the whole text at once, so the words the bag printed
+     can be lifted out and kept. Matching tells us the value is real; it is
+     not licence to reword it. */
+  function findByVocabulary(field, table, reason) {
+    if (found[field]) return;
+    for (var li = 0; li < lines.length; li++) {
+      var span = findTermSpan(lines[li], table);
+      if (!span) continue;
+      put(field, trimEdges(lines[li].slice(span.start, span.end)), reason);
+      return;
+    }
   }
-  if (!found.varietal) {
-    var vars = matchVarietals(hay);
-    if (vars) put('varietal', vars, 'recognised variety name on the label');
-  }
-  if (!found.roast) {
-    var roast = matchTerms(hay, ROAST_TERMS);
-    if (roast) put('roast', roast, 'the label mentions this roast level');
-  }
+  findByVocabulary('process', PROCESS_TERMS, 'the label mentions this process');
+  findByVocabulary('varietal', VARIETAL_TABLE, 'a recognised variety name on the label');
+  findByVocabulary('roast', ROAST_TERMS, 'the label mentions this roast level');
   for (var pi = 0; pi < lines.length; pi++) {
     // Skip anything tier 1 already carved up, or the un-split row comes
     // back and beats the clean half taken out of it.

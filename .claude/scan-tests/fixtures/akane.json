@@ -1,18 +1,25 @@
 {
   "label": "Akane — Paulo Hamasaki (two-column rows)",
-  "roasters": ["Sabino", "Moka Clube", "Lucca"],
+  "roasters": [
+    "Sabino",
+    "Moka Clube",
+    "Lucca"
+  ],
   "heights": {
-    "AKANE": 46, "FERMENTAÇÃO ANAERÓBICA 72H": 20,
-    "MANTIQUEIRA DE MINAS": 22, "PAULO HAMASAKI": 20,
-    "CATUCAI 24/137": 18, "MEDIA": 18
+    "AKANE": 46,
+    "FERMENTAÇÃO ANAERÓBICA 72H": 20,
+    "MANTIQUEIRA DE MINAS": 22,
+    "PAULO HAMASAKI": 20,
+    "CATUCAI 24/137": 18,
+    "MEDIA": 18
   },
   "expect": {
     "name": "AKANE",
     "roasterName": null,
     "origin": "MANTIQUEIRA DE MINAS",
     "altitude": "1,150 m",
-    "process": "Anaerobic",
-    "roast": "Medium",
+    "process": "FERMENTAÇÃO ANAERÓBICA 72H",
+    "roast": "MEDIA",
     "varietal": "CATUCAI 24/137",
     "notes": "LARANJA, FRUTAS AMARELAS, RAPADURA & ESPECIARIAS"
   },

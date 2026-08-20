@@ -13,7 +13,7 @@
     "PROCESSO Cereja descascado ALTITUDE 1600V.": 14
   },
   "expect": {
-    "process": "Pulped natural",
+    "process": "Cereja descascado",
     "altitude": "1,600 m",
     "origin": "Matas de Minas - MG"
   },
