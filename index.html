@@ -31,29 +31,35 @@
 
     <nav class="topbar-actions">
       <div class="menu-holder">
-        <button class="account-chip" id="accountChip" data-action="toggle-menu" aria-label="Account menu" hidden>
+        <button class="account-chip" id="accountChip" data-action="toggle-menu" aria-label="Account menu" data-i18n-aria hidden>
           <img class="account-avatar" id="accountAvatar" alt="" />
         </button>
         <div class="menu" id="appMenu" hidden>
           <div class="menu-account" id="menuAccount" hidden>
             <span class="menu-account-email" id="menuAccountEmail"></span>
           </div>
-          <button data-action="export">Export data (.json)</button>
-          <button data-action="import">Import data…</button>
+          <button data-action="export" data-i18n>Export data (.json)</button>
+          <button data-action="import" data-i18n>Import data…</button>
           <div class="menu-sep"></div>
-          <button data-action="sign-out">Sign out</button>
           <div class="menu-sep"></div>
-          <button data-action="reset" class="danger">Reset library…</button>
+          <div class="menu-label" data-i18n>Language</div>
+          <button data-action="set-lang" data-lang="auto" data-i18n>Device language</button>
+          <button data-action="set-lang" data-lang="en">English</button>
+          <button data-action="set-lang" data-lang="pt">Português</button>
+          <div class="menu-sep"></div>
+          <button data-action="sign-out" data-i18n>Sign out</button>
+          <div class="menu-sep"></div>
+          <button data-action="reset" class="danger" data-i18n>Reset library…</button>
         </div>
       </div>
       <div class="app-actions" id="appActions" hidden>
-        <button class="btn btn-ghost hdr-cta" data-action="open-library" aria-label="Library">
+        <button class="btn btn-ghost hdr-cta" data-action="open-library" aria-label="Library" data-i18n-aria>
           <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
-          <span>Library</span>
+          <span data-i18n>Library</span>
         </button>
-        <button class="btn btn-primary hdr-cta" data-action="new-recipe" aria-label="Add recipe">
+        <button class="btn btn-primary hdr-cta" data-action="new-recipe" aria-label="Add recipe" data-i18n-aria>
           <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Add recipe</span>
+          <span data-i18n>Add recipe</span>
         </button>
       </div>
     </nav>
@@ -63,12 +69,12 @@
 <main id="view" class="wrap"></main>
 
 <footer class="foot wrap">
-  <span>Synced across your signed-in devices.</span>
+  <span data-i18n>Synced across your signed-in devices.</span>
 </footer>
 
 <div id="modalRoot"></div>
 <div id="toast" class="toast" hidden></div>
-<button class="back-to-top" id="backToTop" data-action="back-to-top" aria-label="Back to top">
+<button class="back-to-top" id="backToTop" data-action="back-to-top" aria-label="Back to top" data-i18n-aria>
   <svg viewBox="0 0 24 24" class="ico" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
 </button>
 <input type="file" id="importFile" accept="application/json" hidden />

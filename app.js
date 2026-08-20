@@ -48,7 +48,7 @@ function save(opts) {
   if (!opts || !opts.keepPristine) state.pristine = false;
   if (currentUser && window.Brew) {
     window.Brew.saveLibrary(currentUser.uid, state).catch(function () {
-      toast('Could not sync — check your connection.');
+      toast(t('Could not sync — check your connection.'));
     });
   }
 }
@@ -533,6 +533,337 @@ function preset(styleId, dose, water, methodName) {
    5. Small helpers
    --------------------------------------------------------- */
 
+/* ---------------------------------------------------------
+   Language
+
+   One dictionary keyed on the English string itself, so t() falls back to
+   its own argument and an untranslated string still reads correctly rather
+   than showing a missing key.
+
+   That single mechanism covers the built-in pouring steps too. They are
+   library data, not interface text, but they are also *our* data — and
+   because the lookup is by exact match, a step you have edited no longer
+   matches anything and is left in your own words. Nothing you typed is
+   ever translated: values scanned off a bag, coffee names, tasting notes
+   and grind settings are yours, and stay exactly as entered.
+
+   The language follows the device unless it has been set explicitly. */
+var LANG_KEY = 'brewLang';
+
+function deviceLang() {
+  var list = navigator.languages && navigator.languages.length
+    ? navigator.languages : [navigator.language || 'en'];
+  for (var i = 0; i < list.length; i++) {
+    if (/^pt\b/i.test(list[i])) return 'pt';
+    if (/^en\b/i.test(list[i])) return 'en';
+  }
+  return 'en';
+}
+
+var langChoice = (function () {
+  try { return localStorage.getItem(LANG_KEY) || 'auto'; } catch (e) { return 'auto'; }
+})();
+
+var LANG = langChoice === 'auto' ? deviceLang() : langChoice;
+
+function setLang(choice) {
+  langChoice = choice;
+  LANG = choice === 'auto' ? deviceLang() : choice;
+  try { localStorage.setItem(LANG_KEY, choice); } catch (e) { /* private mode */ }
+  document.documentElement.setAttribute('lang', LANG);
+}
+
+function t(s) {
+  if (LANG === 'en' || s == null) return s;
+  var table = TRANSLATIONS[LANG];
+  var hit = table && Object.prototype.hasOwnProperty.call(table, s) ? table[s] : null;
+  return hit === null ? s : hit;
+}
+
+// Plural helper: English and Portuguese both take a bare -s here, but the
+// noun itself differs, so both forms are looked up rather than assembled.
+function tPlural(n, one, many) {
+  return n === 1 ? t(one) : t(many);
+}
+
+var TRANSLATIONS = {
+  pt: {
+    // --- shell and menu ---
+    'Library': 'Biblioteca',
+    'Add recipe': 'Adicionar receita',
+    'Export data (.json)': 'Exportar dados (.json)',
+    'Import data…': 'Importar dados…',
+    'Sign out': 'Sair',
+    'Reset library…': 'Redefinir biblioteca…',
+    'Language': 'Idioma',
+    'Device language': 'Idioma do dispositivo',
+    'Account menu': 'Menu da conta',
+    'Back to top': 'Voltar ao topo',
+    'Synced across your signed-in devices.': 'Sincronizado entre seus dispositivos conectados.',
+    // --- home ---
+    'Your brewing library': 'Sua biblioteca de preparos',
+    'recipe': 'receita',
+    'recipes': 'receitas',
+    'coffee': 'café',
+    'coffees': 'cafés',
+    'across': 'em',
+    'Filter to find the one you want, then brew it.': 'Filtre para encontrar a que você quer e prepare.',
+    'Search recipes…': 'Buscar receitas…',
+    'Favourites': 'Favoritas',
+    'More filters': 'Mais filtros',
+    'Sort recipes': 'Ordenar receitas',
+    'Newest first': 'Mais recentes',
+    'Oldest first': 'Mais antigas',
+    'Top rated': 'Melhor avaliadas',
+    'A–Z': 'A–Z',
+    'Clear': 'Limpar',
+    'Clear filters': 'Limpar filtros',
+    'Clear search': 'Limpar busca',
+    'Nothing matches those filters': 'Nada corresponde a esses filtros',
+    'No recipes yet': 'Nenhuma receita ainda',
+    'Try clearing a filter or two to see the rest of your library.': 'Tente limpar um filtro ou dois para ver o resto da sua biblioteca.',
+    'Add your first brew — coffee, grinder, method, recipe style and the pour schedule.': 'Adicione seu primeiro preparo — café, moedor, método, estilo de receita e o cronograma de despejos.',
+    'Nothing matches': 'Nada corresponde a',
+    // --- filter fields ---
+    'All coffees': 'Todos os cafés',
+    'All roasters': 'Todas as torrefações',
+    'All grinders': 'Todos os moedores',
+    'All methods': 'Todos os métodos',
+    'All recipe styles': 'Todos os estilos',
+    'Filter by coffee': 'Filtrar por café',
+    'Filter by roaster': 'Filtrar por torrefação',
+    'Filter by grinder': 'Filtrar por moedor',
+    'Filter by brewing method': 'Filtrar por método de preparo',
+    'Filter by recipe style': 'Filtrar por estilo de receita',
+    'Show all coffees': 'Mostrar todos os cafés',
+    'Show all roasters': 'Mostrar todas as torrefações',
+    'Show all grinders': 'Mostrar todos os moedores',
+    'Show all methods': 'Mostrar todos os métodos',
+    'Show all recipe styles': 'Mostrar todos os estilos de receita',
+    // --- entities ---
+    'Roaster': 'Torrefação',
+    'Roasters': 'Torrefações',
+    'roaster': 'torrefação',
+    'roasters': 'torrefações',
+    'Coffee': 'Café',
+    'Coffees': 'Cafés',
+    'Grinder': 'Moedor',
+    'Grinders': 'Moedores',
+    'grinder': 'moedor',
+    'grinders': 'moedores',
+    'Brewing method': 'Método de preparo',
+    'Methods': 'Métodos',
+    'brewing method': 'método de preparo',
+    'methods': 'métodos',
+    'Recipe style': 'Estilo de receita',
+    'Recipe styles': 'Estilos de receita',
+    'recipe style': 'estilo de receita',
+    'recipe styles': 'estilos de receita',
+    // --- entity phrases ---
+    'Add coffee': 'Adicionar café',
+    'Edit coffee': 'Editar café',
+    'Delete coffee': 'Excluir café',
+    'Coffee saved.': 'Café salvo.',
+    'Coffee deleted.': 'Café excluído.',
+    'Add your first coffee.': 'Adicione seu primeiro café.',
+    'Add roaster': 'Adicionar torrefação',
+    'Edit roaster': 'Editar torrefação',
+    'Delete roaster': 'Excluir torrefação',
+    'Roaster saved.': 'Torrefação salva.',
+    'Roaster deleted.': 'Torrefação excluída.',
+    'Add your first roaster.': 'Adicione sua primeira torrefação.',
+    'Add grinder': 'Adicionar moedor',
+    'Edit grinder': 'Editar moedor',
+    'Delete grinder': 'Excluir moedor',
+    'Grinder saved.': 'Moedor salvo.',
+    'Grinder deleted.': 'Moedor excluído.',
+    'Add your first grinder.': 'Adicione seu primeiro moedor.',
+    'Add brewing method': 'Adicionar método de preparo',
+    'Edit brewing method': 'Editar método de preparo',
+    'Delete brewing method': 'Excluir método de preparo',
+    'Brewing method saved.': 'Método de preparo salvo.',
+    'Brewing method deleted.': 'Método de preparo excluído.',
+    'Add your first brewing method.': 'Adicione seu primeiro método de preparo.',
+    'Add recipe style': 'Adicionar estilo de receita',
+    'Edit recipe style': 'Editar estilo de receita',
+    'Delete recipe style': 'Excluir estilo de receita',
+    'Recipe style saved.': 'Estilo de receita salvo.',
+    'Recipe style deleted.': 'Estilo de receita excluído.',
+    'Add your first recipe style.': 'Adicione seu primeiro estilo de receita.',
+    // --- fields ---
+    'Name': 'Nome',
+    'Location': 'Localização',
+    'Origin': 'Origem',
+    'Altitude': 'Altitude',
+    'Process': 'Processo',
+    'Roast level': 'Nível de torra',
+    'Roast': 'Torra',
+    'Varietal': 'Variedade',
+    'Tasting notes': 'Notas sensoriais',
+    'Type': 'Tipo',
+    'Setting unit': 'Unidade de ajuste',
+    'Notes': 'Notas',
+    'Typical ratio': 'Proporção típica',
+    'Author': 'Autor',
+    'Description': 'Descrição',
+    'optional': 'opcional',
+    'City, country': 'Cidade, país',
+    'Region, country': 'Região, país',
+    'Washed / Natural / Honey': 'Lavado / Natural / Cereja descascado',
+    'Light / Medium / Dark': 'Clara / Média / Escura',
+    'Peach, bergamot, jasmine': 'Pêssego, bergamota, jasmim',
+    'Start typing — reuses a roaster or creates it': 'Comece a digitar — reutiliza uma torrefação ou cria uma',
+    'Hand grinder / Electric': 'Manual / Elétrico',
+    'clicks, numbers, marks': 'cliques, números, marcas',
+    'Burr type, reference settings…': 'Tipo de mó, ajustes de referência…',
+    'Pour over / Immersion / Pressure': 'Coado / Imersão / Pressão',
+    'Filter, kettle, gear…': 'Filtro, chaleira, equipamento…',
+    'Who devised it': 'Quem criou',
+    'What this recipe is going for': 'O que esta receita busca',
+    // --- recipe detail ---
+    'Roastery': 'Torrefadora',
+    'Grind size': 'Moagem',
+    'Method': 'Método',
+    'Dose': 'Dose',
+    'Water': 'Água',
+    'Start timer': 'Iniciar cronômetro',
+    'Favourite': 'Favoritar',
+    'Favourited': 'Favoritada',
+    'Edit': 'Editar',
+    'More actions': 'Mais ações',
+    'Duplicate': 'Duplicar',
+    'Delete recipe…': 'Excluir receita…',
+    'Delete recipe': 'Excluir receita',
+    'Delete': 'Excluir',
+    // --- forms ---
+    'New recipe': 'Nova receita',
+    'Edit recipe': 'Editar receita',
+    'Save changes': 'Salvar alterações',
+    'Recipes': 'Receitas',
+    // --- forms and scanning ---
+    'Recipes': 'Receitas',
+    'Cancel': 'Cancelar',
+    'Done': 'Concluído',
+    'Save recipe': 'Salvar receita',
+    'Nothing here yet': 'Nada aqui ainda',
+    'Scan label': 'Escanear rótulo',
+    'Try again': 'Tentar de novo',
+    'Fill the frame with the label itself, not the whole bag — the panel listing origin, process and notes. Small print needs a close, straight, evenly lit shot. Nothing leaves your device.': 'Enquadre o rótulo em si, não o pacote inteiro — o painel com origem, processo e notas. Letras pequenas exigem uma foto próxima, reta e bem iluminada. Nada sai do seu aparelho.',
+    'Everything it read': 'Tudo o que foi lido',
+    'Fill fields': 'Preencher campos',
+    'Brew parameters': 'Parâmetros do preparo',
+    'Coffee dose (g)': 'Dose de café (g)',
+    'Water (g)': 'Água (g)',
+    'Temperature (°C)': 'Temperatura (°C)',
+    'Total brew time': 'Tempo total de preparo',
+    'Ratio': 'Proporção',
+    'Pouring steps': 'Etapas de despejo',
+    'Personal notes': 'Anotações pessoais',
+    'Finishing touches': 'Toques finais',
+    'Custom title (optional)': 'Título personalizado (opcional)',
+    'Cup score': 'Nota da xícara',
+    // --- timer, brewing and steps ---
+    'Sign in to see your recipes — synced across every device.': 'Entre para ver suas receitas — sincronizadas em todos os aparelhos.',
+    'Continue with Google': 'Continuar com o Google',
+    'of': 'de',
+    'Step': 'Etapa',
+    'Next': 'Próxima',
+    'Last step': 'Última etapa',
+    'Left in this step': 'Restante nesta etapa',
+    'Water poured': 'Água despejada',
+    'Start brewing': 'Iniciar preparo',
+    'Resume': 'Retomar',
+    'Pause': 'Pausar',
+    'Brew again': 'Preparar de novo',
+    'Select a coffee…': 'Selecione um café…',
+    'Select a method…': 'Selecione um método…',
+    'Select a grinder…': 'Selecione um moedor…',
+    'Select a style…': 'Selecione um estilo…',
+    'No coffees for this roaster yet': 'Nenhum café desta torrefação ainda',
+    'e.g. 75 clicks': 'ex.: 75 cliques',
+    'What you do at this point': 'O que você faz neste momento',
+    'What to do at this point': 'O que fazer neste momento',
+    'Add step': 'Adicionar etapa',
+    'This recipe style has no built-in formula — write the steps by hand.': 'Este estilo de receita não tem fórmula própria — escreva as etapas à mão.',
+    'Pouring steps always follow the chosen recipe style. Add a style to build your own step-by-step schedule.': 'As etapas de despejo sempre seguem o estilo de receita escolhido. Adicione um estilo para montar seu próprio cronograma.',
+    // --- built-in pouring steps (data, but ours) ---
+    'Bloom to 60 g — three times the dose. Swirl gently to wet every ground.': 'Florada até 60 g — três vezes a dose. Gire suavemente para molhar todo o pó.',
+    'Pour to 100 g total in a slow, steady circle.': 'Despeje até 100 g no total, em círculos lentos e constantes.',
+    'Pour to 200 g total.': 'Despeje até 200 g no total.',
+    'Pour to 300 g total, or your target weight.': 'Despeje até 300 g no total, ou até o peso desejado.',
+    'Let it draw down — aim to finish around 3:00.': 'Deixe escoar — mire terminar por volta de 3:00.',
+    'Bloom — pour the first fifth of the water.': 'Florada — despeje o primeiro quinto da água.',
+    'Pour the second fifth.': 'Despeje o segundo quinto.',
+    'Pour the third fifth.': 'Despeje o terceiro quinto.',
+    'Pour the fourth fifth.': 'Despeje o quarto quinto.',
+    'Pour the final fifth, then let it draw down — no stirring needed.': 'Despeje o último quinto e deixe escoar — não precisa mexer.',
+    'Pour 1 — the first 40% shapes the flavour balance.': 'Despejo 1 — os primeiros 40% definem o equilíbrio de sabor.',
+    'Pour 2 — completes the first 40%.': 'Despejo 2 — completa os primeiros 40%.',
+    'Add the coffee, then pour all the water in one go.': 'Adicione o café e despeje toda a água de uma vez.',
+    'Insert the plunger just enough to seal, then leave it alone.': 'Encaixe o êmbolo só o suficiente para vedar e deixe descansar.',
+    'Press slowly and evenly — about 30 seconds.': 'Pressione devagar e por igual — cerca de 30 segundos.',
+    'Remove the plunger and swirl gently to settle the bed.': 'Retire o êmbolo e gire suavemente para assentar a cama de café.',
+    'Pull the shot.': 'Extraia o shot.',
+    'Get set up.': 'Prepare tudo.',
+    'Preparing the photo…': 'Preparando a foto…',
+    'Loading the reader…': 'Carregando o leitor…',
+    'Reading the label…': 'Lendo o rótulo…',
+    'Couldn’t read any text. Try filling the frame with the label, in even light.': 'Não foi possível ler nenhum texto. Tente enquadrar o rótulo com luz uniforme.',
+    'Couldn’t load the text reader — check your connection and try again.': 'Não foi possível carregar o leitor de texto — verifique sua conexão e tente de novo.',
+    'That file didn’t open as an image.': 'Esse arquivo não abriu como imagem.',
+    'Something went wrong reading that photo.': 'Algo deu errado ao ler essa foto.',
+    'What the label says': 'O que diz o rótulo',
+    'reads as a town and state': 'parece uma cidade e estado',
+    // --- detail page ---
+    'Temperature': 'Temperatura',
+    'Brew time': 'Tempo de preparo',
+    'Grind': 'Moagem',
+    'Details': 'Detalhes',
+    'About this style': 'Sobre este estilo',
+    'ratio': 'proporção',
+    'A pressure shot rather than a pour: dial in with dose, grind and shot time instead of a pour schedule.': 'Um shot sob pressão, não um coado: ajuste por dose, moagem e tempo de extração em vez de um cronograma de despejos.',
+    // --- messages ---
+    'Recipe saved.': 'Receita salva.',
+    'Recipe deleted.': 'Receita excluída.',
+    'Duplicated — edit away.': 'Duplicada — pode editar.',
+    'Pick a coffee first.': 'Escolha um café primeiro.',
+    'Pick a brewing method.': 'Escolha um método de preparo.',
+    'Give it a name first.': 'Dê um nome primeiro.',
+    'Add a brew time or pouring steps first.': 'Adicione um tempo de preparo ou etapas de despejo primeiro.',
+    'Add a coffee first — then the recipe.': 'Adicione um café primeiro — depois a receita.',
+    'Could not sync — check your connection.': 'Não foi possível sincronizar — verifique sua conexão.',
+    'Exported.': 'Exportado.',
+    'Library imported.': 'Biblioteca importada.',
+    'Library reset.': 'Biblioteca redefinida.',
+    'That file does not look like a Brew Library export.': 'Esse arquivo não parece ser uma exportação do Brew Library.',
+    'Could not sign in': 'Não foi possível entrar',
+    'Your browser blocked the sign-in popup — allow popups for this site and try again.': 'Seu navegador bloqueou a janela de login — permita pop-ups neste site e tente novamente.',
+    'Can’t connect': 'Sem conexão',
+    'Still brewing': 'Preparo em andamento',
+    'Leave anyway': 'Sair mesmo assim',
+    'Brew complete.': 'Preparo concluído.',
+  }
+};
+
+/* index.html ships English. Anything marked data-i18n is translated once
+   the language is known, and again whenever it changes. The original text
+   is kept on the node so switching back is a lookup, not a reversal. */
+function translateMarkup() {
+  var nodes = document.querySelectorAll('[data-i18n]');
+  [].forEach.call(nodes, function (el) {
+    if (!el.hasAttribute('data-i18n-src')) el.setAttribute('data-i18n-src', el.textContent);
+    el.textContent = t(el.getAttribute('data-i18n-src'));
+  });
+  [].forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (el) {
+    if (!el.hasAttribute('data-i18n-aria-src')) el.setAttribute('data-i18n-aria-src', el.getAttribute('aria-label'));
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-src')));
+  });
+  // The chosen language is ticked in the menu.
+  [].forEach.call(document.querySelectorAll('[data-action="set-lang"]'), function (el) {
+    el.classList.toggle('on', el.getAttribute('data-lang') === langChoice);
+  });
+}
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -794,12 +1125,12 @@ function renderLoading() {
 }
 
 function renderSignIn() {
-  renderGate('Brew Library', 'Sign in to see your recipes — synced across every device.',
-    '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON + '<span>Continue with Google</span></button>');
+  renderGate('Brew Library', t('Sign in to see your recipes — synced across every device.'),
+    '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON + '<span>' + esc(t('Continue with Google')) + '</span></button>');
 }
 
 function renderFirebaseError() {
-  renderGate('Can’t connect', 'The sync service didn’t load — check your connection and reload the page.', '');
+  renderGate(t('Can’t connect'), 'The sync service didn’t load — check your connection and reload the page.', '');
 }
 
 function render() {
@@ -825,7 +1156,7 @@ function render() {
 // picked id the same way; only how a recipe is matched to an option
 // differs (recipes carry a roasterId only indirectly, via their coffee).
 function comboLabel(type) {
-  return 'All ' + (type === 'roaster' ? 'roasters' : ENTITIES[type].plural.toLowerCase());
+  return t('All ' + (type === 'roaster' ? 'roasters' : ENTITIES[type].plural.toLowerCase()));
 }
 function comboMatch(type, r, id) {
   return type === 'roaster' ? roasterIdOf(r) === id : r[ENTITIES[type].ref] === id;
@@ -844,9 +1175,9 @@ function comboListHTML(type) {
   var term = comboQuery.trim().toLowerCase();
   var opts = comboOptions(type);
   var shown = term ? opts.filter(function (o) { return o.name.toLowerCase().indexOf(term) !== -1; }) : opts;
-  var html = '<div class="combo-list" role="listbox" aria-label="' + esc(ENTITIES[type].label) + '">';
+  var html = '<div class="combo-list" role="listbox" aria-label="' + esc(t(ENTITIES[type].label)) + '">';
   if (!shown.length) {
-    html += '<div class="combo-empty">Nothing matches “' + esc(comboQuery.trim()) + '”</div>';
+    html += '<div class="combo-empty">' + esc(t('Nothing matches') + ' “' + comboQuery.trim() + '”') + '</div>';
   } else {
     shown.forEach(function (o) {
       var on = (filters[type] || '') === o.id;
@@ -869,12 +1200,12 @@ function comboHTML(type) {
     '<div class="combo-field' + (isOpen ? ' open' : '') + '">' +
       ICON[COMBO_ICON[type]] +
       '<input id="f-combo-' + type + '" class="combo-input" role="combobox" aria-haspopup="listbox" ' +
-        'aria-expanded="' + isOpen + '" aria-label="Filter by ' + esc(ENTITIES[type].label) + '" autocomplete="off" ' +
+        'aria-expanded="' + isOpen + '" aria-label="' + esc(t('Filter by ' + ENTITIES[type].label.toLowerCase())) + '" autocomplete="off" ' +
         'placeholder="' + esc(comboLabel(type)) + '" value="' + esc(shown) + '" />' +
-      (isOpen && comboQuery ? '<button class="combo-clear" data-action="combo-clear" aria-label="Clear search">' +
+      (isOpen && comboQuery ? '<button class="combo-clear" data-action="combo-clear" aria-label="' + esc(t('Clear search')) + '">' +
         ICON.close + '</button>' : '') +
-      '<button class="combo-toggle" data-action="combo-toggle" data-type="' + type + '" aria-label="Show all ' +
-        esc(ENTITIES[type].plural.toLowerCase()) + '">' + ICON.chevDown + '</button>' +
+      '<button class="combo-toggle" data-action="combo-toggle" data-type="' + type + '" aria-label="' +
+        esc(t('Show all ' + ENTITIES[type].plural.toLowerCase())) + '">' + ICON.chevDown + '</button>' +
     '</div>' +
     (isOpen ? comboListHTML(type) : '') +
   '</div>';
@@ -886,23 +1217,24 @@ function renderHome() {
 
   var html = '';
   html += '<section class="hero">' +
-    '<h1>Your brewing library</h1>' +
-    '<p><span class="count">' + total + '</span> ' + (total === 1 ? 'recipe' : 'recipes') +
-    ' across ' + state.coffees.length + ' ' + (state.coffees.length === 1 ? 'coffee' : 'coffees') +
-    '. Filter to find the one you want, then brew it.</p>' +
+    '<h1>' + esc(t('Your brewing library')) + '</h1>' +
+    '<p><span class="count">' + total + '</span> ' + esc(tPlural(total, 'recipe', 'recipes')) +
+    ' ' + esc(t('across')) + ' ' + state.coffees.length + ' ' +
+    esc(tPlural(state.coffees.length, 'coffee', 'coffees')) + '. ' +
+    esc(t('Filter to find the one you want, then brew it.')) + '</p>' +
     '</section>';
 
   var moreCount = moreFiltersCount();
   html += '<div class="filters' + (filtersExpanded ? ' expanded' : '') + '">' +
     '<div class="search">' + ICON.search +
-      '<input id="q" type="search" placeholder="Search recipes…" value="' + esc(filters.q) + '" />' +
+      '<input id="q" type="search" placeholder="' + esc(t('Search recipes…')) + '" value="' + esc(filters.q) + '" />' +
     '</div>' +
     '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
-      ICON.star + 'Favourites</button>' +
+      ICON.star + esc(t('Favourites')) + '</button>' +
     // Mobile only (see CSS) — everything below folds under this toggle so
     // the bar collapses to just Search, Favourites and the toggle.
     '<button class="pill-toggle filters-toggle' + (moreCount ? ' on' : '') + '" data-action="toggle-more-filters" ' +
-      'aria-expanded="' + filtersExpanded + '">' + ICON.sliders + 'More filters' +
+      'aria-expanded="' + filtersExpanded + '">' + ICON.sliders + esc(t('More filters')) +
       (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
     '</button>' +
     '<div class="filters-more">' +
@@ -911,25 +1243,25 @@ function renderHome() {
       comboHTML('grinder') +
       comboHTML('method') +
       comboHTML('style') +
-      '<div class="sel"><select id="f-sort" data-filter="sort" aria-label="Sort recipes">' +
-        '<option value="new"' + (filters.sort === 'new' ? ' selected' : '') + '>Newest first</option>' +
-        '<option value="old"' + (filters.sort === 'old' ? ' selected' : '') + '>Oldest first</option>' +
-        '<option value="rating"' + (filters.sort === 'rating' ? ' selected' : '') + '>Top rated</option>' +
-        '<option value="coffee"' + (filters.sort === 'coffee' ? ' selected' : '') + '>A–Z</option>' +
+      '<div class="sel"><select id="f-sort" data-filter="sort" aria-label="' + esc(t('Sort recipes')) + '">' +
+        '<option value="new"' + (filters.sort === 'new' ? ' selected' : '') + '>' + esc(t('Newest first')) + '</option>' +
+        '<option value="old"' + (filters.sort === 'old' ? ' selected' : '') + '>' + esc(t('Oldest first')) + '</option>' +
+        '<option value="rating"' + (filters.sort === 'rating' ? ' selected' : '') + '>' + esc(t('Top rated')) + '</option>' +
+        '<option value="coffee"' + (filters.sort === 'coffee' ? ' selected' : '') + '>' + esc(t('A–Z')) + '</option>' +
       '</select></div>' +
-      (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">Clear</button>' : '') +
+      (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">' + esc(t('Clear')) + '</button>' : '') +
     '</div>' +
     '</div>';
 
   if (!list.length) {
     html += '<div class="empty">' + ICON.bean +
-      '<h3>' + (total ? 'Nothing matches those filters' : 'No recipes yet') + '</h3>' +
-      '<p>' + (total
+      '<h3>' + esc(t(total ? 'Nothing matches those filters' : 'No recipes yet')) + '</h3>' +
+      '<p>' + esc(t(total
         ? 'Try clearing a filter or two to see the rest of your library.'
-        : 'Add your first brew — coffee, grinder, method, recipe style and the pour schedule.') + '</p>' +
+        : 'Add your first brew — coffee, grinder, method, recipe style and the pour schedule.')) + '</p>' +
       (total
-        ? '<button class="btn btn-ghost" data-action="clear-filters">Clear filters</button>'
-        : '<button class="btn btn-primary" data-action="new-recipe">' + ICON.plus + 'Add recipe</button>') +
+        ? '<button class="btn btn-ghost" data-action="clear-filters">' + esc(t('Clear filters')) + '</button>'
+        : '<button class="btn btn-primary" data-action="new-recipe">' + ICON.plus + esc(t('Add recipe')) + '</button>') +
       '</div>';
   } else {
     html += '<div class="grid">' + list.map(cardHTML).join('') + '</div>';
@@ -988,7 +1320,7 @@ function cardHTML(r) {
       '<div class="stats">' +
         '<div class="stat"><span class="k">Dose</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
         '<div class="stat"><span class="k">Water</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
-        '<div class="stat"><span class="k">Ratio</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
+        '<div class="stat"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
       '</div>' +
       (r.rating ? stars(r.rating) : '') +
     '</div>' +
@@ -1006,7 +1338,7 @@ function timelineHTML(steps) {
     return '<li class="step">' +
       '<span class="bullet"></span>' +
       '<div class="t">' + esc(s.t || '') + '</div>' +
-      '<div class="body"><p>' + esc(s.label || '') + '</p>' +
+      '<div class="body"><p>' + esc(t(s.label || '')) + '</p>' +
         (w ? '<div class="w">+' + w + ' g&nbsp; · &nbsp;' + running + ' g total</div>' : '') +
       '</div></li>';
   }).join('');
@@ -1069,7 +1401,7 @@ function effectiveSteps(r) {
 function renderDetail(id) {
   var r = recipeById(id);
   if (!r) {
-    view.innerHTML = '<div class="detail"><a class="back" href="#/">' + ICON.back + 'Library</a>' +
+    view.innerHTML = '<div class="detail"><a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
       '<div class="empty">' + ICON.bean + '<h3>Recipe not found</h3><p>It may have been deleted.</p></div></div>';
     return;
   }
@@ -1085,22 +1417,22 @@ function renderDetail(id) {
 
   var specs = '';
   function spec(k, v) { if (v) specs += '<div class="spec"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>'; }
-  spec('Coffee', c ? c.name : '—');
+  spec(t('Coffee'), c ? c.name : '—');
   if (c) {
     var ro = c.roasterId ? findIn('roaster', c.roasterId) : null;
-    spec('Roaster', roasterNameOf(c));
-    if (ro && ro.location) spec('Roastery', ro.location);
-    spec('Origin', c.origin); spec('Altitude', c.altitude);
-    spec('Process', c.process); spec('Roast', c.roast); spec('Varietal', c.varietal);
+    spec(t('Roaster'), roasterNameOf(c));
+    if (ro && ro.location) spec(t('Roastery'), ro.location);
+    spec(t('Origin'), c.origin); spec(t('Altitude'), c.altitude);
+    spec(t('Process'), c.process); spec(t('Roast'), c.roast); spec(t('Varietal'), c.varietal);
   }
-  spec('Grinder', gr ? gr.name : '—');
-  spec('Grind size', r.grindSize);
-  spec('Method', me ? me.name : '—');
-  spec('Recipe style', st ? st.name : '—');
+  spec(t('Grinder'), gr ? gr.name : '—');
+  spec(t('Grind size'), r.grindSize);
+  spec(t('Method'), me ? me.name : '—');
+  spec(t('Recipe style'), st ? st.name : '—');
   if (st && st.author) spec('Devised by', st.author);
 
   var html = '<div class="detail">' +
-    '<a class="back" href="#/">' + ICON.back + 'Library</a>' +
+    '<a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
 
     '<div class="detail-head">' +
       '<div class="detail-head-info">' +
@@ -1127,18 +1459,18 @@ function renderDetail(id) {
       '<div class="detail-actions">' +
         (timerPlan(r)
           ? '<button class="btn btn-accent btn-sm action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
-            ICON.play + '<span>Start timer</span></button>'
+            ICON.play + '<span>' + esc(t('Start timer')) + '</span></button>'
           : '') +
         '<button class="btn btn-ghost btn-sm fav-desktop" data-action="fav" data-id="' + esc(r.id) + '">' +
-          ICON.star + '<span>' + (r.fav ? 'Favourited' : 'Favourite') + '</span></button>' +
-        '<button class="btn btn-ghost btn-sm action-edit" data-action="edit" data-id="' + esc(r.id) + '">' + ICON.edit + '<span>Edit</span></button>' +
+          ICON.star + '<span>' + esc(t(r.fav ? 'Favourited' : 'Favourite')) + '</span></button>' +
+        '<button class="btn btn-ghost btn-sm action-edit" data-action="edit" data-id="' + esc(r.id) + '">' + ICON.edit + '<span>' + esc(t('Edit')) + '</span></button>' +
         '<div class="menu-holder detail-more">' +
           '<button class="btn btn-ghost btn-sm btn-icon" data-action="toggle-detail-menu" ' +
-            'aria-haspopup="true" aria-expanded="false" aria-label="More actions">' + ICON.more + '</button>' +
+            'aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
           '<div class="menu" id="detailMenu" hidden>' +
-            '<button data-action="duplicate" data-id="' + esc(r.id) + '">Duplicate</button>' +
+            '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
             '<div class="menu-sep"></div>' +
-            '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">Delete recipe…</button>' +
+            '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1146,24 +1478,24 @@ function renderDetail(id) {
 
     '<div style="padding-top:28px"></div>' +
     '<div class="bigstats">' +
-      '<div class="bigstat"><div class="k">Dose</div><div class="v">' + num(r.dose) + '<small>g</small></div></div>' +
-      '<div class="bigstat"><div class="k">Water</div><div class="v">' + num(r.water) + '<small>g</small></div></div>' +
-      '<div class="bigstat"><div class="k">Ratio</div><div class="v">' + ratio(r.dose, r.water) + '</div></div>' +
-      '<div class="bigstat"><div class="k">Temperature</div><div class="v">' + num(r.temp) + '<small>°C</small></div></div>' +
-      '<div class="bigstat"><div class="k">Brew time</div><div class="v">' + (r.brewTime ? esc(r.brewTime) : '—') + '</div></div>' +
-      '<div class="bigstat"><div class="k">Grind</div><div class="v" style="font-size:19px">' + (r.grindSize ? esc(r.grindSize) : '—') + '</div></div>' +
+      '<div class="bigstat"><div class="k">' + esc(t('Dose')) + '</div><div class="v">' + num(r.dose) + '<small>g</small></div></div>' +
+      '<div class="bigstat"><div class="k">' + esc(t('Water')) + '</div><div class="v">' + num(r.water) + '<small>g</small></div></div>' +
+      '<div class="bigstat"><div class="k">' + esc(t('Ratio')) + '</div><div class="v">' + ratio(r.dose, r.water) + '</div></div>' +
+      '<div class="bigstat"><div class="k">' + esc(t('Temperature')) + '</div><div class="v">' + num(r.temp) + '<small>°C</small></div></div>' +
+      '<div class="bigstat"><div class="k">' + esc(t('Brew time')) + '</div><div class="v">' + (r.brewTime ? esc(r.brewTime) : '—') + '</div></div>' +
+      '<div class="bigstat"><div class="k">' + esc(t('Grind')) + '</div><div class="v" style="font-size:19px">' + (r.grindSize ? esc(r.grindSize) : '—') + '</div></div>' +
     '</div>' +
 
     '<div class="detail-body">' +
       '<aside>' +
-        '<div class="section-title">Details</div>' +
+        '<div class="section-title">' + esc(t('Details')) + '</div>' +
         '<dl class="specs">' + specs + '</dl>' +
         (c && c.notes ? '<div class="coffee-note">' + esc(c.notes) + '</div>' : '') +
-        (st && st.notes ? '<div class="block"><div class="section-title">About this style</div>' +
-          '<div class="coffee-note" style="margin-top:0">' + esc(st.notes) + '</div></div>' : '') +
+        (st && st.notes ? '<div class="block"><div class="section-title">' + esc(t('About this style')) + '</div>' +
+          '<div class="coffee-note" style="margin-top:0">' + esc(t(st.notes)) + '</div></div>' : '') +
       '</aside>' +
       '<div>' +
-        '<div class="section-title">Pouring steps</div>' +
+        '<div class="section-title">' + esc(t('Pouring steps')) + '</div>' +
         (steps.length
           ? '<ol class="timeline">' + stepsHTML + '</ol>' +
             (styleDriven ? '<p class="hint" style="margin-top:12px">' + esc(stepsCaption(r)) + '</p>' : '')
@@ -1171,7 +1503,7 @@ function renderDetail(id) {
             ? '<p style="color:var(--text-muted);font:var(--type-body-sm)">' + esc(noStepsMessage(r)) + '</p>'
             : '<p style="color:var(--text-muted);font:var(--type-body-sm)">No steps recorded — ' +
               '<a href="#" data-action="edit" data-id="' + esc(r.id) + '" style="color:var(--text-link)">add them</a>.</p>') +
-        (r.notes ? '<div class="block"><div class="section-title">Personal notes</div><div class="notes">' + esc(r.notes) + '</div></div>' : '') +
+        (r.notes ? '<div class="block"><div class="section-title">' + esc(t('Personal notes')) + '</div><div class="notes">' + esc(r.notes) + '</div></div>' : '') +
       '</div>' +
     '</div>' +
   '</div>';
@@ -1376,7 +1708,7 @@ function buildTimerEl(r, plan) {
   var rowsHTML = plan.segs.map(function (s, i) {
     return '<li class="timer-step" data-i="' + i + '">' +
       '<span class="ts-t">' + esc(mmss(s.start)) + '</span>' +
-      '<span class="ts-l">' + esc(s.label) + '</span>' +
+      '<span class="ts-l">' + esc(t(s.label)) + '</span>' +
       (s.water ? '<span class="ts-w">+' + s.water + ' g</span>' : '<span class="ts-w"></span>') +
     '</li>';
   }).join('');
@@ -1419,18 +1751,18 @@ function buildTimerEl(r, plan) {
             '</svg>' +
             '<div class="timer-face">' +
               '<div class="timer-elapsed" role="timer" aria-live="off">00:00</div>' +
-              '<div class="timer-total">of ' + esc(mmss2(plan.total)) + '</div>' +
+              '<div class="timer-total">' + esc(t('of')) + ' ' + esc(mmss2(plan.total)) + '</div>' +
             '</div>' +
           '</div>' +
           '<div class="timer-readouts">' +
             '<div class="timer-readout">' +
               '<span class="rv timer-left">00:00</span>' +
-              '<span class="rk">Left in this step</span>' +
+              '<span class="rk">' + esc(t('Left in this step')) + '</span>' +
             '</div>' +
             (plan.water
               ? '<div class="timer-readout">' +
                   '<span class="rv timer-poured">0<small>/ ' + plan.water + ' g</small></span>' +
-                  '<span class="rk">Water poured</span>' +
+                  '<span class="rk">' + esc(t('Water poured')) + '</span>' +
                 '</div>'
               : '') +
           '</div>' +
@@ -1446,7 +1778,7 @@ function buildTimerEl(r, plan) {
       '</div>' +
       '<div class="sheet-foot timer-foot">' +
         '<button class="btn btn-ghost timer-side" data-action="timer-reset" aria-label="Restart" title="Restart">' + ICON.replay + '</button>' +
-        '<button class="btn timer-toggle" data-action="timer-toggle">' + ICON.play + '<span>Start brewing</span></button>' +
+        '<button class="btn timer-toggle" data-action="timer-toggle">' + ICON.play + '<span>' + esc(t('Start brewing')) + '</span></button>' +
         '<button class="btn btn-ghost timer-side" data-action="timer-skip" aria-label="Skip to next step" title="Skip to next step">' + ICON.skip + '</button>' +
       '</div>' +
     '</div>';
@@ -1458,7 +1790,7 @@ function openTimer(id) {
   var r = recipeById(id);
   if (!r) return;
   var plan = timerPlan(r);
-  if (!plan) { toast('Add a brew time or pouring steps first.'); return; }
+  if (!plan) { toast(t('Add a brew time or pouring steps first.')); return; }
 
   stopTimer();
   timer = {
@@ -1476,9 +1808,9 @@ function openTimer(id) {
     guardClose: function () {
       if (!timer || !timer.running) return true;
       confirmDanger({
-        title: 'Still brewing',
+        title: t('Still brewing'),
         body: '<p>Your timer is running. Leaving now will stop it and you’ll need to start over.</p>',
-        confirmLabel: 'Leave anyway',
+        confirmLabel: t('Leave anyway'),
         onConfirm: function () {
           closeModal();       // dismiss this confirmation
           closeModal(true);   // then force-close the timer underneath it
@@ -1525,9 +1857,9 @@ function timerPaint() {
   timer.seg = i;
 
   el.querySelector('.timer-eyebrow').textContent =
-    'Step ' + (i + 1) + ' of ' + plan.segs.length;
+    t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length;
   var nxt = plan.segs[i + 1];
-  el.querySelector('.timer-next .nx').textContent = nxt ? 'Next · ' + nxt.label : 'Last step';
+  el.querySelector('.timer-next .nx').textContent = nxt ? t('Next') + ' · ' + t(nxt.label) : t('Last step');
   el.querySelector('.timer-next .nt').textContent = nxt ? mmss2(nxt.start) : '';
 
   var segs = el.querySelectorAll('.tseg');
@@ -1538,9 +1870,9 @@ function timerPaint() {
     rows[k].classList.toggle('is-now', k === i);
     rows[k].classList.toggle('is-past', k < i);
   }
-  el.querySelector('.timer-now-label').textContent = plan.segs[i].label;
+  el.querySelector('.timer-now-label').textContent = t(plan.segs[i].label);
   var say = el.querySelector('.timer-announce');
-  if (say) say.textContent = 'Step ' + (i + 1) + ' of ' + plan.segs.length + '. ' + plan.segs[i].label;
+  if (say) say.textContent = t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length + '. ' + t(plan.segs[i].label);
   if (rows[i]) rows[i].scrollIntoView({ block: 'nearest' });
 
   // Restart the attention pulse from the top on every step change.
@@ -1559,9 +1891,9 @@ function timerTick() {
     timerRun(false);
     timerPaint();
     timer.sheet.classList.add('is-done');
-    timer.el.querySelector('.timer-now-label').textContent = 'Brew complete.';
+    timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
     var say = timer.el.querySelector('.timer-announce');
-    if (say) say.textContent = 'Brew complete.';
+    if (say) say.textContent = t('Brew complete.');
     timerCue('done');
     timerControls();
     return;
@@ -1611,9 +1943,9 @@ function timerControls() {
   var done = timer.elapsed >= timer.plan.total;
   var btn = timer.el.querySelector('.timer-toggle');
   // v3's label ladder: Start brewing → Pause → Resume → Brew again.
-  var label = done ? 'Brew again'
+  var label = done ? t('Brew again')
     : timer.running ? 'Pause'
-    : timer.elapsed > 0 ? 'Resume' : 'Start brewing';
+    : timer.elapsed > 0 ? t('Resume') : t('Start brewing');
   btn.innerHTML = (done ? ICON.replay : timer.running ? ICON.pause : ICON.play) +
     '<span>' + label + '</span>';
 
@@ -1878,7 +2210,7 @@ function crumbTrail(trail, depth) {
    if the form was opened from one. Everything after this comes from the
    stack itself. */
 function baseCrumbs() {
-  var out = [{ label: 'Recipes', hash: '#/' }];
+  var out = [{ label: t('Recipes'), hash: '#/' }];
   var m = (location.hash || '').match(/^#\/r\/(.+)$/);
   if (m) {
     var r = recipeById(decodeURIComponent(m[1]));
@@ -1910,7 +2242,7 @@ function confirmDanger(opts) {
           '<h2>' + esc(opts.title) + '</h2>' +
           '<div class="dialog-body">' + opts.body + '</div>' +
           '<div class="dialog-foot">' +
-            '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+            '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
             '<button class="btn btn-danger" data-action="confirm-danger">' + esc(opts.confirmLabel) + '</button>' +
           '</div>' +
         '</div>';
@@ -1950,7 +2282,7 @@ function entitySelect(type, value, id, placeholder) {
   return '<div class="with-add">' +
     '<select class="inp" id="' + id + '" data-role="' + type + '">' + opts + '</select>' +
     '<button type="button" class="addbtn" data-action="quick-add" data-type="' + type + '" ' +
-      'title="Add ' + esc(ENTITIES[type].label.toLowerCase()) + '">' + ICON.plus + '</button>' +
+      'title="' + esc(t('Add ' + ENTITIES[type].label.toLowerCase())) + '">' + ICON.plus + '</button>' +
   '</div>';
 }
 
@@ -1981,7 +2313,7 @@ function coffeeSelectHTML(roaster, value) {
   // conscious choice every time, and quietly defaulting to whichever coffee
   // sorts first is how a recipe ends up filed under the wrong bag.
   var opts = '<option value="">' +
-    (list.length ? 'Select a coffee…' : 'No coffees for this roaster yet') + '</option>';
+    t(list.length ? 'Select a coffee…' : 'No coffees for this roaster yet') + '</option>';
   list.forEach(function (c) {
     opts += '<option value="' + esc(c.id) + '"' + (c.id === value ? ' selected' : '') + '>' + esc(c.name) + '</option>';
   });
@@ -2014,7 +2346,7 @@ function styleStepsSectionHTML(d) {
       '<input class="inp stepbuild-t" data-s="t" value="' + esc(s.t || '') + '" ' +
         'placeholder="0:45" inputmode="numeric" aria-label="Step ' + (i + 1) + ' time" />' +
       '<input class="inp stepbuild-l" data-s="label" value="' + esc(s.label || '') + '" ' +
-        'placeholder="What to do at this point" aria-label="Step ' + (i + 1) + ' instruction" />' +
+        'placeholder="' + esc(t('What to do at this point')) + '" aria-label="' + esc(t('Step')) + ' ' + (i + 1) + '" />' +
       '<span class="stepbuild-tools">' +
         '<button type="button" class="iconbtn" data-action="style-step-move" data-i="' + i + '" data-dir="-1" ' +
           'aria-label="Move step ' + (i + 1) + ' earlier"' + (i === 0 ? ' disabled' : '') + '>' + ICON.chevUp + '</button>' +
@@ -2033,7 +2365,7 @@ function styleStepsSectionHTML(d) {
       ? '<p class="hint stepbuild-warn">' + ICON.arrowDown + 'Some times run backwards — reorder the steps so the brew reads start to finish.</p>'
       : '') +
     '<div class="steps-tools">' +
-      '<button type="button" class="btn btn-ghost btn-sm" data-action="style-step-add">' + ICON.plus + 'Add step</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-action="style-step-add">' + ICON.plus + esc(t('Add step')) + '</button>' +
     '</div>';
 }
 
@@ -2053,16 +2385,16 @@ function stepsEditor(steps) {
   var rows = steps.map(function (s, i) {
     return '<div class="steprow" data-i="' + i + '">' +
       '<input class="inp" data-s="t" value="' + esc(s.t) + '" placeholder="0:45" inputmode="numeric" />' +
-      '<input class="inp" data-s="label" value="' + esc(s.label) + '" placeholder="What you do at this point" />' +
+      '<input class="inp" data-s="label" value="' + esc(s.label) + '" placeholder="' + esc(t('What you do at this point')) + '" />' +
       '<input class="inp" data-s="water" value="' + esc(s.water === 0 ? '' : s.water) + '" placeholder="g" inputmode="decimal" />' +
       '<button type="button" class="del" data-action="del-step" data-i="' + i + '" aria-label="Remove step">' + ICON.close + '</button>' +
     '</div>';
   }).join('');
-  return '<p class="hint" style="margin:0 0 12px">This recipe style has no built-in formula — write the steps by hand.</p>' +
+  return '<p class="hint" style="margin:0 0 12px">' + esc(t('This recipe style has no built-in formula — write the steps by hand.')) + '</p>' +
     '<div class="steps-head"><span>Time</span><span>Action</span><span>Water</span><span></span></div>' +
     '<div id="stepsWrap">' + rows + '</div>' +
     '<div class="steps-tools">' +
-      '<button type="button" class="btn btn-ghost btn-sm" data-action="add-step">' + ICON.plus + 'Add step</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm" data-action="add-step">' + ICON.plus + esc(t('Add step')) + '</button>' +
     '</div>';
 }
 
@@ -2117,32 +2449,32 @@ function buildRecipeForm(m) {
     // picking a coffee fills the roaster in, and picking a roaster narrows
     // the coffee list for when the library is long.
     '<div class="row row-2">' +
-      '<div class="field" id="coffeeField"><label for="f-coffee-sel">Coffee</label>' +
+      '<div class="field" id="coffeeField"><label for="f-coffee-sel">' + esc(t('Coffee')) + '</label>' +
         coffeeSelectHTML(m.roaster, d.coffeeId) + '</div>' +
-      '<div class="field"><label for="f-roaster-sel">Roaster</label>' + formRoasterSelect(m.roaster) + '</div>' +
+      '<div class="field"><label for="f-roaster-sel">' + esc(t('Roaster')) + '</label>' + formRoasterSelect(m.roaster) + '</div>' +
     '</div>' +
-    '<div class="field"><label for="f-method-sel">Brewing method</label>' + entitySelect('method', d.methodId, 'f-method-sel', 'Select a method…') + '</div>' +
+    '<div class="field"><label for="f-method-sel">' + esc(t('Brewing method')) + '</label>' + entitySelect('method', d.methodId, 'f-method-sel', t('Select a method…')) + '</div>' +
     '<div class="row row-2">' +
-      '<div class="field"><label for="f-grinder-sel">Grinder</label>' + entitySelect('grinder', d.grinderId, 'f-grinder-sel', 'Select a grinder…') + '</div>' +
-      '<div class="field"><label for="f-grind">Grind size</label>' +
-        '<input class="inp" id="f-grind" value="' + esc(d.grindSize) + '" placeholder="e.g. 75 clicks" /></div>' +
+      '<div class="field"><label for="f-grinder-sel">' + esc(t('Grinder')) + '</label>' + entitySelect('grinder', d.grinderId, 'f-grinder-sel', t('Select a grinder…')) + '</div>' +
+      '<div class="field"><label for="f-grind">' + esc(t('Grind size')) + '</label>' +
+        '<input class="inp" id="f-grind" value="' + esc(d.grindSize) + '" placeholder="' + esc(t('e.g. 75 clicks')) + '" /></div>' +
     '</div>' +
-    '<div class="field"><label for="f-style-sel">Recipe style</label>' + entitySelect('style', d.styleId, 'f-style-sel', 'Select a style…') +
-      '<div class="hint">Pouring steps always follow the chosen recipe style. Add a style to build your own step-by-step schedule.</div></div>' +
+    '<div class="field"><label for="f-style-sel">' + esc(t('Recipe style')) + '</label>' + entitySelect('style', d.styleId, 'f-style-sel', t('Select a style…')) +
+      '<div class="hint">' + esc(t('Pouring steps always follow the chosen recipe style. Add a style to build your own step-by-step schedule.')) + '</div></div>' +
 
-    '<div class="form-sep-label">Brew parameters</div>' +
+    '<div class="form-sep-label">' + esc(t('Brew parameters')) + '</div>' +
     '<div class="row row-3">' +
-      '<div class="field"><label for="f-dose">Coffee dose (g)</label>' +
+      '<div class="field"><label for="f-dose">' + esc(t('Coffee dose (g)')) + '</label>' +
         '<input class="inp" id="f-dose" value="' + esc(d.dose) + '" placeholder="15" inputmode="decimal" /></div>' +
-      '<div class="field"><label for="f-water">Water (g)</label>' +
+      '<div class="field"><label for="f-water">' + esc(t('Water (g)')) + '</label>' +
         '<input class="inp" id="f-water" value="' + esc(d.water) + '" placeholder="250" inputmode="decimal" /></div>' +
-      '<div class="field"><label for="f-temp">Temperature (°C)</label>' +
+      '<div class="field"><label for="f-temp">' + esc(t('Temperature (°C)')) + '</label>' +
         '<input class="inp" id="f-temp" value="' + esc(d.temp) + '" placeholder="94" inputmode="decimal" /></div>' +
     '</div>' +
     '<div class="row row-2">' +
-      '<div class="field"><label for="f-time">Total brew time</label>' +
+      '<div class="field"><label for="f-time">' + esc(t('Total brew time')) + '</label>' +
         '<input class="inp" id="f-time" value="' + esc(d.brewTime) + '" placeholder="3:30" /></div>' +
-      '<div class="field"><label>Ratio</label>' +
+      '<div class="field"><label>' + esc(t('Ratio')) + '</label>' +
         '<div class="inp" style="display:flex;align-items:center;background:var(--surface-sunken);border-style:dashed">' +
           '<span id="ratioOut" class="ratio-hint">' + ratio(d.dose, d.water) + '</span></div></div>' +
     '</div>' +
@@ -2150,13 +2482,13 @@ function buildRecipeForm(m) {
     '<div class="form-sep-label">Pouring steps</div>' +
     '<div id="stepsSection">' + stepsSectionHTML(m) + '</div>' +
 
-    '<div class="form-sep-label">Finishing touches</div>' +
-    '<div class="field"><label for="f-notes">Personal notes</label>' +
+    '<div class="form-sep-label">' + esc(t('Finishing touches')) + '</div>' +
+    '<div class="field"><label for="f-notes">' + esc(t('Personal notes')) + '</label>' +
       '<textarea class="inp" id="f-notes" placeholder="What worked, what to change next time…">' + esc(d.notes) + '</textarea></div>' +
     '<div class="row row-2">' +
-      '<div class="field"><label for="f-name">Custom title (optional)</label>' +
+      '<div class="field"><label for="f-name">' + esc(t('Custom title (optional)')) + '</label>' +
         '<input class="inp" id="f-name" value="' + esc(d.name) + '" placeholder="Defaults to the coffee name" /></div>' +
-      '<div class="field"><label>Cup score</label>' +
+      '<div class="field"><label>' + esc(t('Cup score')) + '</label>' +
         '<div class="rate" id="rateWrap">' +
           [1, 2, 3, 4, 5].map(function (i) {
             return '<button type="button" class="' + (i <= (d.rating || 0) ? 'on' : '') + '" data-action="rate" data-v="' + i + '" aria-label="Rate ' + i + '">' +
@@ -2165,10 +2497,10 @@ function buildRecipeForm(m) {
         '</div></div>' +
     '</div>';
 
-  var foot = '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
-    '<button class="btn btn-primary" data-action="save-recipe">' + (d.id ? 'Save changes' : 'Save recipe') + '</button>';
+  var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
+    '<button class="btn btn-primary" data-action="save-recipe">' + esc(t(d.id ? 'Save changes' : 'Save recipe')) + '</button>';
 
-  var el = sheet({ title: d.id ? 'Edit recipe' : 'New recipe', body: body, foot: foot });
+  var el = sheet({ title: t(d.id ? 'Edit recipe' : 'New recipe'), body: body, foot: foot });
 
   // live ratio + live steps preview (steps only react to dose/water while a
   // style-driven formula is active — manual steps aren't touched by these).
@@ -2248,8 +2580,8 @@ function readRecipeForm(m) {
 function saveRecipe(m) {
   readRecipeForm(m);
   var d = m.draft;
-  if (!d.coffeeId) { toast('Pick a coffee first.'); return; }
-  if (!d.methodId) { toast('Pick a brewing method.'); return; }
+  if (!d.coffeeId) { toast(t('Pick a coffee first.')); return; }
+  if (!d.methodId) { toast(t('Pick a brewing method.')); return; }
 
   if (styleProvidesSteps(d.styleId)) {
     // The style owns the schedule — computed live from a formula, or written
@@ -2274,7 +2606,7 @@ function saveRecipe(m) {
   }
   save();
   closeModal();
-  toast('Recipe saved.');
+  toast(t('Recipe saved.'));
 
   var target = '#/r/' + encodeURIComponent(d.id);
   if (location.hash.indexOf('#/r/') === 0 && location.hash !== target) {
@@ -2926,8 +3258,8 @@ function distributeRow(hits, valueLine) {
   // ANAERÓBICA 72H" would lose its 72H.
   if (hits.length === 1) { out[0] = valueLine.replace(/\s+/g, ' ').trim(); return out; }
   [['altitude', findAltitudeSpan],
-   ['roast', function (t) { return findTermSpan(t, ROAST_TERMS); }],
-   ['process', function (t) { return findTermSpan(t, PROCESS_TERMS); }]
+   ['roast', function (line) { return findTermSpan(line, ROAST_TERMS); }],
+   ['process', function (line) { return findTermSpan(line, PROCESS_TERMS); }]
   ].forEach(function (ex) {
     var idx = -1;
     hits.forEach(function (h, i) { if (h.field === ex[0] && out[i] === undefined) idx = i; });
@@ -3342,15 +3674,13 @@ function scanBlockHTML(state) {
     var frac = Math.max(0, Math.min(1, state.progress || 0));
     inner = '<div class="scan-busy"><div class="scan-bar">' +
       '<i style="transform:scaleX(' + frac.toFixed(3) + ')"></i></div>' +
-      '<p>' + esc(state.label || 'Reading the label…') + '</p></div>';
+      '<p>' + esc(state.label || t('Reading the label…')) + '</p></div>';
   } else if (state && state.error) {
     inner = '<p class="scan-err">' + esc(state.error) + '</p>' +
-      '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + 'Try again</button>';
+      '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + esc(t('Try again')) + '</button>';
   } else {
-    inner = '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + 'Scan label</button>' +
-      '<p>Fill the frame with the label itself, not the whole bag — the panel ' +
-      'listing origin, process and notes. Small print needs a close, straight, ' +
-      'evenly lit shot. Nothing leaves your device.</p>';
+    inner = '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + esc(t('Scan label')) + '</button>' +
+      '<p>' + esc(t('Fill the frame with the label itself, not the whole bag — the panel listing origin, process and notes. Small print needs a close, straight, evenly lit shot. Nothing leaves your device.')) + '</p>';
   }
   return '<div class="scan">' + inner + '</div>';
 }
@@ -3385,11 +3715,11 @@ function startLabelScan(m) {
   if (!m || m.type !== 'coffee') return;
   pickImage().then(function (file) {
     if (!file) return;
-    paintScan(m, { busy: true, progress: 0, label: 'Preparing the photo…' });
+    paintScan(m, { busy: true, progress: 0, label: t('Preparing the photo…') });
     return prepScanImage(file).then(function (prepped) {
-      paintScan(m, { busy: true, progress: 0, label: 'Loading the reader…' });
+      paintScan(m, { busy: true, progress: 0, label: t('Loading the reader…') });
       return runScanOCR(prepped.canvas, function (p) {
-        paintScan(m, { busy: true, progress: p, label: 'Reading the label…' });
+        paintScan(m, { busy: true, progress: p, label: t('Reading the label…') });
       });
     }).then(function (data) {
       // The sheet may have been closed while OCR ran; writing into a
@@ -3400,17 +3730,17 @@ function startLabelScan(m) {
       var any = false, k;
       for (k in parsed.found) if (Object.prototype.hasOwnProperty.call(parsed.found, k)) { any = true; break; }
       if (!any && !parsed.raw.trim()) {
-        paintScan(m, { error: 'Couldn’t read any text. Try filling the frame with the label, in even light.' });
+        paintScan(m, { error: t('Couldn’t read any text. Try filling the frame with the label, in even light.') });
         return;
       }
       openScanReview(m, parsed);
     });
   }).catch(function (err) {
-    var msg = 'Something went wrong reading that photo.';
+    var msg = t('Something went wrong reading that photo.');
     if (err && err.message === 'tesseract-network') {
-      msg = 'Couldn’t load the text reader — check your connection and try again.';
+      msg = t('Couldn’t load the text reader — check your connection and try again.');
     } else if (err && err.message === 'decode') {
-      msg = 'That file didn’t open as an image.';
+      msg = t('That file didn’t open as an image.');
     }
     paintScan(m, { error: msg });
   });
@@ -3443,11 +3773,11 @@ function openScanReview(parent, parsed) {
           'The full reading is below — copy anything useful.</p>';
       }
       var body = '<div class="scan-review">' + rows +
-        '<details class="scan-raw"><summary>Everything it read</summary>' +
+        '<details class="scan-raw"><summary>' + esc(t('Everything it read')) + '</summary>' +
         '<pre>' + esc(parsed.raw.trim() || '—') + '</pre></details></div>';
-      var foot = '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
-        '<button class="btn btn-primary" data-action="apply-scan">Fill fields</button>';
-      return sheet({ title: 'What the label says', body: body, foot: foot, narrow: true });
+      var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
+        '<button class="btn btn-primary" data-action="apply-scan">' + esc(t('Fill fields')) + '</button>';
+      return sheet({ title: t('What the label says'), body: body, foot: foot, narrow: true });
     },
     applyScan: function () {
       var el = review.el;
@@ -3499,14 +3829,14 @@ function openEntityForm(type, existing, onSaved, prefill) {
             return '<option value="' + esc(ro.name) + '"></option>';
           }).join('');
           control = '<input class="inp" id="e-' + f.k + '" data-k="' + f.k + '" list="' + dl + '" ' +
-            'value="' + val + '" placeholder="' + esc(f.ph || '') + '" autocomplete="off" />' +
+            'value="' + val + '" placeholder="' + esc(t(f.ph || '')) + '" autocomplete="off" />' +
             '<datalist id="' + dl + '">' + listOpts + '</datalist>';
         } else if (f.area) {
-          control = '<textarea class="inp" id="e-' + f.k + '" data-k="' + f.k + '" placeholder="' + esc(f.ph || '') + '">' + val + '</textarea>';
+          control = '<textarea class="inp" id="e-' + f.k + '" data-k="' + f.k + '" placeholder="' + esc(t(f.ph || '')) + '">' + val + '</textarea>';
         } else {
-          control = '<input class="inp" id="e-' + f.k + '" data-k="' + f.k + '" value="' + val + '" placeholder="' + esc(f.ph || '') + '" />';
+          control = '<input class="inp" id="e-' + f.k + '" data-k="' + f.k + '" value="' + val + '" placeholder="' + esc(t(f.ph || '')) + '" />';
         }
-        return '<div class="field"><label for="e-' + f.k + '">' + esc(f.l) + (f.req ? '' : ' <span style="text-transform:none;letter-spacing:0">(optional)</span>') + '</label>' +
+        return '<div class="field"><label for="e-' + f.k + '">' + esc(t(f.l)) + (f.req ? '' : ' <span style="text-transform:none;letter-spacing:0">(' + esc(t('optional')) + ')</span>') + '</label>' +
           control + '</div>';
       }).join('');
       // Only coffees have a printed label to read, so only coffees get the
@@ -3515,9 +3845,10 @@ function openEntityForm(type, existing, onSaved, prefill) {
       // A style is the one entity that carries a process, not just facts —
       // so it gets the step builder under its plain fields.
       if (type === 'style') body += styleStepsSectionHTML(d);
-      var foot = '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
-        '<button class="btn btn-primary" data-action="save-entity">' + (d.id ? 'Save changes' : 'Add ' + def.label.toLowerCase()) + '</button>';
-      return sheet({ title: (d.id ? 'Edit ' : 'Add ') + def.label.toLowerCase(), body: body, foot: foot, narrow: type !== 'style' });
+      var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
+        '<button class="btn btn-primary" data-action="save-entity">' +
+          esc(d.id ? t('Save changes') : t('Add ' + def.label.toLowerCase())) + '</button>';
+      return sheet({ title: t((d.id ? 'Edit ' : 'Add ') + def.label.toLowerCase()), body: body, foot: foot, narrow: type !== 'style' });
     },
     type: type,
     onSaved: onSaved
@@ -3548,7 +3879,7 @@ function saveEntity(m) {
   var def = ENTITIES[m.type];
   readEntityForm(m, def);
   var d = m.draft;
-  if (!d.name) { toast('Give it a name first.'); return; }
+  if (!d.name) { toast(t('Give it a name first.')); return; }
   // Drop the blank row the builder always keeps at the end.
   if (d.steps) d.steps = d.steps.filter(function (s) { return s.t || s.label; });
 
@@ -3590,7 +3921,7 @@ function saveEntity(m) {
   if (cb) cb(d.id);
   renderModals();
   render();
-  toast(def.label + ' saved.');
+  toast(t(def.label + ' saved.'));
 }
 
 /* ---------------------------------------------------------
@@ -3604,9 +3935,9 @@ function openLibrary(tab) {
       var def = ENTITIES[m.tab];
       var list = coll(m.tab).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
 
-      var tabs = '<div class="tabs">' + Object.keys(ENTITIES).map(function (t) {
-        return '<button data-action="lib-tab" data-type="' + t + '" class="' + (t === m.tab ? 'on' : '') + '">' +
-          esc(ENTITIES[t].plural) + ' <span style="opacity:.55">' + coll(t).length + '</span></button>';
+      var tabs = '<div class="tabs">' + Object.keys(ENTITIES).map(function (tab) {
+        return '<button data-action="lib-tab" data-type="' + tab + '" class="' + (tab === m.tab ? 'on' : '') + '">' +
+          esc(t(ENTITIES[tab].plural)) + ' <span style="opacity:.55">' + coll(tab).length + '</span></button>';
       }).join('') + '</div>';
 
       var items = list.length ? list.map(function (e) {
@@ -3620,13 +3951,13 @@ function openLibrary(tab) {
           '<button class="iconbtn" data-action="lib-edit" data-type="' + m.tab + '" data-id="' + esc(e.id) + '" aria-label="Edit">' + ICON.edit + '</button>' +
           '<button class="iconbtn danger" data-action="lib-del" data-type="' + m.tab + '" data-id="' + esc(e.id) + '" aria-label="Delete">' + ICON.trash + '</button>' +
         '</div>';
-      }).join('') : '<div class="empty" style="padding:44px 20px"><h3 style="font-size:18px">Nothing here yet</h3>' +
-        '<p>Add your first ' + esc(def.label.toLowerCase()) + '.</p></div>';
+      }).join('') : '<div class="empty" style="padding:44px 20px"><h3 style="font-size:18px">' + esc(t('Nothing here yet')) + '</h3>' +
+        '<p>' + esc(t('Add your first ' + def.label.toLowerCase() + '.')) + '</p></div>';
 
-      var foot = '<button class="btn btn-ghost" data-action="close-modal">Done</button>' +
-        '<button class="btn btn-primary" data-action="lib-add" data-type="' + m.tab + '">' + ICON.plus + 'Add ' + esc(def.label.toLowerCase()) + '</button>';
+      var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Done')) + '</button>' +
+        '<button class="btn btn-primary" data-action="lib-add" data-type="' + m.tab + '">' + ICON.plus + esc(t('Add ' + def.label.toLowerCase())) + '</button>';
 
-      return sheet({ title: 'Library', body: tabs + '<div class="list">' + items + '</div>', foot: foot });
+      return sheet({ title: t('Library'), body: tabs + '<div class="list">' + items + '</div>', foot: foot });
     }
   };
   openModal(m);
@@ -3642,16 +3973,16 @@ function deleteEntity(type, id) {
     (used ? '<p>It is used by ' + used + ' ' + (used === 1 ? noun : noun + 's') +
       ', which will show “—” for this field until you edit them.</p>' : '');
   confirmDanger({
-    title: 'Delete ' + def.label.toLowerCase(),
+    title: t('Delete ' + def.label.toLowerCase()),
     body: body,
-    confirmLabel: 'Delete',
+    confirmLabel: t('Delete'),
     onConfirm: function () {
       closeModal();
       state[def.coll] = coll(type).filter(function (x) { return x.id !== id; });
       save();
       renderModals();
       render();
-      toast(def.label + ' deleted.');
+      toast(t(def.label + ' deleted.'));
     }
   });
 }
@@ -3670,7 +4001,7 @@ function exportData() {
   a.click();
   document.body.removeChild(a);
   setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  toast('Exported.');
+  toast(t('Exported.'));
 }
 
 function importData(file) {
@@ -3681,7 +4012,7 @@ function importData(file) {
       data = JSON.parse(reader.result);
       if (!data || !Array.isArray(data.recipes) || !Array.isArray(data.coffees)) throw new Error('bad shape');
     } catch (e) {
-      toast('That file does not look like a Brew Library export.');
+      toast(t('That file does not look like a Brew Library export.'));
       return;
     }
     var have = state.recipes.length, incoming = data.recipes.length;
@@ -3696,7 +4027,7 @@ function importData(file) {
         state = normalizeLibrary(data);
         save();
         render();
-        toast('Library imported.');
+        toast(t('Library imported.'));
       }
     });
   };
@@ -3718,7 +4049,7 @@ function resetAll() {
         save({ keepPristine: true });
         location.hash = '#/';
         render();
-        toast('Library reset.');
+        toast(t('Library reset.'));
       });
     }
   });
@@ -3742,14 +4073,14 @@ function closeMenu() {
 }
 
 document.addEventListener('click', function (ev) {
-  var t = ev.target.closest('[data-action]');
+  var btn = ev.target.closest('[data-action]');
   var menu = ev.target.closest('#appMenu, [data-action="toggle-menu"], #detailMenu, [data-action="toggle-detail-menu"]');
   if (!menu) closeMenu();
-  if (!t) return;
+  if (!btn) return;
 
-  var action = t.getAttribute('data-action');
-  var id = t.getAttribute('data-id');
-  var type = t.getAttribute('data-type');
+  var action = btn.getAttribute('data-action');
+  var id = btn.getAttribute('data-id');
+  var type = btn.getAttribute('data-type');
   var top = stack[stack.length - 1];
 
   switch (action) {
@@ -3766,17 +4097,26 @@ document.addEventListener('click', function (ev) {
       var dm = document.getElementById('detailMenu');
       if (!dm) return;
       dm.hidden = !dm.hidden;
-      t.setAttribute('aria-expanded', dm.hidden ? 'false' : 'true');
+      btn.setAttribute('aria-expanded', dm.hidden ? 'false' : 'true');
       return;
 
     case 'new-recipe':
       ev.preventDefault();
       if (!state.coffees.length) {
         openEntityForm('coffee', null, function () { openRecipeForm(null); });
-        toast('Add a coffee first — then the recipe.');
+        toast(t('Add a coffee first — then the recipe.'));
         return;
       }
       openRecipeForm(null);
+      return;
+
+    case 'set-lang':
+      ev.preventDefault();
+      setLang(btn.getAttribute('data-lang') || 'auto');
+      closeMenu();
+      translateMarkup();
+      renderModals();
+      render();
       return;
 
     case 'open-library': ev.preventDefault(); openLibrary('coffee'); return;
@@ -3842,7 +4182,7 @@ document.addEventListener('click', function (ev) {
       if (timer.elapsed >= timer.plan.total) {
         timerRun(false);
         timer.sheet.classList.add('is-done');
-        timer.el.querySelector('.timer-now-label').textContent = 'Brew complete.';
+        timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
         timerControls();
       }
       return;
@@ -3865,7 +4205,7 @@ document.addEventListener('click', function (ev) {
       state.recipes.push(copy);
       save();
       location.hash = '#/r/' + encodeURIComponent(copy.id);
-      toast('Duplicated — edit away.');
+      toast(t('Duplicated — edit away.'));
       return;
 
     case 'delete':
@@ -3874,7 +4214,7 @@ document.addEventListener('click', function (ev) {
       var dr = recipeById(id);
       if (!dr) return;
       confirmDanger({
-        title: 'Delete recipe',
+        title: t('Delete recipe'),
         body: '<p>Delete “' + esc(titleOf(dr)) + '”?</p>',
         confirmLabel: 'Delete',
         onConfirm: function () {
@@ -3883,7 +4223,7 @@ document.addEventListener('click', function (ev) {
           save();
           location.hash = '#/';
           render();
-          toast('Recipe deleted.');
+          toast(t('Recipe deleted.'));
         }
       });
       return;
@@ -3934,7 +4274,7 @@ document.addEventListener('click', function (ev) {
         } else if (err && err.code === 'auth/popup-closed-by-user') {
           // They closed it themselves — no need to show an error.
         } else {
-          toast('Could not sign in' + (err && err.code ? ' (' + err.code + ')' : '') + '.');
+          toast(t('Could not sign in') + (err && err.code ? ' (' + err.code + ')' : '') + '.');
         }
       });
       return;
@@ -3962,7 +4302,7 @@ document.addEventListener('click', function (ev) {
 
     case 'del-step':
       top.capture();
-      top.draft.steps.splice(Number(t.getAttribute('data-i')), 1);
+      top.draft.steps.splice(Number(btn.getAttribute('data-i')), 1);
       if (!top.draft.steps.length) top.draft.steps.push({ t: '', label: '', water: '' });
       renderModals();
       return;
@@ -3977,15 +4317,15 @@ document.addEventListener('click', function (ev) {
 
     case 'style-step-del':
       top.capture();
-      top.draft.steps.splice(Number(t.getAttribute('data-i')), 1);
+      top.draft.steps.splice(Number(btn.getAttribute('data-i')), 1);
       if (!top.draft.steps.length) top.draft.steps.push({ t: '', label: '' });
       renderModals();
       return;
 
     case 'style-step-move':
       top.capture();
-      var mFrom = Number(t.getAttribute('data-i'));
-      var mTo = mFrom + Number(t.getAttribute('data-dir'));
+      var mFrom = Number(btn.getAttribute('data-i'));
+      var mTo = mFrom + Number(btn.getAttribute('data-dir'));
       var mArr = top.draft.steps;
       if (mTo < 0 || mTo >= mArr.length) return;
       var moved = mArr[mFrom];
@@ -3996,7 +4336,7 @@ document.addEventListener('click', function (ev) {
 
     case 'rate':
       top.capture();
-      var v = Number(t.getAttribute('data-v'));
+      var v = Number(btn.getAttribute('data-v'));
       top.draft.rating = top.draft.rating === v ? 0 : v;
       renderModals();
       return;
@@ -4006,7 +4346,7 @@ document.addEventListener('click', function (ev) {
     // a form with unsaved work still gets to ask.
     case 'crumb-home':
       ev.preventDefault();
-      var goTo = t.getAttribute('data-hash') || '#/';
+      var goTo = btn.getAttribute('data-hash') || '#/';
       while (stack.length) {
         var before = stack.length;
         closeModal();
@@ -4018,7 +4358,7 @@ document.addEventListener('click', function (ev) {
 
     case 'crumb-back':
       ev.preventDefault();
-      var toDepth = parseInt(t.getAttribute('data-depth'), 10);
+      var toDepth = parseInt(btn.getAttribute('data-depth'), 10);
       while (stack.length - 1 > toDepth) {
         var was = stack.length;
         closeModal();
@@ -4282,6 +4622,8 @@ document.addEventListener('visibilitychange', function () {
   timer.raf = requestAnimationFrame(timerFrame);
 });
 
+document.documentElement.setAttribute('lang', LANG);
+translateMarkup();
 trackVisualViewport();
 boot();
 
