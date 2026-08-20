@@ -1692,6 +1692,67 @@ function closeModal(force) {
   if (m && m.onClose) m.onClose();
   renderModals();
 }
+/* Back closes a page instead of leaving the app.
+
+   One history entry is kept per open page, and the two are reconciled here
+   rather than in closeModal, because not every path goes through it —
+   saveEntity pops the stack itself so the callback can write into the
+   parent's draft before anything repaints. renderModals is the one place
+   they all meet.
+
+   Unwinding only touches entries still known to be ours. Saving a recipe
+   from another recipe's page changes the hash right after closing, which
+   puts an entry on top that is not a page; stepping back over it would
+   undo that navigation instead of tidying up. */
+var historyDepth = 0;
+var ignorePops = 0;
+var inPopstate = false;
+
+function syncHistory() {
+  var want = stack.length;
+  while (historyDepth < want) {
+    historyDepth++;
+    history.pushState({ brewDepth: historyDepth }, '');
+  }
+  if (want < historyDepth) {
+    var extra = historyDepth - want;
+    historyDepth = want;
+    if (!history.state || !history.state.brewDepth) return;   // not ours to unwind
+    ignorePops++;
+    // Deferred, and re-checked when it runs. Saving a recipe closes the page
+    // and *then* changes the hash to the recipe just saved; unwinding
+    // regardless would undo that and drop the reader back on the old one.
+    setTimeout(function () {
+      if (!history.state || !history.state.brewDepth) { ignorePops--; return; }
+      history.go(-extra);
+    }, 0);
+  }
+}
+
+window.addEventListener('popstate', function (ev) {
+  if (ignorePops > 0) { ignorePops--; return; }
+  var want = (ev.state && ev.state.brewDepth) || 0;
+  historyDepth = want;
+  inPopstate = true;
+  while (stack.length > want) {
+    var before = stack.length;
+    closeModal();
+    // Not just "unchanged": a running timer answers a close by opening a
+    // confirmation, so the stack grows. Either way nothing was dismissed,
+    // so stop and restore an entry for whatever is still open.
+    if (stack.length >= before) {
+      inPopstate = false;
+      syncHistory();
+      return;
+    }
+  }
+  inPopstate = false;
+  // Landing on an entry that outlived its page — left behind when a save
+  // navigated away — would otherwise leave the count too high, and the next
+  // page would open without an entry of its own for Back to consume.
+  historyDepth = stack.length;
+});
+
 function renderModals() {
   // Every re-render throws the sheets away and builds fresh ones, which resets
   // their scroll to the top. Adding or removing a step near the bottom of a
@@ -1750,6 +1811,10 @@ function renderModals() {
     var focusable = last.el.querySelector('input,select,textarea,.dialog .btn-ghost');
     if (focusable && !('ontouchstart' in window)) focusable.focus();
   }
+
+  // Not while unwinding: the browser has already moved, and matching it
+  // again would step back twice for one press.
+  if (!inPopstate) syncHistory();
 }
 
 // You pressed "Add step" because you have a step to write — put the cursor in
