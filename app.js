@@ -1703,6 +1703,9 @@ function renderModals() {
   });
 
   modalRoot.innerHTML = '';
+  // Titles gather as the stack renders, so each page's breadcrumb can name
+  // the pages that led to it.
+  var trail = baseCrumbs();
   stack.forEach(function (m, i) {
     var el = m.render();
     m.el = el;
@@ -1711,6 +1714,27 @@ function renderModals() {
       var body = el.querySelector('.sheet-body');
       if (body) body.scrollTop = scrolls[i];
     }
+
+    var crumbs = el.querySelector('.crumbs');
+    var heading = el.querySelector('.page-head h2');
+    if (crumbs) crumbs.innerHTML = crumbTrail(trail, i);
+    if (heading) trail.push({ label: heading.textContent, depth: i });
+
+  });
+
+  /* A page is hidden only when another page covers it. Anything that still
+     floats — a confirmation, the timer — is meant to sit *over* the page
+     that opened it, and hiding that page would drop the reader back to the
+     recipe list behind. The pages themselves stay in the DOM regardless: a
+     form's element is where its typed values are read back from. */
+  var pages = stack.map(function (m) {
+    return m.el && m.el.classList.contains('page') ? m.el : null;
+  });
+  pages.forEach(function (el, i) {
+    if (!el) return;
+    var coveredByPage = false;
+    for (var j = i + 1; j < pages.length; j++) if (pages[j]) coveredByPage = true;
+    el.classList.toggle('is-behind', coveredByPage);
   });
 
   document.body.style.overflow = stack.length ? 'hidden' : '';
@@ -1741,18 +1765,61 @@ function focusLastStep(m, rowSelector) {
   if (input.scrollIntoView) input.scrollIntoView({ block: 'nearest' });
 }
 
+/* Forms are pages, not sheets. They are long, they nest — a recipe can
+   open a coffee, which can open a roaster — and on a phone a stack of
+   sheets over a dimmed list gives no sense of where you are. A page with a
+   breadcrumb does, and the trail is just the modal stack drawn out.
+
+   The head and foot stay pinned with the body scrolling between them, so
+   Save is always reachable above the keyboard. Class names from the sheet
+   era are kept where behaviour hangs off them (.sheet-body carries scroll
+   position across re-renders).
+
+   Confirmations are deliberately not pages: v3 reserves the centred modal
+   for destructive choices, and an interruption should read as one. */
 function sheet(opts) {
   var wrap = document.createElement('div');
-  wrap.className = 'overlay';
+  wrap.className = 'page';
   wrap.innerHTML =
-    '<div class="sheet' + (opts.narrow ? ' narrow' : '') + '" role="dialog" aria-modal="true">' +
-      '<div class="sheet-head"><h2>' + esc(opts.title) + '</h2>' +
-        '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button></div>' +
+    '<div class="page-inner' + (opts.narrow ? ' narrow' : '') + '" role="dialog" aria-modal="true">' +
+      '<div class="page-head">' +
+        '<nav class="crumbs" aria-label="Breadcrumb"></nav>' +
+        '<div class="page-title-row">' +
+          '<h2>' + esc(opts.title) + '</h2>' +
+          '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+        '</div>' +
+      '</div>' +
       '<div class="sheet-body">' + opts.body + '</div>' +
       '<div class="sheet-foot">' + opts.foot + '</div>' +
     '</div>';
-  wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
   return wrap;
+}
+
+/* Renders the trail leading to the page at `depth`, every step of it
+   clickable: a crumb pointing into the app closes the whole stack and goes
+   there, one pointing at an earlier page closes back down to it. */
+function crumbTrail(trail, depth) {
+  return trail.map(function (c) {
+    if (c.hash !== undefined) {
+      return '<a href="' + esc(c.hash) + '" data-action="crumb-home" data-hash="' + esc(c.hash) + '">' +
+        esc(c.label) + '</a>';
+    }
+    return '<button data-action="crumb-back" data-depth="' + c.depth + '">' + esc(c.label) + '</button>';
+  }).join('<span class="crumb-sep" aria-hidden="true">/</span>') +
+    (trail.length ? '<span class="crumb-sep" aria-hidden="true">/</span>' : '');
+}
+
+/* Where the trail starts: the recipe list, plus the recipe being looked at
+   if the form was opened from one. Everything after this comes from the
+   stack itself. */
+function baseCrumbs() {
+  var out = [{ label: 'Recipes', hash: '#/' }];
+  var m = (location.hash || '').match(/^#\/r\/(.+)$/);
+  if (m) {
+    var r = recipeById(decodeURIComponent(m[1]));
+    if (r) out.push({ label: titleOf(r), hash: location.hash });
+  }
+  return out;
 }
 
 // A themed stand-in for the browser's own confirm() — used for anything
@@ -3869,6 +3936,31 @@ document.addEventListener('click', function (ev) {
       var v = Number(t.getAttribute('data-v'));
       top.draft.rating = top.draft.rating === v ? 0 : v;
       renderModals();
+      return;
+
+    // A crumb pointing back at the app leaves every open page, so it has to
+    // clear the stack one at a time — each page may guard its own close, and
+    // a form with unsaved work still gets to ask.
+    case 'crumb-home':
+      ev.preventDefault();
+      var goTo = t.getAttribute('data-hash') || '#/';
+      while (stack.length) {
+        var before = stack.length;
+        closeModal();
+        if (stack.length === before) return;   // a page refused to close
+      }
+      if (location.hash !== goTo) location.hash = goTo;
+      else render();
+      return;
+
+    case 'crumb-back':
+      ev.preventDefault();
+      var toDepth = parseInt(t.getAttribute('data-depth'), 10);
+      while (stack.length - 1 > toDepth) {
+        var was = stack.length;
+        closeModal();
+        if (stack.length === was) return;
+      }
       return;
 
     case 'save-recipe': saveRecipe(top); return;

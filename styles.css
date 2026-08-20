@@ -750,12 +750,14 @@ svg.ico-fill{fill:currentColor;stroke:none}
    tracks the actually-visible area and --vv-top the offset the browser
    scrolled it by, keeping the footer above the keyboard. Both fall back to
    the full viewport wherever visualViewport isn't available. */
+/* ---------- overlay ----------
+   Two things still float above the app rather than replacing it: the brew
+   timer, which is fullscreen but is not a form, and the confirmation
+   dialog, which must read as an interruption. Forms became pages; these
+   deliberately did not. */
 .overlay{
   position:fixed;inset:0;z-index:100;background:var(--surface-scrim);
   display:flex;align-items:center;justify-content:center;
-  /* Full-viewport scrim, with the keyboard's height (--kb) held out as
-     padding so the sheet lands above it while the scrim still paints behind
-     it. --vv-top follows the browser scrolling the focused field into view. */
   padding:calc(24px + var(--vv-top,0px)) 24px calc(24px + var(--kb,0px));
   animation:fade var(--dur-base) var(--ease-out) both;overflow-y:auto;
 }
@@ -771,29 +773,95 @@ svg.ico-fill{fill:currentColor;stroke:none}
 }
 .sheet.narrow{max-width:480px}
 @keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
-.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px var(--pad-sheet);border-bottom:var(--border-w-hairline) solid var(--border-hairline);flex:none}
-.sheet-head h2{font:var(--weight-regular) 24px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
-.sheet-body{padding:var(--pad-sheet);overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
-.sheet-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px var(--pad-sheet);border-top:var(--border-w-hairline) solid var(--border-hairline);flex:none;background:var(--surface-sunken);border-radius:0 0 var(--radius-lg) var(--radius-lg)}
+.sheet-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:16px var(--pad-sheet);
+  border-bottom:var(--border-w-hairline) solid var(--border-hairline);flex:none;
+}
+.sheet-head h2{
+  font:var(--weight-regular) 24px/var(--leading-snug) var(--font-display);
+  letter-spacing:var(--tracking-display);color:var(--text-title);
+}
 @media(max-width:640px){
-  /* Floats with margin on every side rather than docking flush, so all
-     four corners round equally. The flat 50px bottom figure is an
-     unconditional safety margin: mobile browser chrome height varies
-     and isn't always reflected by dvh. */
-  /* max() keeps the flat 50px chrome margin when no keyboard is up, and
-     switches to a tight 12px gap above the keyboard when one is — stacking
-     both left a dead band between the sheet and the keys. */
   .overlay{
     padding:calc(16px + var(--vv-top,0px)) 16px max(50px, calc(var(--kb,0px) + 12px));
     align-items:flex-end;
   }
   .sheet{
-    max-width:none;border-radius:var(--radius-sheet);margin:0;
-    max-height:100%;
+    max-width:none;border-radius:var(--radius-sheet);margin:0;max-height:100%;
     animation:up var(--dur-sheet) var(--ease-settle) both;
   }
-  .sheet-foot{border-radius:0 0 var(--radius-sheet) var(--radius-sheet);padding-bottom:max(14px,env(safe-area-inset-bottom))}
   @keyframes up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+}
+
+/* ---------- form pages ----------
+   Forms take over the screen rather than floating over it. They are long,
+   they nest, and on a phone a stack of sheets above a dimmed list gives no
+   sense of place — a page with a breadcrumb does.
+
+   Head and foot are pinned with the body scrolling between them, so Save
+   stays reachable above the keyboard; --kb is how much of the viewport the
+   keyboard is covering. */
+.page{
+  position:fixed;inset:0;z-index:100;
+  display:flex;justify-content:center;
+  background:var(--bg-app);
+  animation:pagein var(--dur-base) var(--ease-out) both;
+}
+@keyframes pagein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* Pages below the top one stay in the DOM — a form's element is where its
+   typed values are read back from — but must not be seen or reachable. */
+.page.is-behind{display:none}
+.page-inner{
+  width:100%;max-width:720px;height:100%;
+  display:flex;flex-direction:column;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border-left:var(--border-w-hairline) solid var(--border-hairline);
+  border-right:var(--border-w-hairline) solid var(--border-hairline);
+}
+.page-inner.narrow{max-width:560px}
+
+.page-head{
+  flex:none;padding:14px var(--pad-sheet) 12px;
+  border-bottom:var(--border-w-hairline) solid var(--border-hairline);
+  background:var(--surface-card);
+}
+.page-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.page-head h2{
+  font:var(--weight-regular) 26px/var(--leading-snug) var(--font-display);
+  letter-spacing:var(--tracking-display);color:var(--text-title);
+}
+
+/* The trail wraps rather than scrolls: knowing where you are matters more
+   than keeping the header one line tall. */
+.crumbs{
+  display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-bottom:8px;
+  font:var(--type-caption);color:var(--text-muted);
+}
+.crumbs a,.crumbs button{
+  color:var(--text-muted);font:inherit;background:none;border:0;padding:2px 0;
+  border-radius:var(--radius-sm);transition:color var(--dur-fast) var(--ease-standard);
+}
+.crumbs a:hover,.crumbs button:hover{color:var(--text-title);text-decoration:underline}
+.crumbs a:focus-visible,.crumbs button:focus-visible{box-shadow:var(--shadow-focus)}
+.crumb-sep{color:var(--text-faint);user-select:none}
+
+.sheet-body{padding:var(--pad-sheet);overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.sheet-foot{
+  display:flex;justify-content:flex-end;gap:10px;flex:none;
+  padding:14px var(--pad-sheet);
+  padding-bottom:calc(14px + var(--kb,0px));
+  border-top:var(--border-w-hairline) solid var(--border-hairline);
+  background:var(--surface-sunken);
+}
+
+@media(max-width:640px){
+  .page-inner{max-width:none;border-left:0;border-right:0}
+  .page-head{padding:12px var(--pad-sheet) 10px}
+  .page-head h2{font-size:22px}
+  /* Actions span the width on a phone, and clear the home indicator. */
+  .sheet-foot{padding-bottom:calc(max(14px,env(safe-area-inset-bottom)) + var(--kb,0px))}
+  .sheet-foot .btn{flex:1 1 0;justify-content:center}
 }
 
 /* ---------- confirmation dialog ----------
