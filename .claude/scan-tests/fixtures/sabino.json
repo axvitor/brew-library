@@ -57,5 +57,6 @@
     "Lote/Torrado em:",
     "20/07/2026",
     "250gr"
-  ]
+  ],
+  "note": "label photo confirms the coffee is called Natália — the largest text on the label — which this scan's OCR never read at all. 'Fazenda Jaguara' is the farm, labelled Fazenda:. The parser cannot do better from text that lacks the name; a rescan that captures it is the fix, not a parsing change"
 }

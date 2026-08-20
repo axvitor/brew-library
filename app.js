@@ -2357,7 +2357,7 @@ var FIELD_LABELS = [
   ['process', ['processamento', 'processo', 'process', 'preparo', 'metodo']],
   ['varietal', ['variedades', 'variedade', 'varietals', 'varietal', 'variety', 'cultivares', 'cultivar']],
   ['roast', ['nivel de torra', 'perfil de torra', 'torra', 'roast level', 'roast']],
-  ['origin', ['origem', 'origin', 'regiao', 'region', 'terroir', 'municipio']],
+  ['origin', ['origem', 'origin', 'regiao', 'region', 'terroir', 'municipio', 'cidade']],
   // Deliberately not 'fazenda' / 'sitio' / 'farm': on Brazilian bags those
   // open the coffee's own name far more often than they label a producer
   // ("Fazenda Samambaia", "Sítio Palmito"). Treating them as labels both
@@ -2484,7 +2484,7 @@ function looksLikePlace(line) { return PLACE_RE.test(String(line).trim()); }
 var REGION_TERMS = ['cerrado mineiro', 'sul de minas', 'mantiqueira de minas', 'matas de minas',
   'campo das vertentes', 'chapada diamantina', 'alta mogiana', 'mogiana', 'oeste da bahia',
   'montanhas do espirito santo', 'caparao', 'jequitinhonha', 'chapada de minas',
-  'alto paranaiba', 'zona da mata'];
+  'alto paranaiba', 'zona da mata', 'norte pioneiro do parana'];
 // Deliberately absent: "Serra da Canastra", "Guji", "Yirgacheffe", "Huila".
 // They are genuine regions, but on a bag they are usually part of the
 // coffee's own name — and two of them are coffee names in this library, so
@@ -2631,7 +2631,7 @@ function assembleNotes(frags) {
   head.concat(tail).forEach(function (f) {
     if (!out) { out = f; return; }
     var joinWith = ' ';
-    if (!/[,&|]$/.test(out) && !/^(e|and)\s/.test(scanNorm(f))) {
+    if (!/[,&|;]$/.test(out) && !/^(e|and)\s/.test(scanNorm(f))) {
       joinWith = out.indexOf('|') !== -1 ? ' | ' : ', ';
     }
     out += joinWith + f;
@@ -2643,7 +2643,8 @@ function looksLikeNotes(line) {
   var n = scanNorm(line);
   if (n.length < 12) return false;
   // A list, not a single word: notes are enumerated.
-  if (n.indexOf(',') === -1 && n.indexOf('|') === -1 && n.indexOf(' e ') === -1 && n.indexOf(' and ') === -1) return false;
+  if (n.indexOf(',') === -1 && n.indexOf('|') === -1 && n.indexOf(';') === -1 &&
+      n.indexOf(' e ') === -1 && n.indexOf(' and ') === -1) return false;
   var hits = 0;
   for (var i = 0; i < FLAVOUR_TERMS.length; i++) {
     if (n.indexOf(FLAVOUR_TERMS[i]) !== -1) hits++;
@@ -2966,8 +2967,45 @@ function parseLabel(data) {
     else put(field, trimEdges(val), reason);
   }
 
+  /* Some bags set labels in one column and values in another, and OCR
+     reports that as every label, then every value. Pairing them off in
+     order fails as soon as anything sits between the two runs — on one bag
+     the producer's name did, which would have filed him as the variety.
+
+     A label with a vocabulary can prove which value is its own, so one
+     confident match anchors the rest: "Perfil de Torra" finds "Média
+     Clara", and the offset that took carries "Variedade" to "Caparaó
+     Amarelo" beside it. Without such an anchor nothing is assigned, since
+     a guess here is worse than leaving the field for the review sheet. */
+  function assignBlock(labelHitsList, values) {
+    var anchor = -1, anchorVal = -1;
+    labelHitsList.forEach(function (hit, p) {
+      if (anchor !== -1) return;
+      var table = hit.field === 'roast' ? ROAST_TERMS : (hit.field === 'process' ? PROCESS_TERMS : null);
+      for (var v = 0; v < values.length; v++) {
+        var ok = table ? matchTerms(scanNorm(values[v].text), table)
+                       : (hit.field === 'altitude' ? parseAltitudeLoose(values[v].text) : '');
+        if (ok) { anchor = p; anchorVal = v; return; }
+      }
+    });
+    if (anchor === -1) return false;
+    var offset = anchorVal - anchor;
+    if (offset < 0) return false;
+    var used = false;
+    labelHitsList.forEach(function (hit, p) {
+      var v = values[p + offset];
+      if (!v) return;
+      assign(hit.field, v.text, 'labelled “' + hit.label + '” in the column above', v.text);
+      used = true;
+    });
+    return used;
+  }
+
+  var handledLine = {};
+
   // Tier 1 — labelled lines. Most reliable, so it runs first and wins.
   lines.forEach(function (line, i) {
+    if (handledLine[i]) return;
     var hits = labelHits(line);
     if (!hits.length) return;
 
@@ -2986,6 +3024,29 @@ function parseLabel(data) {
     var anyInline = inline.some(function (v) { return !!v; });
     var next = (lines[i + 1] || '').trim();
     var nextIsValues = next && !labelHits(next).length;
+
+    // A run of bare labels one per line, followed by a run of values.
+    if (!anyInline && hits.length === 1 && next && labelHits(next).length) {
+      var block = [hits[0]], k = i + 1;
+      for (; k < lines.length; k++) {
+        var h = labelHits(lines[k]);
+        if (h.length !== 1) break;
+        var inlineVal = lines[k].slice(h[0].end).replace(/^\s*[:；;：\-–—]?\s*/, '').trim();
+        if (inlineVal) break;
+        block.push(h[0]);
+      }
+      if (block.length >= 2) {
+        var vals = [];
+        for (; k < lines.length && vals.length < block.length + 4; k++) {
+          if (labelHits(lines[k]).length) break;
+          vals.push({ text: lines[k], at: k });
+        }
+        if (vals.length && assignBlock(block, vals)) {
+          for (var b = 0; b < block.length; b++) handledLine[i + b] = true;
+          return;
+        }
+      }
+    }
 
     // A whole row of labels with nothing beside them means the values are
     // on the row below — pair them up rather than letting only the last

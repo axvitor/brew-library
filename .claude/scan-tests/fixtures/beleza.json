@@ -1,20 +1,28 @@
 {
   "label": "Beleza Tropical — Caparaó (scrambled label/value order)",
-  "roasters": ["Sabino", "Moka Clube", "Lucca"],
+  "roasters": [
+    "Sabino",
+    "Moka Clube",
+    "Lucca"
+  ],
   "heights": {
-    "BELEZA": 44, "TROPICAL": 44,
+    "BELEZA": 44,
+    "TROPICAL": 44,
     "Jaca Madura | Cajá | Manga |": 16,
     "Maracujá | Frutas Vermelhas | limão": 16,
     "Licoroso | Fermentado | Exótico | Doideira": 16,
     "Dores do Rio Preto - ES": 14,
-    "1200 metros": 14, "Natural Fermentado": 14,
-    "Caparaó Amarelo": 14, "Média Clara": 14
+    "1200 metros": 14,
+    "Natural Fermentado": 14,
+    "Caparaó Amarelo": 14,
+    "Média Clara": 14
   },
   "expect": {
     "altitude": "1,200 m",
     "process": "Fermented natural",
     "roast": "Medium-light",
-    "origin": "Dores do Rio Preto - ES"
+    "origin": "Dores do Rio Preto - ES",
+    "varietal": "Caparaó Amarelo"
   },
   "text": [
     "Pr Métodos Indicados:",
@@ -31,17 +39,32 @@
     "Dores do Rio Preto - ES",
     "Café 100% Arábica",
     "dao,",
-    "Métodos Indicados:", "Torrado", "Espresso e Filtrados",
-    "; colh", "artesanalmente", "a", "em pequenos lotes",
-    "Sensorial:", "os”",
+    "Métodos Indicados:",
+    "Torrado",
+    "Espresso e Filtrados",
+    "; colh",
+    "artesanalmente",
+    "a",
+    "em pequenos lotes",
+    "Sensorial:",
+    "os”",
     "Jaca Madura | Cajá | Manga |",
     "Maracujá | Frutas Vermelhas | limão",
     "Licoroso | Fermentado | Exótico | Doideira",
-    "BELEZA", "MOO:",
-    "Altitude", "Natural Fermentado", "1200 metros",
-    "TROPICAL", "Lote 02", "Variedade", "Perfil de Torra",
+    "BELEZA",
+    "MOO:",
+    "Altitude",
+    "Natural Fermentado",
+    "1200 metros",
+    "TROPICAL",
+    "Lote 02",
+    "Variedade",
+    "Perfil de Torra",
     "Ademir Lacerda - Sítio Forquilha do Rio",
-    "Caparaó Amarelo", "Média Clara",
-    "Dores do Rio Preto - ES", "Café 100% Arábica"
-  ]
+    "Caparaó Amarelo",
+    "Média Clara",
+    "Dores do Rio Preto - ES",
+    "Café 100% Arábica"
+  ],
+  "note": "label photo confirms: name is BELEZA TROPICAL, but OCR reported the two words five lines apart so they cannot be rejoined from text alone; notes carry both sensory lines, as printed under one Sensorial heading"
 }
