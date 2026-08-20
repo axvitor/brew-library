@@ -2329,6 +2329,7 @@ var PROCESS_TERMS = [
   ['Wet hulled', ['wet hulled', 'giling basah']],
   ['Washed', ['fully washed', 'washed', 'lavado', 'lavada', 'via umida']],
   ['Honey', ['yellow honey', 'red honey', 'black honey', 'white honey', 'honey']],
+  ['Fermented natural', ['natural fermentado', 'fermented natural', 'natural fermentation']],
   ['Natural', ['natural', 'via seca', 'dry process']],
   ['Induced fermentation', ['fermentacao induzida', 'induced fermentation', 'koji', 'lactic fermentation']]
 ];
@@ -2341,8 +2342,9 @@ var VARIETAL_TERMS = ['Bourbon Amarelo', 'Bourbon Vermelho', 'Bourbon Rosa',
   'Pacas', 'Castillo', 'Caturrão', 'Rubi', 'Tupi', 'Laurina', 'Pink Bourbon'];
 
 var ROAST_TERMS = [
+  ['Medium-light', ['medium-light', 'medium light', 'torra media clara', 'media clara', 'clara media']],
+  ['Medium-dark', ['medium-dark', 'medium dark', 'torra media escura', 'media escura']],
   ['Light', ['light roast', 'light', 'torra clara', 'clara']],
-  ['Medium-dark', ['medium-dark', 'medium dark', 'torra media escura']],
   ['Medium', ['medium roast', 'medium', 'torra media', 'media']],
   ['Dark', ['dark roast', 'dark', 'torra escura', 'escura']],
   ['Omni', ['omni roast', 'omni']]
@@ -2363,7 +2365,7 @@ var FIELD_LABELS = [
   ['producer', ['produtor', 'producer']],
   // Recognised so they terminate a neighbouring value and never pose as a
   // coffee name, but mapped to nothing — the app has no field for them.
-  ['skip', ['pontuacao', 'score', 'finalizacao', 'finalizaco', 'safra', 'secagem',
+  ['skip', ['metodos indicados', 'metodo indicado', 'pontuacao', 'score', 'finalizacao', 'finalizaco', 'safra', 'secagem',
     'peneira', 'torrefacao', 'validade', 'lote/torrado em', 'lote', 'peso liquido',
     'peso', 'conteudo', 'moagem', 'embalado em']],
   ['notes', ['perfil sensorial', 'perfil aromatico', 'notas sensoriais', 'sensorial',
@@ -2554,6 +2556,7 @@ var FLAVOUR_TERMS = ['chocolate', 'cacau', 'caramelo', 'caramelizad', 'melado', 
   'rapadura', 'melaco', 'melado', 'nibs', 'pistache', 'tamarindo', 'cupuacu', 'jabuticaba',
   'maracuja', 'goiaba', 'caju', 'acerola', 'graviola', 'pitanga', 'ameixa', 'figo',
   'toranja', 'bergamota', 'lichia', 'melancia', 'coco', 'amora', 'cereja', 'pera',
+  'jaca', 'caja', 'manga', 'frutas vermelhas', 'fermentado', 'exotico', 'tropical',
   'frutas', 'frutado', 'fruta', 'citrico', 'citrica', 'laranja', 'limao', 'tangerina', 'abacaxi',
   'maca', 'pessego', 'damasco', 'uva', 'morango', 'framboesa', 'banana', 'mamao', 'manga',
   'floral', 'jasmim', 'flores', 'acucar', 'doce', 'cremoso', 'encorpado',
@@ -2617,17 +2620,30 @@ function assembleNotes(frags) {
   var head = [], tail = [];
   frags.forEach(function (f) {
     f = cleanNoteText(splitGluedE(String(f).trim()));
-    if (!f) return;
+    if (!f || !flavourHits(f)) return;
     if (/^e\s/.test(scanNorm(f))) tail.push(f); else head.push(f);
   });
-  return trimEdges(head.concat(tail).join(' ').replace(/\s+/g, ' '));
+  // Rejoin with the separator the bag itself uses, unless the piece
+  // already ends in one or the next begins with the conjunction that
+  // closes a Portuguese list — "…limão Licoroso" should read
+  // "…limão | Licoroso", but "…Cerrado E Caramelo" is already right.
+  var out = '';
+  head.concat(tail).forEach(function (f) {
+    if (!out) { out = f; return; }
+    var joinWith = ' ';
+    if (!/[,&|]$/.test(out) && !/^(e|and)\s/.test(scanNorm(f))) {
+      joinWith = out.indexOf('|') !== -1 ? ' | ' : ', ';
+    }
+    out += joinWith + f;
+  });
+  return trimEdges(out.replace(/\s+/g, ' '));
 }
 
 function looksLikeNotes(line) {
   var n = scanNorm(line);
   if (n.length < 12) return false;
   // A list, not a single word: notes are enumerated.
-  if (n.indexOf(',') === -1 && n.indexOf(' e ') === -1 && n.indexOf(' and ') === -1) return false;
+  if (n.indexOf(',') === -1 && n.indexOf('|') === -1 && n.indexOf(' e ') === -1 && n.indexOf(' and ') === -1) return false;
   var hits = 0;
   for (var i = 0; i < FLAVOUR_TERMS.length; i++) {
     if (n.indexOf(FLAVOUR_TERMS[i]) !== -1) hits++;
@@ -2940,9 +2956,13 @@ function parseLabel(data) {
       if (flavourHits(val)) { take(); put('notes', trimEdges(cleanNoteText(val)), reason); }
       return;
     }
+    if (field === 'altitude') {
+      var av = parseAltitudeLoose(val);
+      if (av) { take(); put('altitude', av, reason); }
+      return;
+    }
     take();
-    if (field === 'altitude') put('altitude', parseAltitudeLoose(val) || val, reason);
-    else if (field === 'producer') put('origin', trimEdges(val), reason);
+    if (field === 'producer') put('origin', trimEdges(val), reason);
     else put(field, trimEdges(val), reason);
   }
 
