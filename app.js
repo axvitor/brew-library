@@ -1355,6 +1355,8 @@ function cardHTML(r) {
         '</div>' +
         '<div class="card-title">' + esc(titleOf(r)) + '</div>' +
         (roaster ? '<div class="card-sub"><span>' + esc(roaster) + '</span></div>' : '') +
+        (r.rating ? '<div class="card-rating" aria-label="' +
+          esc(t('Cup score') + ': ' + r.rating + '/5') + '">' + stars(r.rating) + '</div>' : '') +
       '</div>' +
       '<div class="card-tools">' +
         // Only offered when there's actually something to count — a recipe
@@ -1374,7 +1376,6 @@ function cardHTML(r) {
         '<div class="stat"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
         '<div class="stat"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
       '</div>' +
-      (r.rating ? stars(r.rating) : '') +
     '</div>' +
     '</div>' +
     '</div>';
