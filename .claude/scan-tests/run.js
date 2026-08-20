@@ -47,7 +47,7 @@ function loadParser(roasters) {
     console.error('Expected markers:\n  ' + START + '\n  ' + END);
     process.exit(2);
   }
-  const body = src.slice(from, to) + '\n return { parseLabel: parseLabel };';
+  const body = src.slice(from, to) + '\n return { parseLabel: parseLabel, parseAltitude: parseAltitude };';
   // coll() is the parser's only reach into the app; the roaster list is
   // what lets a known roaster be recognised on a bag.
   return new Function('coll', body)(() => roasters);
@@ -108,6 +108,40 @@ for (const file of files) {
     .map(k => `${k}=${JSON.stringify(found[k])}`);
   if (extra.length) console.log('  (unasserted: ' + extra.join(', ') + ')');
   if (fx.note) console.log('  note: ' + fx.note);
+}
+
+/* Altitude formats, checked directly rather than through a bag. An
+   altitude is always three or four digits followed by a unit, but bags
+   spell that unit every way there is — and the bare "m" needs a word
+   boundary after it, so "1200 meters" once matched nothing at all. */
+const ALTITUDES = [
+  ['1200 m', '1,200 m'], ['1200m', '1,200 m'], ['1250M', '1,250 m'],
+  ['900 metros', '900 m'], ['1200 meters', '1,200 m'], ['1200 metres', '1,200 m'],
+  ['1200 mt', '1,200 m'], ['1200 mts', '1,200 m'], ['1200 m.', '1,200 m'],
+  ['1.200m', '1,200 m'], ['1,200 masl', '1,200 m'], ['1200 msnm', '1,200 m'],
+  ['1100-1300 m', '1,100–1,300 m'], ['1.100 a 1.300 metros', '1,100–1,300 m'],
+  ['1100 to 1300 meters', '1,100–1,300 m'],
+  // A unit is required, and the value has to be a plausible altitude.
+  ['250 g', ''], ['serial 1200', ''], ['1200', ''],
+  ['99999 m', ''], ['12 m', ''], ['50000 m', '']
+];
+
+console.log('\nAltitude formats');
+{
+  const { parseAltitude } = loadParser([]);
+  for (const [input, want] of ALTITUDES) {
+    const got = parseAltitude(input) || '';
+    if (got === want) {
+      pass++;
+    } else {
+      fail++;
+      failures.push(`altitude → ${JSON.stringify(input)}`);
+      console.log(`  FAIL  ${JSON.stringify(input)}`);
+      console.log(`        got  ${JSON.stringify(got)}`);
+      console.log(`        want ${JSON.stringify(want)}`);
+    }
+  }
+  console.log(`  ${ALTITUDES.length} formats checked`);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

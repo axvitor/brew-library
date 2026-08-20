@@ -2395,9 +2395,17 @@ function altNum(s) {
 }
 function altPlausible(n) { return n >= 200 && n <= 3000; }
 
+/* An altitude is always three or four digits followed by a unit —
+   "metros", "meters", or "m". Spelling it out is what the alternation
+   below is for: the bare "m" needs a word boundary after it, so without
+   the long forms listed first, "1200 meters" matched nothing at all. */
+var ALT_UNIT = '(?:metros|metres|meters|msnm|masl|m\\.a\\.s\\.l|mts\\b|mt\\b|m\\b|m\\.)';
+
 function parseAltitude(text) {
-  var re = /(\d{1,2}[.,]?\d{3}|\d{3,4})\s*(?:m|metros)?\s*(?:a|à|-|–|—|to|até|ate)\s*(\d{1,2}[.,]?\d{3}|\d{3,4})\s*(?:m\b|mts|metros|msnm|masl|m\.a\.s\.l)/i;
-  var one = /(\d{1,2}[.,]\d{3}|\d{3,4})\s*(?:m\b|mts|metros|msnm|masl|m\.a\.s\.l)/i;
+  var num = '(\\d{1,2}[.,]?\\d{3}|\\d{3,4})';
+  var re = new RegExp(num + '\\s*(?:metros|metres|meters|m)?\\s*(?:a|à|-|–|—|to|até|ate)\\s*' +
+    num + '\\s*' + ALT_UNIT, 'i');
+  var one = new RegExp('(\\d{1,2}[.,]\\d{3}|\\d{3,4})\\s*' + ALT_UNIT, 'i');
 
   var m = text.match(re);
   if (m) {
@@ -2756,7 +2764,7 @@ function findTermSpan(text, table) {
 }
 
 function findAltitudeSpan(text) {
-  var re = /(\d{1,2}[.,]?\d{3}|\d{3,4})\s*(?:m\b|mts|metros|msnm|masl)/i;
+  var re = new RegExp('(\\d{1,2}[.,]?\\d{3}|\\d{3,4})\\s*' + ALT_UNIT, 'i');
   var m = re.exec(text);
   if (!m) return null;
   var v = parseAltitude(m[0]);
