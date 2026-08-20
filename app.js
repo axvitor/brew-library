@@ -865,6 +865,7 @@ var TRANSLATIONS = {
     'doesn’t use a pour schedule — nothing to show here.': 'não usa cronograma de despejos — nada a mostrar aqui.',
     'Defaults to the coffee name': 'Usa o nome do café por padrão',
     'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. Water 100°C for light roasts, 92°C medium, 85°C dark.': 'Coado versátil que serve a qualquer suporte e qualquer torra. Nivele o leito antes da pré-infusão e despeje devagar — despejos agressivos agitam demais o pó e deixam a xícara amarga. Água a 100°C para torras claras, 92°C médias, 85°C escuras.',
+    'nothing matches — try clearing a filter': 'nada corresponde — tente limpar um filtro',
     // --- messages ---
     'Recipe saved.': 'Receita salva.',
     'Recipe deleted.': 'Receita excluída.',
@@ -1265,10 +1266,14 @@ function renderHome() {
   var html = '';
   html += '<section class="hero">' +
     '<h1>' + esc(t('Your brewing library')) + '</h1>' +
-    '<p><span class="count">' + total + '</span> ' + esc(tPlural(total, 'recipe', 'recipes')) +
-    ' ' + esc(t('across')) + ' ' + state.coffees.length + ' ' +
-    esc(tPlural(state.coffees.length, 'coffee', 'coffees')) + '. ' +
-    esc(t('Filter to find the one you want, then brew it.')) + '</p>' +
+    (filtersActive()
+      ? '<p><span class="count">' + list.length + '</span> ' +
+        esc(tPlural(list.length, 'recipe', 'recipes')) + ' ' + esc(t('of')) + ' ' + total +
+        (list.length ? '' : ' · ' + esc(t('nothing matches — try clearing a filter'))) + '</p>'
+      : '<p><span class="count">' + total + '</span> ' + esc(tPlural(total, 'recipe', 'recipes')) +
+        ' ' + esc(t('across')) + ' ' + state.coffees.length + ' ' +
+        esc(tPlural(state.coffees.length, 'coffee', 'coffees')) + '. ' +
+        esc(t('Filter to find the one you want, then brew it.')) + '</p>') +
     '</section>';
 
   var moreCount = moreFiltersCount();
@@ -1445,6 +1450,19 @@ function effectiveSteps(r) {
   return (r.steps || []).filter(function (s) { return s.label || s.water || s.t; });
 }
 
+/* One stat tile, or nothing at all. An espresso recipe has no water, ratio,
+   temperature or time, and rendering those as em-dashes made the four
+   emptiest fields the loudest marks on a page whose whole job is to hand
+   over the parameters. num() yields an em-dash for a blank value, so that
+   is what "empty" means here. */
+function bigstat(label, value, unit, style) {
+  var v = String(value == null ? '' : value);
+  if (!v || v === '—') return '';
+  return '<div class="bigstat"><div class="k">' + esc(label) + '</div>' +
+    '<div class="v"' + (style ? ' style="' + style + '"' : '') + '>' + v +
+    (unit ? '<small>' + esc(unit) + '</small>' : '') + '</div></div>';
+}
+
 function renderDetail(id) {
   var r = recipeById(id);
   if (!r) {
@@ -1525,24 +1543,26 @@ function renderDetail(id) {
 
     '<div style="padding-top:28px"></div>' +
     '<div class="bigstats">' +
-      '<div class="bigstat"><div class="k">' + esc(t('Dose')) + '</div><div class="v">' + num(r.dose) + '<small>g</small></div></div>' +
-      '<div class="bigstat"><div class="k">' + esc(t('Water')) + '</div><div class="v">' + num(r.water) + '<small>g</small></div></div>' +
-      '<div class="bigstat"><div class="k">' + esc(t('Ratio')) + '</div><div class="v">' + ratio(r.dose, r.water) + '</div></div>' +
-      '<div class="bigstat"><div class="k">' + esc(t('Temperature')) + '</div><div class="v">' + num(r.temp) + '<small>°C</small></div></div>' +
-      '<div class="bigstat"><div class="k">' + esc(t('Brew time')) + '</div><div class="v">' + (r.brewTime ? esc(r.brewTime) : '—') + '</div></div>' +
-      '<div class="bigstat"><div class="k">' + esc(t('Grind')) + '</div><div class="v" style="font-size:19px">' + (r.grindSize ? esc(r.grindSize) : '—') + '</div></div>' +
+      bigstat(t('Dose'), num(r.dose), 'g') +
+      bigstat(t('Water'), num(r.water), 'g') +
+      bigstat(t('Ratio'), ratio(r.dose, r.water)) +
+      bigstat(t('Temperature'), num(r.temp), '°C') +
+      bigstat(t('Brew time'), r.brewTime ? esc(r.brewTime) : '') +
+      bigstat(t('Grind'), r.grindSize ? esc(r.grindSize) : '', '', 'font-size:19px') +
     '</div>' +
 
     '<div class="detail-body">' +
-      '<aside>' +
+      '<aside class="detail-ref">' +
         '<div class="section-title">' + esc(t('Details')) + '</div>' +
         '<dl class="specs">' + specs + '</dl>' +
         (c && c.notes ? '<div class="coffee-note">' + esc(c.notes) + '</div>' : '') +
         (st && st.notes ? '<div class="block"><div class="section-title">' + esc(t('About this style')) + '</div>' +
           '<div class="coffee-note" style="margin-top:0">' + esc(t(st.notes)) + '</div></div>' : '') +
       '</aside>' +
-      '<div>' +
-        '<div class="section-title">' + esc(t('Pouring steps')) + '</div>' +
+      '<div class="detail-brew">' +
+        // A recipe with no schedule is not "pouring steps" — for espresso the
+        // heading would announce a section whose own text says it has none.
+        '<div class="section-title">' + esc(t(steps.length ? 'Pouring steps' : 'How to brew it')) + '</div>' +
         (steps.length
           ? '<ol class="timeline">' + stepsHTML + '</ol>' +
             (styleDriven ? '<p class="hint" style="margin-top:12px">' + esc(stepsCaption(r)) + '</p>' : '')
@@ -2178,6 +2198,19 @@ function renderModals() {
   });
 
   document.body.style.overflow = stack.length ? 'hidden' : '';
+  /* The page covers the app, so the app must leave the tab order with it.
+     Without this, tabbing past a form's last field walks into the hundred
+     recipe links still rendered underneath. inert also takes them out of
+     the accessibility tree; the attribute is ignored where unsupported, so
+     aria-hidden carries those cases. */
+  var covered = stack.some(function (m) {
+    return m.el && m.el.classList && m.el.classList.contains('page');
+  });
+  [view, document.querySelector('.foot'), document.querySelector('.topbar')].forEach(function (el) {
+    if (!el) return;
+    if (covered) { el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); }
+    else { el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
+  });
   var last = stack[stack.length - 1];
   // Only on the way in. Re-focusing the first field on every re-render is the
   // other half of the same jump — the browser scrolls whatever it focuses into

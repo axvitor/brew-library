@@ -488,7 +488,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .combo.on .combo-clear{background:rgba(255,255,255,.22)}
 .combo-list{
   position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:22;
-  max-height:264px;overflow-y:auto;padding:4px;
+  max-height:min(52vh, 420px);overflow-y:auto;padding:4px;
   background:var(--surface-card);background-image:var(--texture-paper);
   border:var(--border-w-hairline) solid var(--border-default);border-radius:var(--radius-md);
   box-shadow:var(--shadow-raised);
@@ -571,7 +571,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
 
 /* ---------- recipe grid (v3 recipe/RecipeCard) ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:16px;padding-bottom:8px}
-@media(max-width:640px){ .grid{grid-template-columns:1fr;gap:var(--stack-card)} }
+@media(max-width:640px){ .grid{grid-template-columns:1fr;gap:16px} }
 
 @keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 /* .card is a plain, non-interactive container. Its two interactive
@@ -594,7 +594,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
   animation:cardIn var(--dur-slow) var(--ease-out) both;
 }
 .card-link{position:absolute;inset:0;z-index:0;border-radius:inherit}
-.card-content{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px;height:100%;padding:var(--pad-card-lg);pointer-events:none}
+.card-content{position:relative;z-index:1;display:flex;flex-direction:column;gap:8px;height:100%;padding:var(--pad-card-lg);pointer-events:none}
 .card-content .cardbtn,.card-content .fav{pointer-events:auto}
 /* hover:hover, not a bare :hover, so touch devices never see a lingering
    hover state after a tap. */
@@ -628,11 +628,11 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .card-foot{display:flex;align-items:flex-end;gap:12px;margin-top:auto}
 .card-foot .stats{flex:1;min-width:0;margin-top:0}
 .card-foot .stars{padding-bottom:2px;flex:none}
-.stats{display:flex;gap:0;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px;margin-top:auto}
+.stats{display:flex;gap:0;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:16px;margin-top:auto}
 .stat{flex:1;min-width:0}
 .stat + .stat{border-left:var(--border-w-hairline) solid var(--border-hairline);padding-left:12px}
 .stat .k{display:block}
-.stat .v{font:var(--weight-medium) 13px/1.2 var(--font-mono);color:var(--text-body);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:4px}
+.stat .v{font:var(--weight-semibold) 15px/1.2 var(--font-mono);color:var(--text-body);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:4px}
 
 /* ---------- tags (v3 core/Tag) ----------
    Printed labels, squared at 3px — chips are pressed, tags are not.
@@ -704,7 +704,13 @@ svg.ico-fill{fill:currentColor;stroke:none}
 }
 
 .detail-body{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:44px;padding-top:30px;align-items:start}
-@media(max-width:860px){ .detail-body{grid-template-columns:1fr;gap:34px} }
+@media(max-width:860px){
+  .detail-body{grid-template-columns:1fr;gap:32px}
+  /* "The pour schedule is the payoff." Stacked, it sat ~370px below the
+     fold behind six stat tiles and a seven-row reference list — all of it
+     pre-brew material. Mid-brew the schedule leads; the reference follows. */
+  .detail-brew{order:-1}
+}
 
 .section-title{display:block;margin-bottom:14px}
 
@@ -744,7 +750,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .step .t{padding-left:24px;font:var(--weight-bold) 13px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);color:var(--text-title);white-space:nowrap}
 .step .body{min-width:0}
 .step .body p{font:var(--type-body-sm);color:var(--text-body)}
-.step .w{font:var(--weight-medium) 12px/1.2 var(--font-mono);color:var(--text-muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.step .w{font:var(--weight-semibold) 13px/1.2 var(--font-mono);color:var(--text-body);margin-top:6px;font-variant-numeric:tabular-nums}
 @media(max-width:520px){
   .step{grid-template-columns:56px minmax(0,1fr);gap:10px}
   .step .t{padding-left:22px;font-size:12px}
@@ -866,6 +872,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .crumbs a:hover,.crumbs button:hover{color:var(--text-title);text-decoration:underline}
 .crumbs a:focus-visible,.crumbs button:focus-visible{box-shadow:var(--shadow-focus)}
 .crumb-sep{color:var(--text-faint);user-select:none}
+.crumbs .crumb-sep:last-child{display:none}
 
 .sheet-body{padding:var(--pad-sheet);overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
 .sheet-foot{
@@ -1001,7 +1008,14 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .row{display:grid;gap:14px}
 .row-2{grid-template-columns:1fr 1fr}
 .row-3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:560px){ .row-3{grid-template-columns:1fr 1fr} .row-2{grid-template-columns:1fr} }
+@media(max-width:560px){
+  .row-3{grid-template-columns:1fr 1fr}
+  .row-2{grid-template-columns:1fr}
+  /* Collapsed to one column the row is no longer grouping anything, so it
+     stops adding its own gap on top of the field rhythm. */
+  .row-2{gap:0}
+  .row-2 > .field:last-child{margin-bottom:16px}
+}
 .with-add{display:flex;gap:8px;align-items:center}
 .with-add .inp{flex:1}
 .addbtn{
@@ -1125,7 +1139,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .sheet-timer .sheet-head{border-bottom-color:var(--border-hairline);padding-bottom:12px;flex-direction:column;align-items:stretch;gap:6px}
 .sheet-timer .sheet-head h2{color:var(--text-title)}
 .timer-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.timer-head-actions{display:flex;align-items:center;gap:2px;flex:none}
+.timer-head-actions{display:flex;align-items:center;gap:8px;flex:none}
 .sheet-timer .timer-mute.is-muted{color:var(--text-faint)}
 .timer-eyebrow{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
 .timer-clock{font:var(--weight-medium) 14px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted)}
@@ -1274,7 +1288,15 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 }
 
 /* play button on library cards */
-.card-tools{display:flex;align-items:center;gap:2px;flex:none}
+.card-tools{display:flex;align-items:center;gap:6px;flex:none}
+/* Reach out to a 44px target without redrawing the glyph. Applied where a
+   small mark sits inside a larger tap surface, so a near miss must not
+   trigger the surface underneath. */
+.fav,.cardbtn,.iconbtn{position:relative}
+.fav::after,.cardbtn::after,.iconbtn::after{
+  content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:44px;height:44px;border-radius:var(--radius-full);
+}
 .cardbtn{width:30px;height:30px;border-radius:var(--radius-full);color:var(--text-faint);display:inline-flex;align-items:center;justify-content:center;flex:none;transition:var(--transition-control)}
 .cardbtn:hover{background:var(--surface-accent);color:var(--action-primary)}
 .cardbtn:active{transform:scale(var(--press-scale))}
@@ -1301,7 +1323,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    Filled AND outlined at rest, so per v3's IconButton rule (radius-full
    only for the bare ghost state) this takes radius-md like .addbtn. */
 .back-to-top{
-  position:fixed;right:20px;bottom:24px;z-index:90;
+  position:fixed;right:20px;bottom:max(24px, env(safe-area-inset-bottom));z-index:90;
   width:44px;height:44px;border-radius:var(--radius-md);
   background:var(--surface-card);
   border:var(--border-w-hairline) solid var(--border-default);color:var(--text-body);
