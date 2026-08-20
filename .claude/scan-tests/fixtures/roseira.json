@@ -1,0 +1,38 @@
+{
+  "label": "Sítio Roseira — Lambari (bare 'Sensorial' label)",
+  "roasters": ["Sabino", "Moka Clube", "Lucca"],
+  "heights": {
+    "Roseira": 40, "Sítio Roseira": 26, "\" Sítio Roseira": 24,
+    "Sensorial": 14, "Licoroso, Vinhoso": 16, "e Doçura de Uva": 16,
+    "Região": 14, "Lambari - MG": 16,
+    "Variedade": 14, "Catuai & Arara 24/137": 16
+  },
+  "expect": {
+    "name": "Sítio Roseira",
+    "origin": "Lambari - MG",
+    "varietal": "Catuai & Arara 24/137",
+    "notes": "Licoroso, Vinhoso e Doçura de Uva",
+    "altitude": null,
+    "roast": null
+  },
+  "text": [
+    "Roseira",
+    "| Senteria) Licoroso, Vinhoso",
+    "e Doçura de Uva",
+    "\" Sítio Roseira",
+    "R",
+    "É egião Lambari - MG",
+    ") 7",
+    "sl Variedade Catuai & Arara 24/137",
+    "| ——", "FG",
+    "Café 2509 O ES",
+    "| Torrado 500g O NE",
+    ") em Grão 19 O",
+    "“OO Arábica, NV", "(",
+    "Roseira", "Sensorial", "Licoroso, Vinhoso", "e Doçura de Uva",
+    "Sítio Roseira", "Região", "Lambari - MG",
+    "Variedade", "Catuai & Arara 24/137", "Va",
+    "Café", "2509 O", "Torrado", "5009 O", "em Grão", "Kg O", "E",
+    "100% Arática", "É"
+  ]
+}

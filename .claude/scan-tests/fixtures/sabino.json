@@ -1,0 +1,61 @@
+{
+  "label": "Sabino — Fazenda Jaguara",
+  "roasters": [
+    "Sabino",
+    "Moka Clube",
+    "Lucca"
+  ],
+  "heights": {
+    "SABINO": 40,
+    "COFFEE CO.": 26,
+    "São João Del Rei - MG": 34,
+    "Campo das Vertentes": 30,
+    "Fazenda Jaguara": 32,
+    "Catuai Amarelo": 20,
+    "Natural": 20,
+    "Média": 18,
+    "Amêndoas caramelizadas, avelã e frutas amarelas": 16
+  },
+  "expect": {
+    "name": "Fazenda Jaguara",
+    "roasterName": "Sabino",
+    "origin": "São João Del Rei - MG",
+    "process": "Natural",
+    "roast": "Medium",
+    "varietal": "Catuaí Amarelo",
+    "notes": "Amêndoas caramelizadas, avelã e frutas amarelas",
+    "altitude": null
+  },
+  "text": [
+    "ES o > Ra",
+    "= \" : . ( E SISTEMA = \" o —",
+    "= SABINO e",
+    "o COFFEE CO. à : E",
+    "rito 4 É 100% :",
+    "são eos São João Del Rei - MG | Campo das Vertentes =. :",
+    "Fazenda Jaguara [cana Amarelo hat ES",
+    "e À Torra: CAE 5",
+    "Fo Amêndoas caramelizadas, avelã e frutas amare| Eta NENAAS:",
+    "EI = Média CREA",
+    "Ee 20/07/2026 16/01/2027 EM GRÃOS :",
+    "= 250gr =. =.",
+    "SABINO",
+    "COFFEE CO.",
+    "100%",
+    "ARABICA",
+    "São João Del Rei - MG",
+    "Campo das Vertentes",
+    "Trocesso;",
+    "Fazenda Jaguara",
+    "Catuai Amarelo",
+    "Natural",
+    "Notas Sencoriais:",
+    "Torra;",
+    "Amêndoas caramelizadas, avelã e frutas amarelas",
+    "Validade:",
+    "Média",
+    "Lote/Torrado em:",
+    "20/07/2026",
+    "250gr"
+  ]
+}

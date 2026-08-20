@@ -1,0 +1,36 @@
+{
+  "label": "Fazenda Sertão — Carmo de Minas (no labels at all)",
+  "roasters": ["Sabino", "Moka Clube", "Lucca"],
+  "heights": {
+    "FAZENDA SERTÃO": 44,
+    "7 FAZENDA SERTÃO": 40,
+    "Bourbon Amarelo - Natural": 18,
+    "1250M | Carmo De Minas - MG": 16,
+    "a, Toranja e Caramelo": 16,
+    "Acidez Cítrica | Corpo 2º": 14
+  },
+  "expect": {
+    "name": "FAZENDA SERTÃO",
+    "varietal": "Bourbon Amarelo",
+    "process": "Natural",
+    "altitude": "1,250 m",
+    "origin": "Carmo De Minas - MG",
+    "notes": "Toranja e Caramelo",
+    "roasterName": null
+  },
+  "text": [
+    "Y", "—— Po | %", "7 FAZENDA SERTÃO",
+    "\"a Bourbon Amarelo - Natural Y",
+    "| 1250M | Carmo De Minas - MG \"",
+    "é EM oranja e Carame *”",
+    "TA Acidez Cítrica | Corpo?",
+    "' Pa o.", "o - 2", "e. »", "*", "*",
+    "FAZENDA SERTÃO",
+    "Bourbon Amarelo - Natural",
+    "1250M | Carmo De Minas - MG",
+    "——", "Lao",
+    "a, Toranja e Caramelo",
+    "Acidez Cítrica | Corpo 2º",
+    "so", "E", "..", "Ei]"
+  ]
+}

@@ -100,6 +100,29 @@ save. Those steps then belong to the style, so every recipe using it follows the
 same schedule and you only write it once. (Recipes saved before styles could carry
 their own steps keep theirs — nothing already stored loses its schedule.)
 
+## Testing the label scanner
+
+The scanner reads a photo of a coffee bag and fills the coffee form. OCR is
+the easy half; turning its output into fields is where the work is, and the
+text varies enough between bags that almost every improvement made for one
+bag has broken another.
+
+So each bag that has been scanned is kept as a test:
+
+```bash
+node .claude/scan-tests/run.js
+```
+
+Each fixture in `.claude/scan-tests/fixtures/` holds the verbatim OCR text
+from a real bag plus the values it should produce. The parser is read
+straight out of `app.js`, so these exercise the shipping code.
+
+To add a bag: scan it, open **Everything it read** in the review sheet, and
+save that text as a new fixture alongside what it should produce. Assert
+only what the bag actually shows — omitting a field beats baking in a wrong
+answer, and `null` asserts that nothing was found, so a bag printing no
+altitude can't start inventing one.
+
 ## Your data
 
 Signed-in users' libraries live in Firestore and sync in real time — add a recipe on
@@ -116,3 +139,5 @@ overwrite what's there.
 - `firebase-init.js` — Firebase config + the `window.Brew` bridge (auth, Firestore reads/writes)
 - `firestore.rules` — security rules to paste into the Firebase console
 - `.claude/serve.py` — local static server (required now, since sign-in needs http/https)
+- `.claude/serve-phone.py` — same, but reachable from a phone on the same Wi-Fi
+- `.claude/scan-tests/` — regression tests for the label scanner's parser

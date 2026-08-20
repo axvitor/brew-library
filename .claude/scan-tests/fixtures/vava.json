@@ -1,0 +1,35 @@
+{
+  "label": "Café do Vavá — Matas de Minas (very rough OCR)",
+  "roasters": [
+    "Sabino",
+    "Moka Clube",
+    "Lucca"
+  ],
+  "heights": {
+    "2 CAFE DO VAVA '": 42,
+    "= DO VAVÁ": 30,
+    "PRODUTOR VAVÁ — VARIEDADE Cotucoi7es |": 14,
+    "REGIÃO Motos de Minos - MG": 14,
+    "PROCESSO Cereja descascado ALTITUDE 1600V.": 14
+  },
+  "expect": {
+    "process": "Pulped natural",
+    "altitude": "1,600 m",
+    "origin": "Matas de Minas - MG"
+  },
+  "text": [
+    "pt.",
+    "F AN",
+    "2 CAFE DO VAVA '",
+    "PRODUTOR VAVÁ — VARIEDADE Cotucoi7es |",
+    "REGIÃO Motos de Minos - MG",
+    "PROCESSO Cereja descascado ALTITUDE 1600V.",
+    "; qa ul",
+    "ne",
+    "= DO VAVÁ",
+    "PROCESS:",
+    "car TonmaDO e onãos.",
+    "7”"
+  ],
+  "note": "name keeps a stray '2' and varietal stays 'Cotucoi7es' — both are OCR damage, not parsing; left unasserted deliberately"
+}

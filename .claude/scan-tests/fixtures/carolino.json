@@ -1,0 +1,60 @@
+{
+  "label": "Família Carolino — Cerrado Mineiro (rough OCR)",
+  "roasters": [
+    "Sabino",
+    "Moka Clube",
+    "Lucca"
+  ],
+  "heights": {
+    "família": 40,
+    "carolino |": 38,
+    "carolino": 38,
+    "fami": 36,
+    "CATUAÍ VERMELHO": 20,
+    "MARACUJÁ DO CERRADO": 18,
+    "ECARAMELO": 18,
+    "(Cerrado Mineiro": 18,
+    "Natural": 18
+  },
+  "expect": {
+    "origin": "Cerrado Mineiro",
+    "varietal": "CATUAÍ VERMELHO",
+    "process": "Natural",
+    "altitude": null,
+    "roast": null,
+    "name": "família carolino",
+    "notes": "MARACUJÁ DO CERRADO E CARAMELO"
+  },
+  "text": [
+    "UT cc",
+    "família",
+    "carolino |",
+    "variedade \"",
+    "CATUAÍ VERMELHO",
+    "aço",
+    "MARACUJÁ DO CERRADO",
+    "ECARAMELO",
+    "] Região",
+    "cCerodo Míteio",
+    "| processo",
+    "peso",
+    "produtor",
+    "ciesoims",
+    "02509 olk |",
+    "MES)",
+    "LAS",
+    "We—",
+    "fami",
+    "carolino",
+    "CATUAÍ VERMELHO",
+    "perfil sensorial",
+    "ECARAMELO",
+    "MARACUJÁ DO CERRADO",
+    "Regiõo",
+    "(Cerrado Mineiro",
+    "Natural",
+    "Gi Coroiino",
+    "02509",
+    "olkg"
+  ]
+}
