@@ -2366,7 +2366,7 @@ var FIELD_LABELS = [
   ['skip', ['pontuacao', 'score', 'finalizacao', 'finalizaco', 'safra', 'secagem',
     'peneira', 'torrefacao', 'validade', 'lote/torrado em', 'lote', 'peso liquido',
     'peso', 'conteudo', 'moagem', 'embalado em']],
-  ['notes', ['perfil sensorial', 'perfil aromatico', 'notas sensoriais',
+  ['notes', ['perfil sensorial', 'perfil aromatico', 'notas sensoriais', 'sensorial',
     'notas de degustacao', 'notas', 'tasting notes', 'sensory', 'descritores',
     'sabor', 'aroma', 'notes']]
 ];
@@ -2379,7 +2379,7 @@ var NOT_A_NAME = ['cafe especial', 'especial', 'specialty coffee', 'specialty', 
   // Seen on the Sabino bag: a roaster's suffix line, and the packaging
   // boilerplate that surrounds the weight and dates.
   'coffee co', 'coffee co.', 'roasters', 'roastery', 'torrefacao',
-  'cafe torrado em graos', 'torrado em graos', 'em graos', 'validade', 'lote',
+  'cafe torrado em graos', 'torrado em graos', 'em graos', 'em grao', 'validade', 'lote',
   'lote/torrado em', 'peso', 'net weight', 'conteudo'];
 
 function fmtMeters(n) {
@@ -2549,6 +2549,8 @@ var FLAVOUR_TERMS = ['chocolate', 'cacau', 'caramelo', 'caramelizad', 'melado', 
   'frutas', 'frutado', 'fruta', 'citrico', 'citrica', 'laranja', 'limao', 'tangerina', 'abacaxi',
   'maca', 'pessego', 'damasco', 'uva', 'morango', 'framboesa', 'banana', 'mamao', 'manga',
   'floral', 'jasmim', 'flores', 'acucar', 'doce', 'cremoso', 'encorpado',
+  'licoroso', 'vinhoso', 'docura', 'sedoso', 'aveludado', 'suave', 'equilibrado',
+  'acidez', 'corpo', 'persistente', 'refrescante',
   'chocolate milk', 'caramel', 'hazelnut', 'almond', 'walnut', 'vanilla', 'cocoa',
   'citrus', 'berry', 'stone fruit', 'jasmine', 'honey', 'nutty', 'toffee', 'praline'];
 
@@ -3064,6 +3066,27 @@ function parseLabel(data) {
         cand = cand + ' ' + join;
       }
     }
+    // The biggest text is sometimes only part of the name: a bag can set
+    // "Roseira" large and "Sítio Roseira" smaller beneath it. Prefer a
+    // fuller line that contains the winner — but only a clean one, or
+    // "Fazenda Jaguara" gets traded for "Fazenda Jaguara [cana Amarelo hat".
+    var nc = scanNorm(cand);
+    tall.forEach(function (l) {
+      var alt = trimEdges(l.text.replace(/[|_~"'`]+/g, ''));
+      if (!alt || scanNorm(alt) === nc) return;
+      if (!looksLikeName(alt) || taken.indexOf(scanNorm(alt)) !== -1) return;
+      var na = scanNorm(alt);
+      if (na.indexOf(nc) === -1 || na.length <= nc.length) return;
+      if (na.length > nc.length * 2.5) return;
+      if (noiseCount(alt) > noiseCount(cand)) return;
+      // What it adds has to be a word. A stray leading character is
+      // alphanumeric too, so without this "FAZENDA SERTÃO" loses to
+      // "7 FAZENDA SERTÃO".
+      var base = nc.split(' ');
+      var extra = na.split(' ').filter(function (w) { return base.indexOf(w) === -1; });
+      if (!extra.some(function (w) { return w.length >= 2; })) return;
+      cand = alt; nc = na;
+    });
     put('name', cand, 'the largest text on the label');
     break;
   }
