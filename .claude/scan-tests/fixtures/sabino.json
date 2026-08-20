@@ -58,5 +58,5 @@
     "20/07/2026",
     "250gr"
   ],
-  "note": "label photo confirms the coffee is called Natália — the largest text on the label — which this scan's OCR never read at all. 'Fazenda Jaguara' is the farm, labelled Fazenda:. The parser cannot do better from text that lacks the name; a rescan that captures it is the fix, not a parsing change"
+  "note": "Full-bag photo confirms: the coffee is Natália, printed on a white label across the bottom fifth of the bag, with SABINO COFFEE CO. above it. This scan framed the whole bag, so the label had too few pixels and OCR rendered the name 'NELENTE' / 'NETEITE' — too damaged to recover, and there is no dictionary of coffee names to correct it against. 'Fazenda Jaguara' is the farm (labelled Fazenda:). Reframing on the label is the fix, not a parsing change."
 }

@@ -2838,12 +2838,25 @@ function linesByHeight(data) {
   return out;
 }
 
+function isBareVocabularyValue(n) {
+  var tables = [PROCESS_TERMS, ROAST_TERMS], i, j;
+  for (i = 0; i < tables.length; i++) {
+    for (j = 0; j < tables[i].length; j++) {
+      if (tables[i][j][1].indexOf(n) !== -1) return true;
+    }
+  }
+  return REGION_TERMS.indexOf(n) !== -1;
+}
+
 function looksLikeName(line) {
   var n = scanNorm(line);
   if (n.length < 3 || n.length > 44) return false;
   if (!/[a-z]/.test(n)) return false;               // pure numbers / weights
   if (/\d+\s*(g|kg|gr|ml)\b/.test(n)) return false; // "250 g"
   if (NOT_A_NAME.indexOf(n) !== -1) return false;
+  // Exact match only: "Natural" and "Campo das Vertentes" are answers to
+  // other fields, while a coffee genuinely called "Água Clara" survives.
+  if (isBareVocabularyValue(n)) return false;
   if (looksLikePlace(line)) return false;   // "São João Del Rei - MG"
   if (looksLikeNotes(line)) return false;   // the tasting-note list
   if (/\d{2}\/\d{2}\/\d{2,4}/.test(n)) return false; // roast / best-before dates
@@ -3205,9 +3218,9 @@ function scanBlockHTML(state) {
       '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + 'Try again</button>';
   } else {
     inner = '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + 'Scan label</button>' +
-      '<p>Fill the frame with the panel that lists origin, altitude and process — ' +
-      'usually the back. Small print needs a close, straight, evenly lit shot. ' +
-      'Nothing leaves your device.</p>';
+      '<p>Fill the frame with the label itself, not the whole bag — the panel ' +
+      'listing origin, process and notes. Small print needs a close, straight, ' +
+      'evenly lit shot. Nothing leaves your device.</p>';
   }
   return '<div class="scan">' + inner + '</div>';
 }
