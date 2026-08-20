@@ -355,7 +355,11 @@ svg.ico-fill{fill:currentColor;stroke:none}
 
 /* ---------- menu ---------- */
 @keyframes menuPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.menu-holder{position:relative}
+/* Flex, not block: the trigger inside is an inline-block button, so a
+   block wrapper adds a line-box descender beneath it and stands 50px tall
+   against the 44px buttons beside it — enough to lift the account avatar
+   3px above their centre line. */
+.menu-holder{position:relative;display:flex;align-items:center}
 .menu{
   position:absolute;right:0;top:46px;min-width:212px;z-index:70;
   background:var(--surface-card);background-image:var(--texture-paper);
@@ -499,6 +503,10 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .combo-opt.on{font-weight:var(--weight-semibold);background:var(--surface-sunken)}
 .combo-opt-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .combo-opt-meta{font:var(--weight-medium) 12px/1 var(--font-mono);color:var(--text-faint)}
+/* Nothing filed under it yet — still listed and selectable, but the count
+   says so rather than the entry quietly going missing. */
+.combo-opt.is-empty .combo-opt-label{color:var(--text-muted)}
+.combo-opt.is-empty .combo-opt-meta{opacity:.6}
 .combo-opt .ico{width:15px;height:15px;color:var(--pine-700);flex:none}
 .combo-empty{padding:14px 10px;font:var(--type-body-sm);color:var(--text-muted)}
 

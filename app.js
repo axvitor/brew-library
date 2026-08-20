@@ -85,7 +85,7 @@ function initialLibraryFor(user) {
    edits into the next seed. */
 function builtinStyles() {
   return JSON.parse(JSON.stringify([
-    { id: 'st-hoffmann', name: 'James Hoffmann', author: 'James Hoffmann',
+    { id: 'st-hoffmann', name: 'James Hoffmann V60', author: 'James Hoffmann',
       notes: 'Ultimate V60 technique — bloom, two pours, swirl, even drawdown.' },
     { id: 'st-tetsu-sweet', name: 'Tetsu Kasuya — Sweet', author: 'Tetsu Kasuya',
       notes: '4:6 method. A smaller first pour pushes the cup toward sweetness.' },
@@ -117,7 +117,7 @@ function builtinStyles() {
 /* Bump when a new built-in style is added. Tracked per library so the
    backfill runs exactly once: a style the user then deletes stays deleted
    rather than reappearing on every load. */
-var BUILTIN_STYLES_VERSION = 1;
+var BUILTIN_STYLES_VERSION = 2;
 
 function seed() {
   var coffees = [
@@ -363,7 +363,7 @@ var ENTITIES = {
       { k: 'unit', l: 'Setting unit', ph: 'clicks, numbers, marks' },
       { k: 'notes', l: 'Notes', ph: 'Burr type, reference settings…', area: true }
     ],
-    meta: function (e) { return [e.kind, e.unit ? 'in ' + e.unit : ''].filter(Boolean).join(' · '); }
+    meta: function (e) { return [t(e.kind), e.unit ? t('in') + ' ' + e.unit : ''].filter(Boolean).join(' · '); }
   },
   method: {
     coll: 'methods', label: 'Brewing method', plural: 'Methods', ref: 'methodId',
@@ -373,7 +373,7 @@ var ENTITIES = {
       { k: 'ratio', l: 'Typical ratio', ph: '1:16' },
       { k: 'notes', l: 'Notes', ph: 'Filter, kettle, gear…', area: true }
     ],
-    meta: function (e) { return [e.kind, e.ratio].filter(Boolean).join(' · '); }
+    meta: function (e) { return [t(e.kind), e.ratio].filter(Boolean).join(' · '); }
   },
   style: {
     coll: 'styles', label: 'Recipe style', plural: 'Recipe styles', ref: 'styleId',
@@ -417,6 +417,12 @@ function normalizeLibrary(lib) {
     lib.styles.forEach(function (st) { haveStyle[st.id] = true; });
     builtinStyles().forEach(function (st) {
       if (!haveStyle[st.id]) lib.styles.push(st);
+    });
+    // Renames of built-in styles, applied only where the old name is still
+    // in place — if you renamed it yourself, that is your name for it.
+    [['st-hoffmann', 'James Hoffmann', 'James Hoffmann V60']].forEach(function (ren) {
+      var st = lib.styles.filter(function (x) { return x.id === ren[0]; })[0];
+      if (st && st.name === ren[1]) st.name = ren[2];
     });
     lib.builtinStylesVersion = BUILTIN_STYLES_VERSION;
     libraryMigrated = true;
@@ -576,8 +582,18 @@ function setLang(choice) {
 function t(s) {
   if (LANG === 'en' || s == null) return s;
   var table = TRANSLATIONS[LANG];
-  var hit = table && Object.prototype.hasOwnProperty.call(table, s) ? table[s] : null;
-  return hit === null ? s : hit;
+  if (!table) return s;
+  if (Object.prototype.hasOwnProperty.call(table, s)) return table[s];
+  // Steps built from a formula count upward — "Pour 3 — the last 60%…" —
+  // so the number is lifted out, the shape looked up, and the number put
+  // back. Only shapes actually in the dictionary can match, so a step you
+  // wrote yourself is untouched.
+  var num = null;
+  var shape = String(s).replace(/\d+/, function (d) { num = d; return '{n}'; });
+  if (num !== null && Object.prototype.hasOwnProperty.call(table, shape)) {
+    return table[shape].replace('{n}', num);
+  }
+  return s;
 }
 
 // Plural helper: English and Portuguese both take a bare -s here, but the
@@ -822,6 +838,49 @@ var TRANSLATIONS = {
     'About this style': 'Sobre este estilo',
     'ratio': 'proporção',
     'A pressure shot rather than a pour: dial in with dose, grind and shot time instead of a pour schedule.': 'Um shot sob pressão, não um coado: ajuste por dose, moagem e tempo de extração em vez de um cronograma de despejos.',
+    // --- remaining interface ---
+    'Action': 'Ação',
+    'Time': 'Tempo',
+    'Brewing steps': 'Etapas do preparo',
+    'Recipe not found': 'Receita não encontrada',
+    'It may have been deleted.': 'Ela pode ter sido excluída.',
+    'This cannot be undone — export a backup first if unsure.': 'Isso não pode ser desfeito — exporte um backup antes, se tiver dúvida.',
+    'All roasters': 'Todas as torrefações',
+    // --- built-in pouring steps ---
+    'Bloom — pour the first fifth of the water.': 'Pré-infusão — despeje o primeiro quinto da água.',
+    'Bloom to 60 g — three times the dose. Swirl gently to wet every ground.': 'Pré-infusão até 60 g — três vezes a dose. Gire suavemente para molhar todo o pó.',
+    'Pour to 100 g total in a slow, steady circle.': 'Despeje até 100 g no total em círculos lentos e constantes.',
+    'Pour to 200 g total.': 'Despeje até 200 g no total.',
+    'Pour to 300 g total, or your target weight.': 'Despeje até 300 g no total, ou o seu peso alvo.',
+    'Let it draw down — aim to finish around 3:00.': 'Deixe escoar — busque terminar por volta de 3:00.',
+    'Pour the second fifth.': 'Despeje o segundo quinto.',
+    'Pour the third fifth.': 'Despeje o terceiro quinto.',
+    'Pour the fourth fifth.': 'Despeje o quarto quinto.',
+    'Pour the final fifth, then let it draw down — no stirring needed.': 'Despeje o último quinto e deixe escoar — não precisa mexer.',
+    'Pour 1 — the first 40% shapes the flavour balance.': 'Despejo 1 — os primeiros 40% definem o equilíbrio de sabor.',
+    'Pour 2 — completes the first 40%.': 'Despejo 2 — completa os primeiros 40%.',
+    'Pour {n} — the last 60% builds strength.': 'Despejo {n} — os últimos 60% constroem a intensidade.',
+    'Add the coffee, then pour all the water in one go.': 'Adicione o café e despeje toda a água de uma vez.',
+    'Insert the plunger just enough to seal, then leave it alone.': 'Encaixe o êmbolo só o suficiente para vedar e deixe quieto.',
+    'Remove the plunger and swirl gently to settle the bed.': 'Retire o êmbolo e gire suavemente para assentar o leito.',
+    'Press slowly and evenly — about 30 seconds.': 'Pressione devagar e por igual — cerca de 30 segundos.',
+    'Pull the shot.': 'Extraia o shot.',
+    'Get set up.': 'Prepare tudo.',
+    // --- built-in style descriptions ---
+    'Ultimate V60 technique — bloom, two pours, swirl, even drawdown.': 'Técnica definitiva do V60 — pré-infusão, dois despejos, giro e escoamento uniforme.',
+    '4:6 method. A smaller first pour pushes the cup toward sweetness.': 'Método 4:6. Um primeiro despejo menor leva a xícara para a doçura.',
+    '4:6 method. A larger first pour brings out acidity and brightness.': 'Método 4:6. Um primeiro despejo maior realça a acidez e o brilho.',
+    '4:6 method. Balanced first 40%, then the remaining 60% split into three pours for a stronger cup.': 'Método 4:6. Primeiros 40% equilibrados, e os 60% restantes divididos em três despejos para uma xícara mais intensa.',
+    'A pressure shot rather than a pour: dial in with dose, grind and shot time instead of a pour schedule.': 'Um shot sob pressão, não um coado: ajuste por dose, moagem e tempo de extração em vez de um cronograma de despejos.',
+    // --- built-in method and grinder types ---
+    'Pour over': 'Coado',
+    'Immersion': 'Imersão',
+    'Pressure': 'Pressão',
+    'Stovetop': 'Fogão',
+    'Drip filter': 'Filtro de gotejamento',
+    'Hand grinder': 'Moedor manual',
+    'Electric grinder': 'Moedor elétrico',
+    'in': 'em',
     // --- messages ---
     'Recipe saved.': 'Receita salva.',
     'Recipe deleted.': 'Receita excluída.',
@@ -1164,9 +1223,13 @@ function comboMatch(type, r, id) {
 function comboOptions(type) {
   var list = coll(type).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
   var out = [{ id: '', name: comboLabel(type), count: state.recipes.length }];
+  // Everything is listed, including entries nothing is filed under yet.
+  // Hiding those made sense on the chip rail this replaced, where space was
+  // the constraint — but in a list you search, a style you just added
+  // simply being absent reads as the search being broken.
   list.forEach(function (e) {
     var n = state.recipes.filter(function (r) { return comboMatch(type, r, e.id); }).length;
-    if (n) out.push({ id: e.id, name: e.name, count: n });
+    out.push({ id: e.id, name: e.name, count: n });
   });
   return out;
 }
@@ -1181,7 +1244,7 @@ function comboListHTML(type) {
   } else {
     shown.forEach(function (o) {
       var on = (filters[type] || '') === o.id;
-      html += '<div class="combo-opt' + (on ? ' on' : '') + '" role="option" aria-selected="' + on +
+      html += '<div class="combo-opt' + (on ? ' on' : '') + (o.id && !o.count ? ' is-empty' : '') + '" role="option" aria-selected="' + on +
         '" data-action="combo-pick" data-type="' + type + '" data-id="' + esc(o.id) + '">' +
         '<span class="combo-opt-label">' + esc(o.name) + '</span>' +
         (o.id ? '<span class="combo-opt-meta">' + o.count + '</span>' : '') +
@@ -1318,8 +1381,8 @@ function cardHTML(r) {
     (bits.length ? '<div class="tags">' + bits.join('') + '</div>' : '') +
     '<div class="card-foot">' +
       '<div class="stats">' +
-        '<div class="stat"><span class="k">Dose</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
-        '<div class="stat"><span class="k">Water</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
+        '<div class="stat"><span class="k">' + esc(t('Dose')) + '</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
+        '<div class="stat"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
         '<div class="stat"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
       '</div>' +
       (r.rating ? stars(r.rating) : '') +
@@ -1402,7 +1465,7 @@ function renderDetail(id) {
   var r = recipeById(id);
   if (!r) {
     view.innerHTML = '<div class="detail"><a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
-      '<div class="empty">' + ICON.bean + '<h3>Recipe not found</h3><p>It may have been deleted.</p></div></div>';
+      '<div class="empty">' + ICON.bean + '<h3>' + esc(t('Recipe not found')) + '</h3><p>' + esc(t('It may have been deleted.')) + '</p></div></div>';
     return;
   }
 
@@ -1447,7 +1510,7 @@ function renderDetail(id) {
         '</div>' +
         '<div class="card-sub" style="margin-top:10px">' +
           (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
-          '<span>' + ratio(r.dose, r.water) + ' ratio</span>' +
+          '<span>' + ratio(r.dose, r.water) + ' ' + esc(t('ratio')) + '</span>' +
           (c && c.origin ? '<span class="dot"></span><span>' + esc(c.origin) + '</span>' : '') +
         '</div>' +
       '</div>' +
@@ -1944,7 +2007,7 @@ function timerControls() {
   var btn = timer.el.querySelector('.timer-toggle');
   // v3's label ladder: Start brewing → Pause → Resume → Brew again.
   var label = done ? t('Brew again')
-    : timer.running ? 'Pause'
+    : timer.running ? t('Pause')
     : timer.elapsed > 0 ? t('Resume') : t('Start brewing');
   btn.innerHTML = (done ? ICON.replay : timer.running ? ICON.pause : ICON.play) +
     '<span>' + label + '</span>';
@@ -2292,7 +2355,7 @@ function entitySelect(type, value, id, placeholder) {
    makes picking a coffee quick once the library is large, and it's derived
    back off the coffee when an existing recipe is reopened. */
 function formRoasterSelect(value) {
-  var opts = '<option value="">All roasters</option>';
+  var opts = '<option value="">' + esc(t('All roasters')) + '</option>';
   allRoasters().forEach(function (ro) {
     opts += '<option value="' + esc(ro.id) + '"' + (ro.id === value ? ' selected' : '') + '>' + esc(ro.name) + '</option>';
   });
@@ -2330,7 +2393,7 @@ function coffeeSelectHTML(roaster, value) {
    itself mid-keystroke is unusable — and a hint flags any time that isn't
    later than the one above it, which is the case worth catching. */
 function styleStepsSectionHTML(d) {
-  var head = '<div class="form-sep-label">Brewing steps</div>';
+  var head = '<div class="form-sep-label">' + esc(t('Brewing steps')) + '</div>';
 
   if (hasFormula(d.id)) {
     return head + '<p class="hint" style="margin:0">This style\'s steps come from its built-in formula and ' +
@@ -2391,7 +2454,7 @@ function stepsEditor(steps) {
     '</div>';
   }).join('');
   return '<p class="hint" style="margin:0 0 12px">' + esc(t('This recipe style has no built-in formula — write the steps by hand.')) + '</p>' +
-    '<div class="steps-head"><span>Time</span><span>Action</span><span>Water</span><span></span></div>' +
+    '<div class="steps-head"><span>' + esc(t('Time')) + '</span><span>' + esc(t('Action')) + '</span><span>' + esc(t('Water')) + '</span><span></span></div>' +
     '<div id="stepsWrap">' + rows + '</div>' +
     '<div class="steps-tools">' +
       '<button type="button" class="btn btn-ghost btn-sm" data-action="add-step">' + ICON.plus + esc(t('Add step')) + '</button>' +
@@ -2479,7 +2542,7 @@ function buildRecipeForm(m) {
           '<span id="ratioOut" class="ratio-hint">' + ratio(d.dose, d.water) + '</span></div></div>' +
     '</div>' +
 
-    '<div class="form-sep-label">Pouring steps</div>' +
+    '<div class="form-sep-label">' + esc(t('Pouring steps')) + '</div>' +
     '<div id="stepsSection">' + stepsSectionHTML(m) + '</div>' +
 
     '<div class="form-sep-label">' + esc(t('Finishing touches')) + '</div>' +
@@ -2545,7 +2608,7 @@ function buildRecipeForm(m) {
     var c = findIn('coffee', d.coffeeId);
     if (m.roaster && (!c || c.roasterId !== m.roaster)) d.coffeeId = '';
     var field = el.querySelector('#coffeeField');
-    field.innerHTML = '<label for="f-coffee-sel">Coffee</label>' + coffeeSelectHTML(m.roaster, d.coffeeId);
+    field.innerHTML = '<label for="f-coffee-sel">' + esc(t('Coffee')) + '</label>' + coffeeSelectHTML(m.roaster, d.coffeeId);
   });
 
   return el;
@@ -4020,7 +4083,7 @@ function importData(file) {
       title: 'Replace your library',
       body: '<p>Replace your current library — ' + have + ' ' + (have === 1 ? 'recipe' : 'recipes') +
         ' — with the imported file (' + incoming + ' ' + (incoming === 1 ? 'recipe' : 'recipes') + ')?</p>' +
-        '<p>This cannot be undone — export a backup first if unsure.</p>',
+        '<p>' + esc(t('This cannot be undone — export a backup first if unsure.')) + '</p>',
       confirmLabel: 'Replace library',
       onConfirm: function () {
         closeModal();
