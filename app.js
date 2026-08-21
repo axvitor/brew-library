@@ -1342,8 +1342,8 @@ function render() {
   if (m) renderDetail(decodeURIComponent(m[1]));
   else if (hash === '#/account') renderAccount();
   else if (hash === '#/library') renderLibrary();
-  else if (hash === '#/saved') { filters.fav = true; renderHome(true); }
-  else renderHome(true);
+  else if (hash === '#/saved') { enterSaved(); renderHome(true); }
+  else { leaveSaved(); renderHome(true); }
   closeMenu();
 }
 
@@ -1551,6 +1551,31 @@ function resumeHTML() {
    arriving at home should animate, but renderHome() also runs on every
    search keystroke and every filter change, and replaying the whole page
    under the caret each time you type is unusable. */
+/* #/saved is the recipe list with the favourites filter forced on. It has
+   to put that filter back when you leave, or the filter follows you home
+   and the list silently stays narrowed — the whole library looking like
+   an empty state because a route you visited once turned a filter on and
+   never turned it off.
+
+   Whatever you had set yourself before visiting is what gets restored,
+   not simply "off". */
+var savedRoute = false;
+var favBeforeSaved = false;
+
+function enterSaved() {
+  if (!savedRoute) {
+    favBeforeSaved = filters.fav;
+    savedRoute = true;
+  }
+  filters.fav = true;
+}
+
+function leaveSaved() {
+  if (!savedRoute) return;
+  filters.fav = favBeforeSaved;
+  savedRoute = false;
+}
+
 function repaintFilters() {
   if (filterTarget === filters) renderHome();
   else renderModals();
@@ -4792,6 +4817,7 @@ document.addEventListener('click', function (ev) {
       return;
 
     case 'toggle-fav-filter':
+      savedRoute = false;
       filters.fav = !filters.fav;
       render();
       return;
