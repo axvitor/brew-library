@@ -1757,52 +1757,41 @@ function renderDetail(id) {
   spec(t('Recipe style'), st ? st.name : '—');
   if (st && st.author) spec('Devised by', st.author);
 
+  var roaster = roasterOf(r);
   var html = '<div class="detail">' +
-    '<a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
-
-    '<div class="detail-head">' +
-      '<div class="detail-head-info">' +
-        '<div class="kicker">' + esc(nameOf('method', r.methodId)) + ' · ' + esc(nameOf('style', r.styleId)) + '</div>' +
-        '<div class="title-row">' +
+    // The masthead is an inverse block that runs to the screen edges: the
+    // recipe's identity, set apart from the numbers you read off it below.
+    '<header class="detail-head">' +
+      '<div class="detail-head-inner">' +
+        '<div class="detail-nav">' +
+          '<a class="navbtn" href="#/" aria-label="' + esc(t('Library')) + '">' + ICON.back + '</a>' +
+          '<span class="detail-nav-gap"></span>' +
+          '<button class="navbtn fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' +
+            esc(r.id) + '" aria-label="' + esc(t('Toggle favourite')) + '">' + iconStar(r.fav) + '</button>' +
+          '<div class="menu-holder detail-more">' +
+            '<button class="navbtn" data-action="toggle-detail-menu" aria-haspopup="true" ' +
+              'aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
+            '<div class="menu" id="detailMenu" hidden>' +
+              '<button data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('Edit')) + '</button>' +
+              '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
+              '<div class="menu-sep"></div>' +
+              '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-title">' +
+          '<span class="kicker">' + esc(nameOf('method', r.methodId)) + ' · ' + esc(nameOf('style', r.styleId)) + '</span>' +
           '<h1>' + esc(titleOf(r)) + '</h1>' +
-          // Mobile-only: favourite as a plain star inline with the name,
-          // at the far end of the row (same icon-only treatment as the
-          // grid cards). Hidden on desktop, where the labelled button
-          // below already covers it.
-          '<button class="fav fav-inline' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' + iconStar(r.fav) + '</button>' +
-        '</div>' +
-        '<div class="card-sub" style="margin-top:10px">' +
-          (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
-          '<span>' + ratio(r.dose, r.water) + ' ' + esc(t('ratio')) + '</span>' +
-          (c && c.origin ? '<span class="dot"></span><span>' + esc(c.origin) + '</span>' : '') +
-        '</div>' +
-      '</div>' +
-      // Brewing is what this page is for, so Start timer is the one filled
-      // button and wears the same roast the timer's own control does — the
-      // brew action looks identical everywhere it appears. Edit drops to a
-      // ghost, and the two destructive-adjacent verbs move into an overflow
-      // so four admin controls stop outranking the reason you opened this.
-      '<div class="detail-actions">' +
-        (timerPlan(r)
-          ? '<button class="btn btn-accent btn-sm action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
-            ICON.play + '<span>' + esc(t('Start timer')) + '</span></button>'
-          : '') +
-        '<button class="btn btn-ghost btn-sm fav-desktop" data-action="fav" data-id="' + esc(r.id) + '">' +
-          ICON.star + '<span>' + esc(t(r.fav ? 'Favourited' : 'Favourite')) + '</span></button>' +
-        '<button class="btn btn-ghost btn-sm action-edit" data-action="edit" data-id="' + esc(r.id) + '">' + ICON.edit + '<span>' + esc(t('Edit')) + '</span></button>' +
-        '<div class="menu-holder detail-more">' +
-          '<button class="btn btn-ghost btn-sm btn-icon" data-action="toggle-detail-menu" ' +
-            'aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
-          '<div class="menu" id="detailMenu" hidden>' +
-            '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
-            '<div class="menu-sep"></div>' +
-            '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
+          '<div class="detail-meta">' +
+            (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
+            (roaster ? '<span>' + esc(roaster) + '</span><span class="dot"></span>' : '') +
+            '<span>' + ratio(r.dose, r.water) + ' ' + esc(t('ratio')) + '</span>' +
+            (c && c.origin ? '<span class="dot"></span><span>' + esc(c.origin) + '</span>' : '') +
           '</div>' +
         '</div>' +
       '</div>' +
-    '</div>' +
-
-    '<div style="padding-top:28px"></div>' +
+    '</header>' +
+    '<div class="detail-sheet">' +
     '<div class="bigstats">' +
       bigstat(t('Dose'), num(r.dose), 'g') +
       bigstat(t('Water'), num(r.water), 'g') +
@@ -1834,7 +1823,24 @@ function renderDetail(id) {
         (r.notes ? '<div class="block"><div class="section-title">' + esc(t('Personal notes')) + '</div><div class="notes">' + esc(r.notes) + '</div></div>' : '') +
       '</div>' +
     '</div>' +
-  '</div>';
+    '</div>' +
+  '</div>' +
+    // Pinned on a phone, inline under the sheet on a desktop. Brewing is
+    // what this page is for, so the brew action is the one filled control
+    // and wears the same roast the timer's own start button does.
+    //
+    // Deliberately a sibling of .detail, not a child: .detail animates on
+    // entry, and an element with a transform is a containing block for
+    // fixed descendants — nested here the bar pins to the page rather
+    // than the viewport and lands somewhere below the fold.
+    '<div class="detail-bar">' +
+      (timerPlan(r)
+        ? '<button class="btn btn-accent action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
+          ICON.play + '<span>' + esc(t('Start brew timer')) + '</span></button>'
+        : '<span class="detail-bar-note">' + esc(t('Add a brew time or pouring steps to time this one.')) + '</span>') +
+      '<button class="btn btn-ghost btn-icon action-edit" data-action="edit" data-id="' + esc(r.id) + '" ' +
+        'aria-label="' + esc(t('Edit')) + '">' + ICON.edit + '</button>' +
+    '</div>';
 
   view.innerHTML = html;
   markSeen(r.id);
