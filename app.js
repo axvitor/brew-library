@@ -4656,9 +4656,11 @@ function renderLibrary() {
       '<input id="libQ" type="search" autocomplete="off" value="' + esc(libraryQuery) + '" ' +
         'placeholder="' + esc(librarySearchPlaceholder()) + '" />' +
     '</div>' +
-    '<div class="list" id="libList">' + libraryListHTML(libraryTab) + '</div>' +
+    // Above the list, not below it: at the foot of fifty-eight coffees,
+    // adding one meant scrolling past every coffee you already had.
     '<button class="btn btn-primary library-add" data-action="lib-add" data-type="' + libraryTab + '">' +
       libraryAddHTML() + '</button>' +
+    '<div class="list" id="libList">' + libraryListHTML(libraryTab) + '</div>' +
   '</div>';
   window.scrollTo(0, 0);
 }

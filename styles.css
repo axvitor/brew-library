@@ -1440,9 +1440,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .library-head p{margin-top:10px;color:var(--text-muted);font:var(--type-body-sm);max-width:52ch}
 /* .search is written for the home filter bar's flex row; here it owns a
    full row of its own between the tabs and the list. */
-.library-search{flex:none;width:100%;margin-bottom:16px}
-.library-add{align-self:flex-start;margin-top:20px}
-@media(max-width:640px){ .library-add{align-self:stretch;justify-content:center} }
+.library-search{flex:none;width:100%;margin-bottom:12px}
+/* Full width on a phone so the label always fits — "Add brewing method"
+   in Portuguese is long enough to truncate in a shared row. */
+.library-add{align-self:stretch;justify-content:center;margin:0 0 20px}
+@media(min-width:641px){ .library-add{align-self:flex-start} }
 
 /* ---------- library manager ---------- */
 /* v3's segmented Tabs track is squared (radius-md), with each tab a
