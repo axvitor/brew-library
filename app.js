@@ -654,6 +654,8 @@ var TRANSLATIONS = {
     'Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.': 'Dê uma nota a um preparo e o café entra no ranking. Dois ou três já bastam para ver quais pacotes valem repetir.',
     'Start with the one you just opened': 'Comece pela que você acabou de abrir',
     'The rest': 'Os demais',
+    'Search ': 'Buscar ',
+    'Try a shorter search, or clear it to see all ': 'Tente uma busca mais curta, ou limpe para ver todos os ',
     'avg score': 'nota média',
     'scored': 'avaliadas',
     'with no score yet. Rate a brew and it joins the ranking.': 'sem nota ainda. Avalie um preparo e ele entra no ranking.',
@@ -4589,14 +4591,28 @@ function saveEntity(m) {
    it. Entity forms still open as pages on top — those are tasks you
    finish and leave, which is a different thing from a place you are. */
 var libraryTab = 'coffee';
+var libraryQuery = '';
 
 function libraryListHTML(tab) {
   var def = ENTITIES[tab];
-  var list = coll(tab).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
-  if (!list.length) {
+  var all = coll(tab).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+  var q = libraryQuery.trim().toLowerCase();
+  // Matches the meta line too, so a coffee is findable by its roaster,
+  // origin or process — the things actually printed on the row.
+  var list = q ? all.filter(function (e) {
+    return (e.name + ' ' + (def.meta(e) || '')).toLowerCase().indexOf(q) !== -1;
+  }) : all;
+
+  if (!all.length) {
     return '<div class="empty" style="padding:44px 20px">' +
       '<h3 style="font-size:18px">' + esc(t('Nothing here yet')) + '</h3>' +
       '<p>' + esc(t('Add your first ' + def.label.toLowerCase() + '.')) + '</p></div>';
+  }
+  if (!list.length) {
+    return '<div class="empty" style="padding:36px 20px">' +
+      '<h3 style="font-size:18px">' + esc(t('Nothing matches') + ' “' + libraryQuery.trim() + '”') + '</h3>' +
+      '<p>' + esc(t('Try a shorter search, or clear it to see all ') +
+        coll(tab).length + ' ' + t(ENTITIES[tab].plural.toLowerCase()) + '.') + '</p></div>';
   }
   return list.map(function (e) {
     var used = def.usedBy ? def.usedBy(e.id) : state.recipes.filter(function (r) { return r[def.ref] === e.id; }).length;
@@ -4619,6 +4635,10 @@ function libraryTabsHTML() {
   }).join('');
 }
 
+function librarySearchPlaceholder() {
+  return t('Search ') + t(ENTITIES[libraryTab].plural.toLowerCase()) + '…';
+}
+
 function libraryAddHTML() {
   var def = ENTITIES[libraryTab];
   return ICON.plus + '<span>' + esc(t('Add ' + def.label.toLowerCase())) + '</span>';
@@ -4632,6 +4652,10 @@ function renderLibrary() {
       '<p>' + esc(t('Coffees, roasters and gear your recipes refer to. Edit one here and every recipe using it follows.')) + '</p>' +
     '</div>' +
     '<div class="tabs" id="libTabs">' + libraryTabsHTML() + '</div>' +
+    '<div class="search library-search">' + ICON.search +
+      '<input id="libQ" type="search" autocomplete="off" value="' + esc(libraryQuery) + '" ' +
+        'placeholder="' + esc(librarySearchPlaceholder()) + '" />' +
+    '</div>' +
     '<div class="list" id="libList">' + libraryListHTML(libraryTab) + '</div>' +
     '<button class="btn btn-primary library-add" data-action="lib-add" data-type="' + libraryTab + '">' +
       libraryAddHTML() + '</button>' +
@@ -4642,11 +4666,21 @@ function renderLibrary() {
 /* Swaps the tab strip and the list in place. A full re-render rebuilt the
    whole page for what is a change of context inside it, which reads as a
    reload and throws away your scroll position. */
+function paintLibraryList() {
+  var list = document.getElementById('libList');
+  if (list) list.innerHTML = libraryListHTML(libraryTab);
+}
+
 function paintLibraryTab() {
   var tabs = document.getElementById('libTabs');
   var list = document.getElementById('libList');
   var add = document.querySelector('.library-add');
   if (!tabs || !list) { renderLibrary(); return; }
+  // The search does not carry across tabs: a term that found a coffee
+  // would land on Grinders as an empty list with no obvious cause.
+  libraryQuery = '';
+  var q = document.getElementById('libQ');
+  if (q) { q.value = ''; q.placeholder = librarySearchPlaceholder(); }
   tabs.innerHTML = libraryTabsHTML();
   list.innerHTML = libraryListHTML(libraryTab);
   if (add) {
@@ -5154,6 +5188,11 @@ document.addEventListener('click', function (ev) {
 });
 
 document.addEventListener('input', function (ev) {
+  if (ev.target.id === 'libQ') {
+    libraryQuery = ev.target.value;
+    paintLibraryList();
+    return;
+  }
   if (ev.target.id === 'q') {
     filters.q = ev.target.value;
     var pos = ev.target.selectionStart;
