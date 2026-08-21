@@ -1209,9 +1209,6 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
   '<path fill="#34A853" d="M24 48c6.5 0 12-2.1 15.9-5.9l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.4 0-11.7-3.5-13.6-8.7l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/>' +
   '</svg>';
 
-// The avatar chip and the "Signed in as…" line inside the ⋮ menu both
-// just reflect currentUser — Sign out itself now lives as a menu item
-// (see index.html), so the topbar doesn't need a dedicated button for it.
 /* The tab bar's height is not a constant: it grows by the home-indicator
    inset on phones that have one, and the bar disappears entirely on
    desktop. Anything that has to sit above it — the pinned brew action,
@@ -1230,7 +1227,7 @@ function measureNav() {
   document.documentElement.style.setProperty('--nav-w', (side ? nav.offsetWidth : 0) + 'px');
 }
 
-function updateAccountChip() {
+function updateNav() {
   var nav = document.getElementById('appNav');
   if (!nav) return;
 
@@ -1321,7 +1318,7 @@ function renderFirebaseError() {
 }
 
 function render() {
-  updateAccountChip();
+  updateNav();
 
   if (authPhase === 'loading') { renderLoading(); return; }
   if (authPhase === 'signedOut') { renderSignIn(); return; }
@@ -5133,7 +5130,9 @@ translateMarkup();
 trackVisualViewport();
 boot();
 
-})();
-
+// The bar changes height on rotation and disappears entirely when the
+// layout crosses into the sidebar breakpoint.
 window.addEventListener('resize', measureNav);
 window.addEventListener('orientationchange', measureNav);
+
+})();
