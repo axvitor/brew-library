@@ -638,6 +638,44 @@ function tPlural(n, one, many) {
 var TRANSLATIONS = {
   pt: {
     // --- shell and menu ---
+    'Home': 'Início',
+    'Saved': 'Salvos',
+    'Account': 'Conta',
+    'Export data': 'Exportar dados',
+    'Backup': 'Backup',
+    'Device': 'Dispositivo',
+    // --- greeting and home ---
+    'Morning': 'Bom dia',
+    'Afternoon': 'Boa tarde',
+    'Evening': 'Boa noite',
+    'What are you': 'O que você vai',
+    'brewing': 'preparar',
+    'today?': 'hoje?',
+    'roaster': 'torrefação',
+    'roasters': 'torrefações',
+    'All': 'Todos',
+    'All recipes': 'Todas as receitas',
+    'Matching recipes': 'Receitas encontradas',
+    'Brew': 'Preparar',
+    'Open': 'Abrir',
+    'opened': 'aberta',
+    'Pouring now': 'Despejando agora',
+    'Now': 'Agora',
+    'Done': 'Pronto',
+    // --- sign-in ---
+    'Every recipe you have dialled in, on every device.': 'Cada receita que você ajustou, em todos os aparelhos.',
+    'Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.': 'Entre para abrir sua biblioteca — os despejos se ajustam à dose que você preparar hoje.',
+    'Pour steps computed live from the recipe style': 'Despejos calculados na hora a partir do estilo da receita',
+    'Real-time sync, nothing to save by hand': 'Sincronização em tempo real, nada para salvar à mão',
+    'Your library stays private to your account': 'Sua biblioteca fica privada na sua conta',
+    'Open to anyone with a Google account. Your recipes are never shared between accounts.': 'Aberto a qualquer conta Google. Suas receitas nunca são compartilhadas entre contas.',
+    'Pick up where you left off': 'Continue de onde parou',
+    'just now': 'agora mesmo',
+    'min ago': 'min atrás',
+    'hour ago': 'hora atrás',
+    'hours ago': 'horas atrás',
+    'yesterday': 'ontem',
+    'days ago': 'dias atrás',
     'Library': 'Biblioteca',
     'Add recipe': 'Adicionar receita',
     'Export data (.json)': 'Exportar dados (.json)',
@@ -1013,6 +1051,9 @@ function stars(n) {
 var ICON = {
   edit: '<svg viewBox="0 0 24 24" class="ico"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="M15 5l4 4"/></svg>',
   copy: '<svg viewBox="0 0 24 24" class="ico"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg>',
+  download: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 4v11M8 11l4 4 4-4M5 20h14"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 15V4M8 8l4-4 4 4M5 20h14"/></svg>',
+  signout: '<svg viewBox="0 0 24 24" class="ico"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h9"/></svg>',
   trash: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14"/></svg>',
   close: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 6 6 18M6 6l12 12"/></svg>',
@@ -1036,6 +1077,7 @@ var ICON = {
     '<circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="20" r="2"/></svg>',
   chevUp: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 15l-6-6-6 6"/></svg>',
   chevDown: '<svg viewBox="0 0 24 24" class="ico"><path d="M6 9l6 6 6-6"/></svg>',
+  chevRight: '<svg viewBox="0 0 24 24" class="ico"><path d="M9 6l6 6-6 6"/></svg>',
   soundOn: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
     '<path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 5.2a9 9 0 0 1 0 13.6"/></svg>',
   soundOff: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
@@ -1077,12 +1119,15 @@ var COMBO_ICON = {
    --------------------------------------------------------- */
 
 var filters = { q: '', coffee: '', roaster: '', grinder: '', method: '', style: '', fav: false, sort: 'new' };
+/* Which set the comboboxes read and write. Home points it at the live
+   filters; the filters page points it at its own draft, so nothing the
+   page touches reaches the list until Apply. */
+var filterTarget = filters;
 
 // Mobile only: whether the coffee/roaster/grinder/method/style/sort group
 // is expanded under "More filters". A module-level flag rather than
 // something read off the DOM, since renderHome() rebuilds the filter bar
 // on every keystroke and every filter change — it has to survive that.
-var filtersExpanded = false;
 
 // Cupform v3.1's Combobox: "Select for a list that outgrew a list. Typing
 // filters the options; the field still resolves to exactly one value."
@@ -1125,15 +1170,16 @@ function allRoasters() {
   return coll('roaster').slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
 }
 
-function visibleRecipes() {
-  var q = filters.q.trim().toLowerCase();
+function visibleRecipes(f) {
+  f = f || filters;
+  var q = f.q.trim().toLowerCase();
   var out = state.recipes.filter(function (r) {
-    if (filters.coffee && r.coffeeId !== filters.coffee) return false;
-    if (filters.roaster && roasterIdOf(r) !== filters.roaster) return false;
-    if (filters.grinder && r.grinderId !== filters.grinder) return false;
-    if (filters.method && r.methodId !== filters.method) return false;
-    if (filters.style && r.styleId !== filters.style) return false;
-    if (filters.fav && !r.fav) return false;
+    if (f.coffee && r.coffeeId !== f.coffee) return false;
+    if (f.roaster && roasterIdOf(r) !== f.roaster) return false;
+    if (f.grinder && r.grinderId !== f.grinder) return false;
+    if (f.method && r.methodId !== f.method) return false;
+    if (f.style && r.styleId !== f.style) return false;
+    if (f.fav && !r.fav) return false;
     if (q) {
       var hay = [titleOf(r), nameOf('coffee', r.coffeeId), roasterOf(r), nameOf('grinder', r.grinderId),
         nameOf('method', r.methodId), nameOf('style', r.styleId), r.notes, r.grindSize]
@@ -1144,9 +1190,9 @@ function visibleRecipes() {
   });
 
   out.sort(function (a, b) {
-    if (filters.sort === 'old') return a.createdAt - b.createdAt;
-    if (filters.sort === 'rating') return (b.rating || 0) - (a.rating || 0) || b.createdAt - a.createdAt;
-    if (filters.sort === 'coffee') return titleOf(a).localeCompare(titleOf(b));
+    if (f.sort === 'old') return a.createdAt - b.createdAt;
+    if (f.sort === 'rating') return (b.rating || 0) - (a.rating || 0) || b.createdAt - a.createdAt;
+    if (f.sort === 'coffee') return titleOf(a).localeCompare(titleOf(b));
     return b.createdAt - a.createdAt;
   });
   return out;
@@ -1166,32 +1212,45 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
   '<path fill="#34A853" d="M24 48c6.5 0 12-2.1 15.9-5.9l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.4 0-11.7-3.5-13.6-8.7l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/>' +
   '</svg>';
 
-// The avatar chip and the "Signed in as…" line inside the ⋮ menu both
-// just reflect currentUser — Sign out itself now lives as a menu item
-// (see index.html), so the topbar doesn't need a dedicated button for it.
-function updateAccountChip() {
-  var chip = document.getElementById('accountChip');
-  var actions = document.getElementById('appActions');
-  var menuAccount = document.getElementById('menuAccount');
-  if (!chip) return;
+/* The tab bar's height is not a constant: it grows by the home-indicator
+   inset on phones that have one, and the bar disappears entirely on
+   desktop. Anything that has to sit above it — the pinned brew action,
+   Back to top, the page's own bottom padding — measures it rather than
+   guessing, which is how a 16px gap opened up under the brew bar. */
+function measureNav() {
+  var nav = document.getElementById('appNav');
+  var shown = nav && !nav.hidden;
+  var side = shown && getComputedStyle(nav).position === 'fixed' &&
+    window.matchMedia('(min-width:861px)').matches;
+  // Height when it is a bottom bar, width when it is a sidebar, zero for
+  // both when it is not on screen at all — the sign-in screen has no nav,
+  // and reserving the sidebar's width there left the page inset by 232px
+  // with the hero unable to reach the left edge.
+  document.documentElement.style.setProperty('--nav-h', (shown && !side ? nav.offsetHeight : 0) + 'px');
+  document.documentElement.style.setProperty('--nav-w', (side ? nav.offsetWidth : 0) + 'px');
+}
 
-  if (currentUser) {
-    chip.hidden = false;
-    var avatar = document.getElementById('accountAvatar');
-    if (avatar) {
-      avatar.src = currentUser.photoURL || '';
-      avatar.style.visibility = currentUser.photoURL ? 'visible' : 'hidden';
-    }
-    if (menuAccount) {
-      menuAccount.hidden = false;
-      var emailEl = document.getElementById('menuAccountEmail');
-      if (emailEl) emailEl.textContent = currentUser.email || '';
-    }
-  } else {
-    chip.hidden = true;
-    if (menuAccount) menuAccount.hidden = true;
+function updateNav() {
+  var nav = document.getElementById('appNav');
+  if (!nav) return;
+
+  // The nav is the app's whole chrome now, so it only exists once there is
+  // an app to navigate — the sign-in gate owns the screen on its own.
+  nav.hidden = authPhase !== 'ready' || !currentUser;
+  measureNav();
+
+  var hash = location.hash || '#/';
+  var here = hash === '#/account' ? 'account'
+    : hash === '#/saved' ? 'saved'
+    : hash.indexOf('#/r/') === 0 ? 'home'
+    : 'home';
+  var items = nav.querySelectorAll('[data-nav]');
+  for (var i = 0; i < items.length; i++) {
+    var on = items[i].getAttribute('data-nav') === here;
+    items[i].classList.toggle('on', on);
+    if (on) items[i].setAttribute('aria-current', 'page');
+    else items[i].removeAttribute('aria-current');
   }
-  if (actions) actions.hidden = authPhase !== 'ready';
 }
 
 function renderGate(title, message, footHTML) {
@@ -1207,9 +1266,54 @@ function renderLoading() {
   renderGate('Brew Library', 'Loading your library…', '');
 }
 
+/* The one screen a first-time visitor sees, so it gets a picture and a
+   reason rather than a bean and a button. Its own layout, not renderGate:
+   loading and the connection error are momentary states that want to stay
+   small and quiet, and dressing them up would be dressing up a failure. */
 function renderSignIn() {
-  renderGate('Brew Library', t('Sign in to see your recipes — synced across every device.'),
-    '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON + '<span>' + esc(t('Continue with Google')) + '</span></button>');
+  function point(text) {
+    return '<li class="gate-point">' + ICON.check + '<span>' + esc(t(text)) + '</span></li>';
+  }
+  view.innerHTML = '<div class="gate-screen">' +
+    '<div class="gate-hero">' +
+      // Line art rather than a photograph: v3 is a drawn system, and a
+      // stock photo of coffee is the one thing every coffee app already has.
+      '<svg class="gate-art" viewBox="0 0 120 106" aria-hidden="true">' +
+        '<g class="gate-steam">' +
+          '<path d="M50 20c-3-4-3-7 0-11s3-7 0-11"/>' +
+          '<path d="M60 17c-3-4-3-7 0-11s3-7 0-11"/>' +
+          '<path d="M70 20c-3-4-3-7 0-11s3-7 0-11"/>' +
+        '</g>' +
+        '<path d="M34 34h52l-16 30H50z"/>' +
+        '<path d="M45 41h30" stroke-dasharray="3 4"/>' +
+        '<path d="M60 64v9"/>' +
+        '<path d="M42 75h36v18a8 8 0 0 1-8 8H50a8 8 0 0 1-8-8z"/>' +
+        '<path d="M42 82h36" stroke-dasharray="3 4"/>' +
+        '<path d="M78 79h5a6 6 0 0 1 0 12h-5"/>' +
+      '</svg>' +
+      '<div class="gate-wordmark">' +
+        '<svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">' +
+          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
+        '<span class="brand-text">Brew<em>Library</em></span>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="gate-sheet">' +
+      '<div>' +
+        '<h1>' + esc(t('Every recipe you have dialled in, on every device.')) + '</h1>' +
+        '<p class="gate-lede">' + esc(t('Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.')) + '</p>' +
+      '</div>' +
+      '<ul class="gate-points">' +
+        point('Pour steps computed live from the recipe style') +
+        point('Real-time sync, nothing to save by hand') +
+        point('Your library stays private to your account') +
+      '</ul>' +
+      '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON +
+        '<span>' + esc(t('Continue with Google')) + '</span></button>' +
+      '<p class="gate-foot">' + esc(t('Open to anyone with a Google account. Your recipes are never shared between accounts.')) + '</p>' +
+    '</div>' +
+  '</div>';
 }
 
 function renderFirebaseError() {
@@ -1217,7 +1321,7 @@ function renderFirebaseError() {
 }
 
 function render() {
-  updateAccountChip();
+  updateNav();
 
   if (authPhase === 'loading') { renderLoading(); return; }
   if (authPhase === 'signedOut') { renderSignIn(); return; }
@@ -1226,7 +1330,9 @@ function render() {
   var hash = location.hash || '#/';
   var m = hash.match(/^#\/r\/(.+)$/);
   if (m) renderDetail(decodeURIComponent(m[1]));
-  else renderHome();
+  else if (hash === '#/account') renderAccount();
+  else if (hash === '#/saved') { filters.fav = true; renderHome(true); }
+  else renderHome(true);
   closeMenu();
 }
 
@@ -1267,7 +1373,7 @@ function comboListHTML(type) {
     html += '<div class="combo-empty">' + esc(t('Nothing matches') + ' “' + comboQuery.trim() + '”') + '</div>';
   } else {
     shown.forEach(function (o) {
-      var on = (filters[type] || '') === o.id;
+      var on = (filterTarget[type] || '') === o.id;
       html += '<div class="combo-opt' + (on ? ' on' : '') + (o.id && !o.count ? ' is-empty' : '') + '" role="option" aria-selected="' + on +
         '" data-action="combo-pick" data-type="' + type + '" data-id="' + esc(o.id) + '">' +
         '<span class="combo-opt-label">' + esc(o.name) + '</span>' +
@@ -1281,9 +1387,9 @@ function comboListHTML(type) {
 
 function comboHTML(type) {
   var isOpen = openCombo === type;
-  var current = filters[type] ? findIn(type, filters[type]) : null;
+  var current = filterTarget[type] ? findIn(type, filterTarget[type]) : null;
   var shown = isOpen ? comboQuery : (current ? current.name : '');
-  return '<div class="combo' + (filters[type] ? ' on' : '') + '">' +
+  return '<div class="combo' + (filterTarget[type] ? ' on' : '') + '">' +
     '<div class="combo-field' + (isOpen ? ' open' : '') + '">' +
       ICON[COMBO_ICON[type]] +
       '<input id="f-combo-' + type + '" class="combo-input" role="combobox" aria-haspopup="listbox" ' +
@@ -1298,51 +1404,240 @@ function comboHTML(type) {
   '</div>';
 }
 
-function renderHome() {
+/* The last recipe you opened, for the home screen to hand back.
+
+   Deliberately local rather than part of the synced library: this is one
+   write every time any recipe is opened, where the library is otherwise
+   written only when something actually changes. Pushing that to Firestore
+   would turn ordinary browsing into a stream of writes for a fact that is
+   really about this device — what you had open on this phone, not what
+   the library knows. Only ever one entry; the previous one is replaced. */
+var SEEN_KEY = 'brewLastSeen';
+
+function markSeen(id) {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify({ id: id, at: Date.now() })); }
+  catch (e) { /* private mode — the card just won't appear */ }
+}
+
+function lastSeen() {
+  var raw;
+  try { raw = localStorage.getItem(SEEN_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+  var v;
+  try { v = JSON.parse(raw); } catch (e) { return null; }
+  if (!v || !v.id) return null;
+  // The recipe may have been deleted, or belong to an account that has
+  // since signed out on this device.
+  var r = recipeById(v.id);
+  return r ? { recipe: r, at: v.at } : null;
+}
+
+// Coarse on purpose: "3 days ago" is what you want to know here, not a
+// timestamp. Anything past a fortnight stops counting and gives a date.
+function agoLabel(ms) {
+  var mins = Math.floor((Date.now() - ms) / 60000);
+  if (mins < 2) return t('just now');
+  if (mins < 60) return mins + ' ' + t('min ago');
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + ' ' + t(hrs === 1 ? 'hour ago' : 'hours ago');
+  var days = Math.floor(hrs / 24);
+  if (days === 1) return t('yesterday');
+  if (days < 15) return days + ' ' + t('days ago');
+  return new Date(ms).toLocaleDateString();
+}
+
+function greetingKey() {
+  var h = new Date().getHours();
+  if (h < 12) return 'Morning';
+  if (h < 18) return 'Afternoon';
+  return 'Evening';
+}
+
+function greetingHTML() {
+  var name = (currentUser && currentUser.displayName || '').split(' ')[0];
+  var photo = currentUser && currentUser.photoURL;
+  var letter = (name || (currentUser && currentUser.email) || '?').trim().charAt(0).toUpperCase();
+  return '<div class="greet">' +
+    '<a class="greet-av" href="#/account" aria-label="' + esc(t('Account')) + '">' +
+      (photo ? '<img src="' + esc(photo) + '" alt="" />' : '<span>' + esc(letter) + '</span>') +
+    '</a>' +
+    '<div class="greet-txt">' +
+      '<span class="greet-day">' + esc(new Date().toLocaleDateString(undefined,
+        { weekday: 'long', day: 'numeric', month: 'long' })) + '</span>' +
+      '<span class="greet-name">' + esc(t(greetingKey())) + (name ? ', ' + esc(name) : '') + '</span>' +
+    '</div>' +
+  '</div>';
+}
+
+/* The methods you actually brew with, most-used first — a shortcut past
+   the full combo below for the two or three you reach for every day.
+   Methods nothing is filed under are left out; the combo still lists them. */
+function methodChipsHTML() {
+  var counts = coll('method').map(function (me) {
+    return { id: me.id, name: me.name, n: state.recipes.filter(function (r) { return r.methodId === me.id; }).length };
+  }).filter(function (m) { return m.n > 0; })
+    .sort(function (a, b) { return b.n - a.n; })
+    .slice(0, 5);
+  if (counts.length < 2) return '';
+
+  var html = '<div class="chips">' +
+    '<button class="chip' + (filters.method ? '' : ' on') + '" data-action="pick-method" data-id="">' +
+      esc(t('All')) + '</button>';
+  counts.forEach(function (m) {
+    html += '<button class="chip' + (filters.method === m.id ? ' on' : '') + '" ' +
+      'data-action="pick-method" data-id="' + esc(m.id) + '">' + esc(m.name) + '</button>';
+  });
+  return html + '</div>';
+}
+
+/* Hands back the last thing you brewed, with the two numbers you need to
+   weigh it out and a control that goes straight to the ring. Suppressed
+   while filtering — you came here looking for something else. */
+function resumeHTML() {
+  if (filtersActive()) return '';
+  var seen = lastSeen();
+  if (!seen) return '';
+  var r = seen.recipe;
+  var roaster = roasterOf(r);
+  return '<div class="sechead"><span class="section-title">' +
+      esc(t('Pick up where you left off')) + '</span></div>' +
+    '<section class="resume">' +
+    '<a class="resume-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' +
+      esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
+    '<svg class="resume-mark" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+      '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
+    '<div class="resume-body">' +
+      '<div class="resume-top">' +
+        '<span class="resume-kicker">' + esc(nameOf('method', r.methodId)) + ' · ' +
+          esc(nameOf('style', r.styleId)) + '</span>' +
+        '<span class="resume-name">' + esc(titleOf(r)) + '</span>' +
+        '<span class="resume-meta">' + (roaster ? esc(roaster) + ' · ' : '') +
+          esc(t('opened')) + ' ' + esc(agoLabel(seen.at)) + '</span>' +
+      '</div>' +
+      '<div class="resume-row">' +
+        '<div class="resume-stats">' +
+          '<div class="rs"><span class="k">' + esc(t('Dose')) + '</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
+          '<div class="rs"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
+          '<div class="rs"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
+        '</div>' +
+        (timerPlan(r)
+          ? '<button class="resume-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
+            ICON.play + '<span>' + esc(t('Brew')) + '</span></button>'
+          : '<a class="resume-brew resume-open" href="#/r/' + encodeURIComponent(r.id) + '">' +
+            '<span>' + esc(t('Open')) + '</span>' + ICON.chevRight + '</a>') +
+      '</div>' +
+    '</div>' +
+  '</section>';
+}
+
+/* Repaints whichever surface owns the comboboxes right now. */
+/* Which view was last painted. Entrance animations are gated on this:
+   arriving at home should animate, but renderHome() also runs on every
+   search keystroke and every filter change, and replaying the whole page
+   under the caret each time you type is unusable. */
+function repaintFilters() {
+  if (filterTarget === filters) renderHome();
+  else renderModals();
+}
+
+/* ---- filters page ----
+   Was an inline group that expanded under the search bar and applied
+   every change to the list as you made it. As a page it commits instead:
+   changes land in a draft, the button counts what they would leave you
+   with, and nothing reaches the list until Apply. Search is not part of
+   it — typing a query is inherently live, and it stays on the home bar. */
+function openFilters() {
+  var m = {
+    draft: {
+      q: filters.q,
+      coffee: filters.coffee, roaster: filters.roaster, grinder: filters.grinder,
+      method: filters.method, style: filters.style,
+      fav: filters.fav, sort: filters.sort
+    },
+    onClose: function () { filterTarget = filters; openCombo = null; comboQuery = ''; },
+    render: function () {
+      filterTarget = m.draft;
+      var n = visibleRecipes(m.draft).length;
+      var touched = m.draft.coffee || m.draft.roaster || m.draft.grinder ||
+        m.draft.method || m.draft.style || m.draft.fav || m.draft.sort !== 'new';
+
+      var body =
+        '<div class="filter-page">' +
+          '<button class="pill-toggle' + (m.draft.fav ? ' on' : '') + '" data-action="filters-toggle-fav">' +
+            ICON.star + esc(t('Favourites only')) + '</button>' +
+          '<div class="field"><label>' + esc(t('Coffee')) + '</label>' + comboHTML('coffee') + '</div>' +
+          '<div class="field"><label>' + esc(t('Roaster')) + '</label>' + comboHTML('roaster') + '</div>' +
+          '<div class="field"><label>' + esc(t('Grinder')) + '</label>' + comboHTML('grinder') + '</div>' +
+          '<div class="field"><label>' + esc(t('Brewing method')) + '</label>' + comboHTML('method') + '</div>' +
+          '<div class="field"><label>' + esc(t('Recipe style')) + '</label>' + comboHTML('style') + '</div>' +
+          '<div class="field"><label for="f-sort">' + esc(t('Sort')) + '</label>' +
+            '<select class="inp" id="f-sort" data-filter="sort">' +
+              '<option value="new"' + (m.draft.sort === 'new' ? ' selected' : '') + '>' + esc(t('Newest first')) + '</option>' +
+              '<option value="old"' + (m.draft.sort === 'old' ? ' selected' : '') + '>' + esc(t('Oldest first')) + '</option>' +
+              '<option value="rating"' + (m.draft.sort === 'rating' ? ' selected' : '') + '>' + esc(t('Top rated')) + '</option>' +
+              '<option value="coffee"' + (m.draft.sort === 'coffee' ? ' selected' : '') + '>' + esc(t('A–Z')) + '</option>' +
+            '</select></div>' +
+        '</div>';
+
+      var foot =
+        (touched ? '<button class="btn btn-quiet filters-clear" data-action="filters-clear-draft">' +
+          esc(t('Clear')) + '</button>' : '') +
+        '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
+        '<button class="btn btn-primary" data-action="filters-apply"' + (n ? '' : ' disabled') + '>' +
+          esc(n ? t('Show') + ' ' + n + ' ' + tPlural(n, 'recipe', 'recipes') : t('No matches')) +
+        '</button>';
+
+      return sheet({ title: t('Filters'), body: body, foot: foot, narrow: true });
+    }
+  };
+  openModal(m);
+}
+
+function renderHome(entering) {
+  // Only the router passes this. Every other caller — a keystroke in the
+  // search field, a chip, applying filters — repaints without replaying
+  // the page's entrance under the caret.
+  view.classList.toggle('view-enter', entering === true);
   var list = visibleRecipes();
   var total = state.recipes.length;
 
   var html = '';
+  html += greetingHTML();
   html += '<section class="hero">' +
-    '<h1>' + esc(t('Your brewing library')) + '</h1>' +
+    '<h1>' + esc(t('What are you')) + '<br>' + esc(t('brewing')) +
+      ' <em>' + esc(t('today?')) + '</em></h1>' +
     (filtersActive()
       ? '<p><span class="count">' + list.length + '</span> ' +
         esc(tPlural(list.length, 'recipe', 'recipes')) + ' ' + esc(t('of')) + ' ' + total +
         (list.length ? '' : ' · ' + esc(t('nothing matches — try clearing a filter'))) + '</p>'
       : '<p><span class="count">' + total + '</span> ' + esc(tPlural(total, 'recipe', 'recipes')) +
-        ' ' + esc(t('across')) + ' ' + state.coffees.length + ' ' +
-        esc(tPlural(state.coffees.length, 'coffee', 'coffees')) + '. ' +
-        esc(t('Filter to find the one you want, then brew it.')) + '</p>') +
+        ' · ' + state.coffees.length + ' ' + esc(tPlural(state.coffees.length, 'coffee', 'coffees')) +
+        ' · ' + state.roasters.length + ' ' + esc(tPlural(state.roasters.length, 'roaster', 'roasters')) + '</p>') +
     '</section>';
 
   var moreCount = moreFiltersCount();
-  html += '<div class="filters' + (filtersExpanded ? ' expanded' : '') + '">' +
+  html += '<div class="filters">' +
     '<div class="search">' + ICON.search +
       '<input id="q" type="search" placeholder="' + esc(t('Search recipes…')) + '" value="' + esc(filters.q) + '" />' +
     '</div>' +
     '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
       ICON.star + esc(t('Favourites')) + '</button>' +
-    // Mobile only (see CSS) — everything below folds under this toggle so
-    // the bar collapses to just Search, Favourites and the toggle.
-    '<button class="pill-toggle filters-toggle' + (moreCount ? ' on' : '') + '" data-action="toggle-more-filters" ' +
-      'aria-expanded="' + filtersExpanded + '">' + ICON.sliders + esc(t('More filters')) +
+    '<button class="pill-toggle' + (moreCount ? ' on' : '') + '" data-action="filters-open">' +
+      ICON.sliders + esc(t('Filters')) +
       (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
     '</button>' +
-    '<div class="filters-more">' +
-      comboHTML('coffee') +
-      comboHTML('roaster') +
-      comboHTML('grinder') +
-      comboHTML('method') +
-      comboHTML('style') +
-      '<div class="sel"><select id="f-sort" data-filter="sort" aria-label="' + esc(t('Sort recipes')) + '">' +
-        '<option value="new"' + (filters.sort === 'new' ? ' selected' : '') + '>' + esc(t('Newest first')) + '</option>' +
-        '<option value="old"' + (filters.sort === 'old' ? ' selected' : '') + '>' + esc(t('Oldest first')) + '</option>' +
-        '<option value="rating"' + (filters.sort === 'rating' ? ' selected' : '') + '>' + esc(t('Top rated')) + '</option>' +
-        '<option value="coffee"' + (filters.sort === 'coffee' ? ' selected' : '') + '>' + esc(t('A–Z')) + '</option>' +
-      '</select></div>' +
-      (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">' + esc(t('Clear')) + '</button>' : '') +
-    '</div>' +
-    '</div>';
+    (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">' + esc(t('Clear')) + '</button>' : '') +
+  '</div>';
+
+  html += methodChipsHTML();
+  html += resumeHTML();
+
+  if (list.length) {
+    html += '<div class="sechead"><span class="section-title">' +
+      esc(t(filtersActive() ? 'Matching recipes' : 'All recipes')) + '</span>' +
+      '<span class="sechead-count">' + list.length + '</span></div>';
+  }
 
   if (!list.length) {
     html += '<div class="empty">' + ICON.bean +
@@ -1503,7 +1798,63 @@ function bigstat(label, value, unit, style) {
     (unit ? '<small>' + esc(unit) + '</small>' : '') + '</div></div>';
 }
 
+/* ---- account ----
+   Everything that used to hang off the topbar's overflow menu: identity,
+   language, the export/import backup hatch, and the two destructive verbs.
+   A page rather than a dropdown, because the nav gives it a home now and a
+   menu anchored to a bar that no longer exists had nowhere to hang. */
+function renderAccount() {
+  view.classList.remove('view-enter');
+  var name = (currentUser && (currentUser.displayName || '')) || '';
+  var email = (currentUser && currentUser.email) || '';
+  var initial = (name || email || '?').trim().charAt(0).toUpperCase();
+  var photo = currentUser && currentUser.photoURL;
+
+  function langBtn(code, label) {
+    return '<button class="seg' + (langChoice === code ? ' on' : '') + '" ' +
+      'data-action="set-lang" data-lang="' + code + '">' + esc(label) + '</button>';
+  }
+  function row(action, icon, label, meta, danger) {
+    return '<button class="acc-row' + (danger ? ' danger' : '') + '" data-action="' + action + '">' +
+      icon + '<span class="grow">' + esc(label) + '</span>' +
+      (meta ? '<span class="acc-meta">' + esc(meta) + '</span>' : '') + '</button>';
+  }
+
+  view.innerHTML = '<div class="account">' +
+    '<div class="acc-card">' +
+      (photo
+        ? '<img class="acc-av" src="' + esc(photo) + '" alt="" />'
+        : '<div class="acc-av acc-av-letter">' + esc(initial) + '</div>') +
+      '<div class="acc-id">' +
+        (name ? '<span class="acc-name">' + esc(name) + '</span>' : '') +
+        '<span class="acc-email">' + esc(email) + '</span>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="acc-group">' +
+      '<div class="section-title">' + esc(t('Language')) + '</div>' +
+      '<div class="segs">' +
+        langBtn('auto', t('Device')) + langBtn('en', 'English') + langBtn('pt', 'Português') +
+      '</div>' +
+    '</div>' +
+
+    '<div class="acc-group">' +
+      '<div class="section-title">' + esc(t('Backup')) + '</div>' +
+      row('export', ICON.download, t('Export data'), '.json') +
+      row('import', ICON.upload, t('Import data…')) +
+      '<p class="acc-sync"><i></i>' + esc(t('Synced across your signed-in devices.')) + '</p>' +
+    '</div>' +
+
+    '<div class="acc-group">' +
+      row('sign-out', ICON.signout, t('Sign out')) +
+      row('reset', ICON.trash, t('Reset library…'), '', true) +
+    '</div>' +
+  '</div>';
+  window.scrollTo(0, 0);
+}
+
 function renderDetail(id) {
+  view.classList.remove('view-enter');
   var r = recipeById(id);
   if (!r) {
     view.innerHTML = '<div class="detail"><a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
@@ -1536,52 +1887,44 @@ function renderDetail(id) {
   spec(t('Recipe style'), st ? st.name : '—');
   if (st && st.author) spec('Devised by', st.author);
 
+  var roaster = roasterOf(r);
   var html = '<div class="detail">' +
-    '<a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
-
-    '<div class="detail-head">' +
-      '<div class="detail-head-info">' +
-        '<div class="kicker">' + esc(nameOf('method', r.methodId)) + ' · ' + esc(nameOf('style', r.styleId)) + '</div>' +
-        '<div class="title-row">' +
+    // The masthead is an inverse block that runs to the screen edges: the
+    // recipe's identity, set apart from the numbers you read off it below.
+    '<header class="detail-head">' +
+      '<svg class="detail-mark" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+        '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
+      '<div class="detail-head-inner">' +
+        '<div class="detail-nav">' +
+          '<a class="navbtn" href="#/" aria-label="' + esc(t('Library')) + '">' + ICON.back + '</a>' +
+          '<span class="detail-nav-gap"></span>' +
+          '<button class="navbtn fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' +
+            esc(r.id) + '" aria-label="' + esc(t('Toggle favourite')) + '">' + iconStar(r.fav) + '</button>' +
+          '<div class="menu-holder detail-more">' +
+            '<button class="navbtn" data-action="toggle-detail-menu" aria-haspopup="true" ' +
+              'aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
+            '<div class="menu" id="detailMenu" hidden>' +
+              '<button data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('Edit')) + '</button>' +
+              '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
+              '<div class="menu-sep"></div>' +
+              '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-title">' +
+          '<span class="kicker">' + esc(nameOf('method', r.methodId)) + ' · ' + esc(nameOf('style', r.styleId)) + '</span>' +
           '<h1>' + esc(titleOf(r)) + '</h1>' +
-          // Mobile-only: favourite as a plain star inline with the name,
-          // at the far end of the row (same icon-only treatment as the
-          // grid cards). Hidden on desktop, where the labelled button
-          // below already covers it.
-          '<button class="fav fav-inline' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' + iconStar(r.fav) + '</button>' +
-        '</div>' +
-        '<div class="card-sub" style="margin-top:10px">' +
-          (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
-          '<span>' + ratio(r.dose, r.water) + ' ' + esc(t('ratio')) + '</span>' +
-          (c && c.origin ? '<span class="dot"></span><span>' + esc(c.origin) + '</span>' : '') +
-        '</div>' +
-      '</div>' +
-      // Brewing is what this page is for, so Start timer is the one filled
-      // button and wears the same roast the timer's own control does — the
-      // brew action looks identical everywhere it appears. Edit drops to a
-      // ghost, and the two destructive-adjacent verbs move into an overflow
-      // so four admin controls stop outranking the reason you opened this.
-      '<div class="detail-actions">' +
-        (timerPlan(r)
-          ? '<button class="btn btn-accent btn-sm action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
-            ICON.play + '<span>' + esc(t('Start timer')) + '</span></button>'
-          : '') +
-        '<button class="btn btn-ghost btn-sm fav-desktop" data-action="fav" data-id="' + esc(r.id) + '">' +
-          ICON.star + '<span>' + esc(t(r.fav ? 'Favourited' : 'Favourite')) + '</span></button>' +
-        '<button class="btn btn-ghost btn-sm action-edit" data-action="edit" data-id="' + esc(r.id) + '">' + ICON.edit + '<span>' + esc(t('Edit')) + '</span></button>' +
-        '<div class="menu-holder detail-more">' +
-          '<button class="btn btn-ghost btn-sm btn-icon" data-action="toggle-detail-menu" ' +
-            'aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
-          '<div class="menu" id="detailMenu" hidden>' +
-            '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
-            '<div class="menu-sep"></div>' +
-            '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
+          '<div class="detail-meta">' +
+            (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
+            (roaster ? '<span>' + esc(roaster) + '</span><span class="dot"></span>' : '') +
+            '<span>' + ratio(r.dose, r.water) + ' ' + esc(t('ratio')) + '</span>' +
+            (c && c.origin ? '<span class="dot"></span><span>' + esc(c.origin) + '</span>' : '') +
           '</div>' +
         '</div>' +
       '</div>' +
-    '</div>' +
-
-    '<div style="padding-top:28px"></div>' +
+    '</header>' +
+    '<div class="detail-sheet">' +
     '<div class="bigstats">' +
       bigstat(t('Dose'), num(r.dose), 'g') +
       bigstat(t('Water'), num(r.water), 'g') +
@@ -1613,9 +1956,27 @@ function renderDetail(id) {
         (r.notes ? '<div class="block"><div class="section-title">' + esc(t('Personal notes')) + '</div><div class="notes">' + esc(r.notes) + '</div></div>' : '') +
       '</div>' +
     '</div>' +
-  '</div>';
+    '</div>' +
+  '</div>' +
+    // Pinned on a phone, inline under the sheet on a desktop. Brewing is
+    // what this page is for, so the brew action is the one filled control
+    // and wears the same roast the timer's own start button does.
+    //
+    // Deliberately a sibling of .detail, not a child: .detail animates on
+    // entry, and an element with a transform is a containing block for
+    // fixed descendants — nested here the bar pins to the page rather
+    // than the viewport and lands somewhere below the fold.
+    '<div class="detail-bar">' +
+      (timerPlan(r)
+        ? '<button class="btn btn-accent action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
+          ICON.play + '<span>' + esc(t('Start brew timer')) + '</span></button>'
+        : '<span class="detail-bar-note">' + esc(t('Add a brew time or pouring steps to time this one.')) + '</span>') +
+      '<button class="btn btn-ghost btn-icon action-edit" data-action="edit" data-id="' + esc(r.id) + '" ' +
+        'aria-label="' + esc(t('Edit')) + '">' + ICON.edit + '</button>' +
+    '</div>';
 
   view.innerHTML = html;
+  markSeen(r.id);
   window.scrollTo(0, 0);
 }
 
@@ -1873,7 +2234,10 @@ function buildTimerEl(r, plan) {
                 '</div>'
               : '') +
           '</div>' +
-          '<div class="timer-now"><span class="timer-now-label"></span></div>' +
+          '<div class="timer-now">' +
+            '<span class="timer-now-kicker"></span>' +
+            '<span class="timer-now-label"></span>' +
+          '</div>' +
         '<p class="sr-only timer-announce" role="status" aria-live="polite"></p>' +
         '</div>' +
         '<div class="timer-list">' +
@@ -1978,6 +2342,14 @@ function timerPaint() {
     rows[k].classList.toggle('is-past', k < i);
   }
   el.querySelector('.timer-now-label').textContent = t(plan.segs[i].label);
+  // Steps that add no water are not pours — a drawdown or a steep says so
+  // rather than announcing a pour of nothing.
+  var kick = el.querySelector('.timer-now-kicker');
+  if (kick) {
+    kick.textContent = seg.water
+      ? t('Pouring now') + ' · +' + seg.water + ' g'
+      : t('Now');
+  }
   var say = el.querySelector('.timer-announce');
   if (say) say.textContent = t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length + '. ' + t(plan.segs[i].label);
   if (rows[i]) rows[i].scrollIntoView({ block: 'nearest' });
@@ -1999,6 +2371,8 @@ function timerTick() {
     timerPaint();
     timer.sheet.classList.add('is-done');
     timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
+    var doneKick = timer.el.querySelector('.timer-now-kicker');
+    if (doneKick) doneKick.textContent = t('Done');
     var say = timer.el.querySelector('.timer-announce');
     if (say) say.textContent = t('Brew complete.');
     timerCue('done');
@@ -4348,6 +4722,12 @@ document.addEventListener('click', function (ev) {
       });
       return;
 
+    case 'pick-method':
+      ev.preventDefault();
+      filters.method = id || '';
+      renderHome();
+      return;
+
     case 'clear-filters':
       filters.q = ''; filters.coffee = ''; filters.roaster = ''; filters.grinder = '';
       filters.method = ''; filters.style = ''; filters.fav = false;
@@ -4360,30 +4740,59 @@ document.addEventListener('click', function (ev) {
       render();
       return;
 
-    case 'toggle-more-filters':
-      filtersExpanded = !filtersExpanded;
-      render();
-      return;
-
     case 'combo-toggle':
       openCombo = openCombo === type ? null : type;
       comboQuery = '';
-      renderHome();
+      repaintFilters();
       if (openCombo) { var cf = document.getElementById('f-combo-' + openCombo); if (cf) cf.focus(); }
       return;
 
     case 'combo-clear':
       comboQuery = '';
-      renderHome();
+      repaintFilters();
       var cc = document.getElementById('f-combo-' + openCombo);
       if (cc) cc.focus();
       return;
 
     case 'combo-pick':
-      filters[type] = id;
+      filterTarget[type] = id;
       openCombo = null;
       comboQuery = '';
-      render();
+      repaintFilters();
+      return;
+
+    case 'filters-open':
+      ev.preventDefault();
+      openFilters();
+      return;
+
+    case 'filters-clear-draft':
+      ev.preventDefault();
+      if (top && top.draft) {
+        top.draft.coffee = top.draft.roaster = top.draft.grinder = '';
+        top.draft.method = top.draft.style = '';
+        top.draft.fav = false;
+        top.draft.sort = 'new';
+        renderModals();
+      }
+      return;
+
+    case 'filters-toggle-fav':
+      ev.preventDefault();
+      if (top && top.draft) { top.draft.fav = !top.draft.fav; renderModals(); }
+      return;
+
+    case 'filters-apply':
+      ev.preventDefault();
+      if (top && top.draft) {
+        // q stays live from the home search field and is never part of
+        // the draft, so it is deliberately not copied back.
+        ['coffee', 'roaster', 'grinder', 'method', 'style', 'fav', 'sort'].forEach(function (k) {
+          filters[k] = top.draft[k];
+        });
+      }
+      closeModal();
+      renderHome();
       return;
 
     case 'sign-in':
@@ -4580,9 +4989,9 @@ document.addEventListener('click', function (ev) {
 document.addEventListener('change', function (ev) {
   var f = ev.target.getAttribute && ev.target.getAttribute('data-filter');
   if (!f) return;
-  if (f === 'sort') filters.sort = ev.target.value;
-  else filters[f] = ev.target.value;
-  renderHome();
+  if (f === 'sort') filterTarget.sort = ev.target.value;
+  else filterTarget[f] = ev.target.value;
+  repaintFilters();
 });
 
 document.addEventListener('keydown', function (ev) {
@@ -4746,5 +5155,10 @@ document.documentElement.setAttribute('lang', LANG);
 translateMarkup();
 trackVisualViewport();
 boot();
+
+// The bar changes height on rotation and disappears entirely when the
+// layout crosses into the sidebar breakpoint.
+window.addEventListener('resize', measureNav);
+window.addEventListener('orientationchange', measureNav);
 
 })();

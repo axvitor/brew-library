@@ -101,6 +101,10 @@
   --action-disabled:var(--paper-300);
   --action-disabled-text:var(--ink-400);
 
+  /* Add recipe: the app's standing call to action, in roast wherever it
+     appears — the nav's two shapes and the empty state's button. */
+  --nav-add-bg:var(--roast-600);
+
   --accent-star:var(--roast-500);
   --accent-star-empty:var(--paper-400);
   --accent-favorite:var(--roast-600);
@@ -286,33 +290,103 @@ svg.ico-fill{fill:currentColor;stroke:none}
   text-transform:uppercase;color:var(--text-muted);
 }
 
-/* ---------- top bar ----------
-   v3's AppBar: 52px compact, paper, hairline underneath. No blur —
-   v3 allows transparency only on the scrim. */
-.topbar{
-  position:sticky;top:0;z-index:60;
-  background:var(--bg-app);
-  border-bottom:var(--border-w-hairline) solid var(--border-hairline);
-}
-.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:60px}
-.brand{display:inline-flex;align-items:center;gap:10px;min-width:0;flex:none;padding:12px 4px;margin:-12px -4px}
+/* ---------- brand ----------
+   v3 has no logo: the brand is a lowercase wordmark in the display serif.
+   The bean mark is this app's own and predates v3, so it stays. Lives in
+   the sidebar now that the top bar is gone. */
 .brand-mark{width:22px;height:22px;fill:none;stroke:var(--pine-700);stroke-width:1.6;stroke-linecap:round;flex:none}
-/* v3 has no logo: the brand is a lowercase wordmark in the display
-   serif. The bean mark is this app's own and predates v3, so it
-   stays — but the wordmark now follows the system. */
-.brand-text{font-family:var(--font-display);font-weight:var(--weight-regular);font-size:22px;letter-spacing:var(--tracking-display);white-space:nowrap;color:var(--text-title);text-transform:lowercase}
-.brand-text em{font-style:normal;color:var(--text-muted);margin-left:.3em}
-.topbar-actions{display:flex;align-items:center;gap:8px;flex:none;min-width:0}
-@media(max-width:560px){
-  .topbar-inner{gap:6px;height:56px}
-  .topbar-actions{gap:6px}
-  .brand-text{font-size:20px}
-  /* Icon-only on narrow screens — the label crowds the header next to
-     the Library button and account chip. */
-  .hdr-cta{width:var(--control-h-md);padding:0}
-  .hdr-cta span{display:none}
+.brand-text{
+  font-family:var(--font-display);font-weight:var(--weight-regular);font-size:22px;
+  letter-spacing:var(--tracking-display);white-space:nowrap;color:var(--text-title);
+  text-transform:lowercase;
 }
+.brand-text em{font-style:normal;color:var(--text-muted);margin-left:.3em}
 @media (prefers-color-scheme: dark){ .brand-mark{stroke:var(--sage-300)} }
+
+/* ---------- app nav ----------
+   One element, two shapes. Under 861px it is a bottom tab bar with the
+   primary action raised out of the row; at 861px and up it becomes a fixed
+   sidebar and takes over what the top bar used to carry (brand, Library,
+   Add recipe) plus the account menu's contents, which are a page now.
+
+   861px is the breakpoint the brew timer already splits on, reused rather
+   than invented so the app only ever has one idea of "wide". */
+.appnav[hidden]{display:none}
+.appnav{
+  position:fixed;z-index:60;
+  background:var(--surface-card);background-image:var(--texture-paper);
+}
+.nav-items{display:flex}
+.nav-item{
+  display:flex;align-items:center;color:var(--text-faint);
+  transition:var(--transition-control);-webkit-tap-highlight-color:transparent;
+}
+.nav-item .ico{width:21px;height:21px;stroke-width:1.6}
+.nav-item.on{color:var(--action-primary)}
+.nav-add .ico{stroke-width:1.9}
+
+/* --- phone: bottom tab bar --- */
+@media(max-width:860px){
+  .nav-brand{display:none}
+  .appnav{
+    left:0;right:0;bottom:0;
+    border-top:var(--border-w-hairline) solid var(--border-hairline);
+    padding:10px 12px max(26px, env(safe-area-inset-bottom));
+  }
+  .nav-items{gap:2px}
+  .nav-item{
+    flex:1 1 0;flex-direction:column;justify-content:center;gap:5px;min-height:44px;
+    font:var(--weight-semibold) 10px/1 var(--font-text);letter-spacing:.04em;text-align:center;
+  }
+  /* The primary action is a raised disc in roast. That widens what roast
+     covers — it was the brew action and the live timer only — to include
+     the one thing the nav exists to offer. Deliberate: the disc is the
+     app's single standing call to action, and pine made it read as one
+     more piece of navigation. */
+  .nav-add .nav-add-mark{
+    width:52px;height:52px;border-radius:var(--radius-full);
+    background:var(--nav-add-bg);color:var(--paper-000);
+    display:flex;align-items:center;justify-content:center;margin-top:-16px;
+    box-shadow:0 4px 12px rgba(174,82,44,.32);
+    transition:var(--transition-control);
+  }
+  .nav-add:active .nav-add-mark{background:var(--roast-700)}
+  .nav-add:active .nav-add-mark{transform:scale(var(--press-scale))}
+  .nav-add span{white-space:nowrap}
+  /* The bar floats over the page, so the page has to end above it.
+     --nav-h is measured in app.js; the fallback covers first paint. */
+  body{padding-bottom:calc(var(--nav-h, 88px) + 16px)}
+}
+
+/* --- desktop: sidebar --- */
+@media(min-width:861px){
+  .appnav{
+    top:0;left:0;bottom:0;width:232px;
+    display:flex;flex-direction:column;gap:26px;
+    padding:22px 14px;
+    border-right:var(--border-w-hairline) solid var(--border-hairline);
+  }
+  .nav-brand{display:flex;align-items:center;gap:10px;padding:6px 10px;min-width:0}
+  .nav-items{flex-direction:column;gap:2px}
+  .nav-item{
+    gap:12px;min-height:var(--control-h-md);padding:0 12px;border-radius:var(--radius-md);
+    font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-body);
+  }
+  .nav-item:hover{background:var(--surface-sunken);color:var(--text-title)}
+  .nav-item.on{background:var(--surface-accent);color:var(--action-primary);font-weight:var(--weight-bold)}
+  .nav-item .ico{color:inherit}
+  /* Add recipe is the one filled row — the sidebar's single primary. */
+  .nav-add{
+    margin-top:6px;background:var(--nav-add-bg);color:var(--paper-000);
+    font-weight:var(--weight-semibold);
+  }
+  .nav-add:hover{background:var(--roast-500);color:var(--paper-000)}
+  .nav-add:active{background:var(--roast-700)}
+  .nav-add .nav-add-mark{display:flex;align-items:center}
+  /* Measured in app.js — zero while the nav is hidden, so the sign-in
+     screen is not inset by a sidebar that is not there. */
+  body{padding-left:var(--nav-w, 0px)}
+}
 
 /* ---------- buttons (v3 core/Button) ---------- */
 .btn{
@@ -325,6 +399,10 @@ svg.ico-fill{fill:currentColor;stroke:none}
   -webkit-tap-highlight-color:transparent;
 }
 .btn-primary{background:var(--action-primary);color:var(--action-primary-text);border-color:var(--action-primary)}
+/* Same action as the nav's, so the same colour. */
+.btn-primary[data-action="new-recipe"]{background:var(--nav-add-bg);border-color:var(--nav-add-bg);color:var(--paper-000)}
+.btn-primary[data-action="new-recipe"]:hover{background:var(--roast-500);border-color:var(--roast-500)}
+.btn-primary[data-action="new-recipe"]:active{background:var(--roast-700)}
 .btn-primary:hover{background:var(--action-primary-hover);border-color:var(--action-primary-hover)}
 .btn-primary:active{background:var(--action-primary-press)}
 /* v3's "secondary": paper fill, ink hairline. */
@@ -384,20 +462,142 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .menu-account-email{font:var(--weight-medium) var(--text-caption)/1.3 var(--font-text);color:var(--text-muted);word-break:break-all}
 .menu-account[hidden]{display:none}
 
-.account-chip{width:var(--control-h-md);height:var(--control-h-md);border-radius:var(--radius-full);overflow:hidden;flex:none;border:var(--border-w-hairline) solid var(--border-default);transition:var(--transition-control)}
-.account-chip:hover{border-color:var(--border-strong)}
-.account-chip:active{transform:scale(var(--press-scale))}
-.account-chip[hidden]{display:none}
-.account-avatar{width:100%;height:100%;object-fit:cover;display:block}
-.app-actions{display:flex;align-items:center;gap:8px}
-.app-actions[hidden]{display:none}
+
+/* ---------- home entrance ----------
+   The page assembles top to bottom as you arrive. Gated on .view-enter,
+   which app.js sets only when you actually arrive at home — renderHome()
+   also runs on every search keystroke, and replaying this under the caret
+   as you type would be unusable.
+
+   Reduced motion is already covered globally: the block at the end of
+   this file collapses every duration to near zero.
+
+   The order is the reading order, one 40ms beat apart. Anything slower
+   stops reading as the page settling and starts reading as a queue. */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.view-enter .greet,
+.view-enter .hero,
+.view-enter .chips,
+.view-enter .sechead,
+.view-enter .resume{animation:cardIn var(--dur-slow) var(--ease-out) both}
+
+.view-enter .greet{animation-delay:0s}
+.view-enter .hero{animation-delay:.04s}
+/* Opacity only, no transform. .filters is position:sticky, and an element
+   with a transform becomes the containing block for its fixed and sticky
+   behaviour — animating it would break the stick. */
+.view-enter .filters{animation:fadeIn var(--dur-slow) var(--ease-out) both;animation-delay:.08s}
+.view-enter .chips{animation-delay:.12s}
+.view-enter .sechead{animation-delay:.16s}
+.view-enter .resume{animation-delay:.16s}
+
+/* ---------- greeting ----------
+   Who you are and what day it is, above the headline. The avatar is the
+   way to the account page now that there is no top bar to hang it in. */
+.greet{display:flex;align-items:center;gap:12px;padding:22px 0 20px}
+.greet-av{
+  width:var(--control-h-md);height:var(--control-h-md);border-radius:var(--radius-full);
+  overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--action-primary);color:var(--action-primary-text);
+  font:var(--weight-semibold) 15px/1 var(--font-text);
+  border:var(--border-w-hairline) solid var(--border-default);
+  transition:var(--transition-control);
+}
+.greet-av:hover{border-color:var(--border-strong)}
+.greet-av img{width:100%;height:100%;object-fit:cover;display:block}
+.greet-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.greet-day{
+  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--text-muted);
+}
+.greet-name{font:var(--weight-semibold) 16px/1.2 var(--font-text);color:var(--text-title)}
 
 /* ---------- hero ---------- */
-.hero{padding:44px 0 24px}
+.hero{padding:0 0 22px}
 .hero h1{font:var(--weight-regular) clamp(30px,4.6vw,44px)/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
+/* The one italic in the app, and the one place roast carries type — it
+   marks the question, not a control, so it doesn't spend the accent. */
+.hero h1 em{font-style:italic;color:var(--text-accent)}
 .hero p{color:var(--text-muted);margin-top:12px;font:var(--type-body-sm);max-width:52ch}
 .hero .count{font-family:var(--font-mono);font-weight:var(--weight-bold);font-variant-numeric:tabular-nums;color:var(--text-title)}
-@media(max-width:640px){ .hero{padding:28px 0 18px} }
+
+/* ---------- method chips ----------
+   A shortcut past the combo filters for the methods actually in use. */
+.chips{
+  display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  /* Full-bleed: the row runs to both screen edges and scrolls off them,
+     rather than stopping short at the page gutter and reading as a
+     complete list. Padding restores the gutter for the first and last
+     chip so nothing sits flush against the edge. */
+  margin:0 calc(var(--gutter-screen) * -1) 22px;
+  padding:0 var(--gutter-screen);
+}
+@media(min-width:641px){ .chips{margin:0 -24px 22px;padding:0 24px} }
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;min-height:38px;padding:0 15px;border-radius:var(--radius-full);
+  border:var(--border-w-hairline) solid var(--border-default);background:var(--surface-card);
+  font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-body);
+  white-space:nowrap;transition:var(--transition-control);
+}
+.chip:hover{background:var(--surface-sunken)}
+.chip.on{background:var(--action-primary);border-color:var(--action-primary);color:var(--action-primary-text)}
+.chip:active{transform:scale(var(--press-scale))}
+
+/* ---------- resume card ----------
+   The last brew, handed back. Inverse surface so it reads as the one
+   offer on the page rather than another card in the list. */
+.resume{
+  position:relative;overflow:hidden;margin-bottom:28px;
+  background:var(--surface-inverse);background-image:var(--texture-paper);
+  border-radius:var(--radius-lg);color:var(--text-on-inverse);
+}
+.resume-link{position:absolute;inset:0;z-index:0}
+.resume-mark{
+  position:absolute;right:-26px;top:-22px;width:150px;height:150px;
+  opacity:.13;color:var(--sage-300);fill:none;stroke:currentColor;stroke-width:1;
+}
+.resume-body{position:relative;z-index:1;display:flex;flex-direction:column;gap:16px;padding:18px;pointer-events:none}
+.resume-top{display:flex;flex-direction:column;gap:6px}
+.resume-kicker{
+  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--sage-300);
+}
+.resume-name{font:var(--weight-regular) 23px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display)}
+.resume-meta{font:var(--type-body-sm);font-size:13px;color:var(--text-on-inverse-muted)}
+.resume-row{display:flex;align-items:center;gap:12px}
+.resume-stats{display:flex;gap:18px;flex:1;min-width:0}
+.rs{display:flex;flex-direction:column;gap:2px}
+.rs .k{
+  font:var(--type-eyebrow);font-size:10px;letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--text-on-inverse-muted);
+}
+.rs .v{font:var(--weight-bold) 16px/1.1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse)}
+/* Roast, and the one on this screen: this is the brew action. */
+.resume-brew{
+  pointer-events:auto;flex:none;display:inline-flex;align-items:center;gap:8px;
+  min-height:var(--control-h-md);padding:0 18px;border-radius:var(--radius-full);
+  background:var(--accent-timer);color:var(--paper-000);
+  font:var(--weight-semibold) 14px/1 var(--font-text);letter-spacing:var(--tracking-label);
+  transition:var(--transition-control);
+}
+.resume-brew:hover{background:var(--roast-500)}
+.resume-brew:active{transform:scale(var(--press-scale))}
+.resume-brew .ico{width:16px;height:16px}
+/* Espresso has no pour schedule, so there is no ring to start. Same pill
+   as Brew so the card's shape never changes, but outlined rather than
+   filled — it opens a recipe, it does not start anything, and roast is
+   the brew action's colour alone. */
+.resume-open{
+  background:transparent;color:var(--text-on-inverse);
+  border:var(--border-w-hairline) solid var(--border-inverse);
+}
+.resume-open:hover{background:rgba(246,241,232,.10);color:var(--text-on-inverse)}
+
+/* ---------- section heading ---------- */
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px}
+.sechead-count{font:var(--weight-bold) var(--text-caption)/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-faint)}
 
 /* ---------- filter bar ---------- */
 .filters{
@@ -406,7 +606,22 @@ svg.ico-fill{fill:currentColor;stroke:none}
   background:var(--surface-card);background-image:var(--texture-paper);
   border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-lg);
   box-shadow:var(--shadow-card);
-  position:sticky;top:68px;z-index:40;
+  /* 68px was the top bar's height; with the bar gone it needs only enough
+     offset to keep the card off the very edge. */
+  position:sticky;top:10px;z-index:40;
+}
+/* Cards used to slide visibly past the card's rounded corners and through
+   the 10px of daylight above it. A band of the page's own colour, bled to
+   both gutters and tucked behind the card, hides them a moment earlier so
+   they end at a clean edge rather than at the corner radius.
+
+   A fade would read better still, but v3 forbids gradients outright (see
+   --texture-paper) — flat colour is the system's answer here. */
+.filters::before{
+  content:"";position:absolute;z-index:-1;
+  top:-14px;bottom:auto;height:calc(100% + 20px);
+  left:calc(var(--gutter-screen) * -1);right:calc(var(--gutter-screen) * -1);
+  background:var(--bg-app);
 }
 .search{position:relative;flex:1 1 210px;min-width:170px}
 .search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-faint);width:17px;height:17px}
@@ -510,6 +725,22 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .combo-opt .ico{width:15px;height:15px;color:var(--pine-700);flex:none}
 .combo-empty{padding:14px 10px;font:var(--type-body-sm);color:var(--text-muted)}
 
+@media(max-width:640px){
+  /* Not sticky on a phone: the bar is tall enough that pinning it costs
+     more of the list than it saves — and with nothing sliding under it,
+     the band behind it has nothing to hide. */
+  .filters{position:static;padding:12px}
+  .filters::before{display:none}
+  /* Search owns its own row, then the two toggles split the next one
+     evenly rather than sizing to their labels and leaving a ragged gap.
+     A full 999px capsule reads fine at a chip's natural width, but
+     stretched across half a row it becomes an elongated stadium — so
+     they drop to radius-lg at this width only. */
+  .filters .search{flex:1 1 100%;min-width:0}
+  .filters>.pill-toggle{flex:1 1 0;justify-content:center;border-radius:var(--radius-lg)}
+  .filters>.btn-quiet{flex:1 1 100%;justify-content:center}
+}
+
 /* v3 rounds fully in exactly two places: chips and the timer's start
    button. This is the chip. */
 .pill-toggle{
@@ -525,48 +756,20 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .pill-toggle .ico{width:15px;height:15px}
 .filters .spacer{flex:1}
 
-/* "More filters" — desktop shows every filter inline as always, so the
-   toggle is hidden and .filters-more's children flow straight into the
-   parent flex row (display:contents unwraps the group with no visual
-   trace). Mobile hides the group behind the toggle by default so the bar
-   collapses to just Search, Favourites and the toggle; see the media
-   query below. */
-.filters-toggle{display:none}
-.filters-more{display:contents}
-/* Only ever rendered alongside .on (moreCount > 0 implies the pill is
-   filled), so it's styled purely for contrast against that pine fill. */
-.filter-count{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:18px;height:18px;padding:0 5px;margin:0 -4px 0 -1px;
-  border-radius:var(--radius-full);
-  font:var(--weight-bold) 11px/1 var(--font-mono);
-  background:rgba(255,255,255,.22);color:inherit;
-}
+/* ---------- filters page ----------
+   The five entity combos, favourites and sort, as a committed form:
+   nothing here reaches the list until Apply. */
+.filter-page{display:flex;flex-direction:column;gap:16px}
+.filter-page .pill-toggle{align-self:flex-start}
+.filter-page .field{margin-bottom:0}
+/* The combos size themselves for the home bar's flex row; here each one
+   owns a full field width. */
+.filter-page .combo{flex:none;width:100%;max-width:none;min-width:0}
+.sheet-foot .filters-clear{margin-right:auto}
 @media(max-width:640px){
-  .filters{position:static;padding:12px}
-  .sel select{max-width:none;width:100%}
-  .sel{flex:1 1 46%}
-  /* Search stays put; coffee, roaster, grinder, method, style, sort and
-     Clear all fold under "More filters" so the bar still opens small.
-     .filters-more reverts from display:contents to a real
-     collapsed/expandable box only at this width — each combobox gets a
-     full-width row there, same as a type-in field wants more room than
-     a two-up plain select does. */
-  .combo{flex:1 1 100%;min-width:0;max-width:none}
-  /* Favourites and More filters share the row edge-to-edge, matching the
-     two-column rhythm the selects below already use, instead of sitting
-     as small left-aligned pills with empty space to their right. A true
-     999px capsule reads fine at a chip's normal compact width (that's
-     v3's Chip spec, kept as-is on desktop) but stretched across half the
-     row it becomes an elongated stadium shape rather than a button —
-     scaled down to radius-lg here, at full width only. */
-  .filters>.pill-toggle{flex:1 1 0;justify-content:center;border-radius:var(--radius-lg)}
-  .filters-toggle{display:inline-flex}
-  .filters-more{
-    display:none;width:100%;flex-wrap:wrap;gap:10px;
-    margin-top:2px;padding-top:12px;border-top:var(--border-w-hairline) dashed var(--border-default);
-  }
-  .filters.expanded .filters-more{display:flex}
+  /* Clear is a text button and should not take a third of the row from
+     the two that commit. */
+  .sheet-foot .filters-clear{flex:0 0 auto}
 }
 
 /* ---------- recipe grid (v3 recipe/RecipeCard) ---------- */
@@ -670,33 +873,85 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .empty h3{font:var(--weight-regular) var(--text-display-3)/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display)}
 .empty p{color:var(--text-muted);margin:8px auto 20px;max-width:38ch;font:var(--type-body-sm)}
 
-/* ---------- detail view ---------- */
-.detail{padding:24px 0 60px;animation:rise var(--dur-base) var(--ease-out) both}
+/* ---------- detail view ----------
+   Two surfaces: an inverse masthead carrying the recipe's identity, and a
+   paper sheet carrying every number you read off it. The sheet overlaps
+   the masthead so the page reads as one object rather than two bands. */
+.detail{padding:0 0 60px;animation:rise var(--dur-base) var(--ease-out) both}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.back{display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font:var(--type-body-sm);margin-bottom:20px}
-.back:hover{color:var(--text-title)}
-.detail-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap;padding-bottom:22px;border-bottom:var(--border-w-hairline) solid var(--border-hairline)}
-.detail-head-info{flex:1;min-width:0}
-.detail-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
-.detail-head .kicker{display:block;margin-bottom:10px}
-.title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.fav-inline{display:none}
-.detail-actions{display:flex;gap:8px;flex-wrap:wrap}
 
-@media(max-width:640px){
-  .detail-head{gap:14px}
-  .title-row{gap:8px}
-  .fav-inline{display:inline-flex;margin-top:4px}
-  .fav-desktop{display:none}
-  .detail-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;width:100%}
-  .detail-actions .btn{width:100%;justify-content:center}
-  .detail-actions .action-timer{order:-2;grid-column:1/-1;min-height:var(--control-h-lg)}
-  .detail-actions .action-edit{order:-1}
-  .detail-actions .detail-more{order:-1}
+.detail-head{
+  /* Full-bleed out of .wrap's gutter — the masthead runs to the screen
+     edges while its contents stay on the page's measure. */
+  position:relative;overflow:hidden;
+  margin:0 calc(var(--gutter-screen) * -1);
+  padding:0 var(--gutter-screen);
+  background:var(--surface-inverse-deep);background-image:var(--texture-paper);
+  color:var(--text-on-inverse);
 }
+/* The bean, cropped by the masthead's edge. Watermark weight only — it is
+   texture behind the title, never something to read, so it stays well
+   under the kicker's contrast and never grows into the title's column. */
+.detail-mark{
+  position:absolute;right:-40px;top:4px;width:200px;height:200px;
+  opacity:.10;color:var(--sage-300);
+  fill:none;stroke:currentColor;stroke-width:1;
+  pointer-events:none;
+}
+@media(max-width:520px){ .detail-mark{width:164px;height:164px;right:-34px} }
+.detail-head-inner{padding:14px 0 34px;display:flex;flex-direction:column;gap:22px}
+.detail-nav{display:flex;align-items:center;gap:8px}
+.detail-nav-gap{flex:1}
+.navbtn{
+  width:var(--control-h-md);height:var(--control-h-md);border-radius:var(--radius-full);flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--text-on-inverse);border:var(--border-w-hairline) solid var(--border-inverse);
+  transition:var(--transition-control);
+}
+.navbtn:hover{background:rgba(246,241,232,.10)}
+.navbtn:active{transform:scale(var(--press-scale))}
+.navbtn .ico{width:20px;height:20px}
+/* On the masthead the bookmark reads paper until it is set, then roast —
+   .fav's own ink-on-paper default would vanish against the pine. */
+.navbtn.fav{color:var(--text-on-inverse)}
+.navbtn.fav.on{color:var(--roast-300)}
+.navbtn.fav svg{width:20px;height:20px}
+.detail-title{display:flex;flex-direction:column;gap:9px;position:relative;max-width:min(100%, 30ch)}
+.detail-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-on-inverse)}
+.detail-head .kicker{color:var(--sage-300)}
+.detail-meta{display:flex;align-items:center;flex-wrap:wrap;gap:9px;font:var(--type-body-sm);font-size:13px;color:var(--text-on-inverse-muted)}
+.detail-meta .dot{width:3px;height:3px;border-radius:var(--radius-full);background:currentColor;flex:none}
+.detail-meta .stars{color:var(--roast-300)}
+
+/* Lifted over the masthead's bottom edge. */
+.detail-sheet{
+  position:relative;margin:-20px calc(var(--gutter-screen) * -1) 0;
+  padding:24px var(--gutter-screen) 0;
+  background:var(--bg-app);border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;
+}
+
 /* Anchors the overflow popover; .menu positions against it. */
 .detail-more{position:relative;display:inline-flex;flex:none}
 .detail-more .menu{top:calc(100% + 6px);min-width:190px}
+
+/* ---------- detail action bar ----------
+   Pinned above the tab bar on a phone: mid-brew the one thing you want is
+   never more than a thumb away, whatever you have scrolled to. */
+.detail-bar{display:flex;align-items:center;gap:10px;margin:30px 0 0;max-width:var(--page-max)}
+.detail-bar .action-timer{flex:1;min-height:var(--control-h-lg);border-radius:var(--radius-full)}
+.detail-bar .action-edit{width:var(--control-h-lg);height:var(--control-h-lg);flex:none}
+.detail-bar-note{flex:1;font:var(--type-caption);color:var(--text-muted)}
+@media(max-width:860px){
+  .detail-bar{
+    /* Flush against the top of the tab bar — the two read as one stacked
+       control surface, with no strip of page showing between them. */
+    position:fixed;left:0;right:0;bottom:var(--nav-h, 88px);z-index:55;margin:0;
+    padding:12px var(--gutter-screen);
+    background:var(--surface-card);border-top:var(--border-w-hairline) solid var(--border-hairline);
+  }
+  /* Clears the pinned bar as well as the tab bar. */
+  .detail{padding-bottom:76px}
+}
 
 /* Announced by screen readers, never painted — the tone and the buzz carry
    nothing to a non-visual user, so the step change is mirrored here. */
@@ -721,8 +976,12 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .spec dt{color:var(--text-muted);flex:none}
 .spec dd{margin:0;text-align:right;color:var(--text-title);font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono)}
 
-.bigstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:30px}
-.bigstat{background:var(--surface-card);background-image:var(--texture-paper);border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-card);animation:cardIn var(--dur-slow) var(--ease-out) both}
+.bigstats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:var(--border-w-hairline);margin-bottom:30px;
+  background:var(--border-hairline);border:var(--border-w-hairline) solid var(--border-hairline);
+  border-radius:var(--radius-md);overflow:hidden;
+}
+.bigstat{background:var(--surface-card);background-image:var(--texture-paper);padding:14px 16px;animation:cardIn var(--dur-slow) var(--ease-out) both}
 .bigstat:nth-child(1){animation-delay:0s}
 .bigstat:nth-child(2){animation-delay:.04s}
 .bigstat:nth-child(3){animation-delay:.08s}
@@ -731,7 +990,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .bigstat:nth-child(6){animation-delay:.2s}
 .bigstat .k{display:block}
 /* Every measurement is mono in v3 — this is the "recipe numbers" role. */
-.bigstat .v{font:var(--weight-bold) 30px/1.05 var(--font-mono);margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text-title)}
+.bigstat .v{font:var(--weight-bold) 24px/1.05 var(--font-mono);margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text-title)}
 .bigstat .v small{font:var(--weight-medium) 13px/1 var(--font-text);color:var(--text-muted);margin-left:4px;letter-spacing:var(--tracking-label)}
 @media(max-width:520px){ .bigstats{grid-template-columns:repeat(2,1fr)} }
 
@@ -1187,9 +1446,24 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .timer-readout .rv small{font:var(--weight-medium) 12px/1 var(--font-text);color:var(--text-muted);margin-left:2px}
 .timer-readout .rk{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
 
-/* The instruction itself — the display serif, the largest text here. */
-.timer-now{flex:none;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px;width:100%;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px}
-.timer-now-label{font:var(--weight-regular) 22px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
+/* The instruction itself — the display serif, the largest text here, and
+   the only thing on this screen you read while pouring. A card rather
+   than a rule-and-a-line: mid-brew it has to be findable at a glance
+   from a metre away, and roast marks it as the live one. */
+.timer-now{
+  flex:none;width:100%;display:flex;flex-direction:column;gap:6px;
+  padding:14px 16px;border-radius:var(--radius-lg);
+  background:rgba(194,104,59,.16);
+  border:var(--border-w-hairline) solid rgba(224,167,131,.28);
+}
+.timer-now-kicker{
+  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--roast-300);
+}
+.timer-now-label{font:var(--weight-regular) 21px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--paper-000);text-wrap:pretty}
+/* Finished: the ring has gone pine, and so does this. */
+.sheet-timer.is-done .timer-now{background:rgba(186,195,179,.12);border-color:rgba(186,195,179,.24)}
+.sheet-timer.is-done .timer-now-kicker{color:var(--sage-300)}
 
 .sheet-timer.pulse .timer-ring{animation:ringPulse var(--dur-slow) var(--ease-out)}
 .sheet-timer.pulse .timer-now-label{animation:nowIn var(--dur-base) var(--ease-out)}
@@ -1246,48 +1520,71 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   .timer-ring{width:min(320px,90%)}
 }
 
-/* Dark mode: v3's own inverse-pine BrewTimer, same light-default/
-   dark-override pattern every other surface in this file follows. */
-@media (prefers-color-scheme: dark){
-  .overlay-full{background-color:var(--surface-inverse);background-image:var(--texture-paper)}
-  .sheet-timer{background:var(--surface-inverse);border-color:var(--pine-900);color:var(--text-on-inverse)}
-  .sheet-timer .sheet-head{border-bottom-color:var(--border-inverse)}
-  .sheet-timer .sheet-head h2{color:var(--paper-000)}
-  .timer-eyebrow,.timer-clock{color:var(--text-on-inverse-muted)}
-  .sheet-timer .iconbtn{color:var(--paper-200)}
-  .sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
-
-  .ttrack{stroke:rgba(246,241,232,.10)}
-  .tseg{stroke:var(--paper-000)}
-  .timer-ring .thead circle{stroke:var(--pine-700)}
-  .sheet-timer.is-done .tprog{stroke:var(--sage-300)}
-  .sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
-  .sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
-
-  .timer-elapsed{color:var(--paper-000)}
-  .timer-total{color:var(--text-on-inverse-muted)}
-  .timer-readout .rv{color:var(--paper-000)}
-  .timer-readout .rv small,.timer-readout .rk{color:var(--text-on-inverse-muted)}
-  .timer-now{border-top-color:var(--border-inverse)}
-  .timer-now-label{color:var(--paper-000)}
-
-  .timer-steps{border-top-color:var(--border-inverse)}
-  .timer-step{color:var(--paper-200)}
-  .timer-step .ts-t,.timer-step .ts-w{color:var(--text-on-inverse-muted)}
-  .timer-step.is-past{color:var(--text-on-inverse-muted)}
-  .timer-step.is-past .ts-l{text-decoration-color:var(--border-inverse)}
-  .timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
-  .timer-step.is-now .ts-t{color:var(--roast-300)}
-
-  .timer-next{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
-  .timer-next .ico{color:var(--sage-300)}
-  .timer-next .nx{color:var(--paper-200)}
-  .timer-next .nt{color:var(--text-on-inverse-muted)}
-
-  .timer-foot{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
-  .timer-foot .timer-side{border-color:var(--border-inverse);color:var(--paper-200)}
-  .timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
+/* The timer is always the inverse-pine surface, whatever the OS theme is
+   set to. This is v3's own BrewTimer spec — the app previously followed
+   the system here, which meant the one screen you stand over in a dim
+   kitchen could come up bright paper. Everything else in the app still
+   follows the system. */
+/* Rebinding the tokens rather than restating every rule: the timer's own
+   styles above are written against the semantic aliases, so pinning the
+   dark values on the container makes all of them resolve dark. Overriding
+   rule by rule does not work here — .overlay.overlay-full carries two
+   classes and outranks anything written as .overlay-full. */
+.overlay.overlay-full,.overlay-full .sheet-timer{
+  --surface-card:var(--pine-800);
+  --surface-sunken:#1F2A23;
+  --surface-inverse:var(--pine-800);
+  --surface-inverse-deep:#141C17;
+  --surface-accent:rgba(186,195,179,.12);
+  --text-title:var(--paper-100);
+  --text-body:var(--paper-200);
+  --text-muted:var(--pine-300);
+  --text-faint:#7D8F82;
+  --text-link:var(--sage-300);
+  --border-hairline:rgba(246,241,232,.10);
+  --border-default:rgba(246,241,232,.16);
+  --action-primary:var(--sage-300);
+  --action-primary-text:var(--pine-900);
+  --accent-star-empty:rgba(246,241,232,.20);
+  /* Black noise vanishes on a dark ground — invert the tooth. */
+  --texture-paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' fill='%23fff' opacity='.03'/%3E%3C/svg%3E");
 }
+.overlay.overlay-full{background-color:var(--surface-inverse);background-image:var(--texture-paper)}
+.overlay-full .sheet-timer{background:var(--surface-inverse);border-color:var(--pine-900);color:var(--text-on-inverse)}
+.sheet-timer .sheet-head{border-bottom-color:var(--border-inverse)}
+.sheet-timer .sheet-head h2{color:var(--paper-000)}
+.timer-eyebrow,.timer-clock{color:var(--text-on-inverse-muted)}
+.sheet-timer .iconbtn{color:var(--paper-200)}
+.sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
+
+.ttrack{stroke:rgba(246,241,232,.10)}
+.tseg{stroke:var(--paper-000)}
+.timer-ring .thead circle{stroke:var(--pine-700)}
+.sheet-timer.is-done .tprog{stroke:var(--sage-300)}
+.sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
+.sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
+
+.timer-elapsed{color:var(--paper-000)}
+.timer-total{color:var(--text-on-inverse-muted)}
+.timer-readout .rv{color:var(--paper-000)}
+.timer-readout .rv small,.timer-readout .rk{color:var(--text-on-inverse-muted)}
+
+.timer-steps{border-top-color:var(--border-inverse)}
+.timer-step{color:var(--paper-200)}
+.timer-step .ts-t,.timer-step .ts-w{color:var(--text-on-inverse-muted)}
+.timer-step.is-past{color:var(--text-on-inverse-muted)}
+.timer-step.is-past .ts-l{text-decoration-color:var(--border-inverse)}
+.timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
+.timer-step.is-now .ts-t{color:var(--roast-300)}
+
+.timer-next{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
+.timer-next .ico{color:var(--sage-300)}
+.timer-next .nx{color:var(--paper-200)}
+.timer-next .nt{color:var(--text-on-inverse-muted)}
+
+.timer-foot{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
+.timer-foot .timer-side{border-color:var(--border-inverse);color:var(--paper-200)}
+.timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
 
 /* play button on library cards */
 .card-tools{display:flex;align-items:center;gap:6px;flex:none}
@@ -1325,8 +1622,13 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    Filled AND outlined at rest, so per v3's IconButton rule (radius-full
    only for the bare ghost state) this takes radius-md like .addbtn. */
 .back-to-top{
-  position:fixed;right:20px;bottom:max(24px, env(safe-area-inset-bottom));z-index:90;
-  width:44px;height:44px;border-radius:var(--radius-md);
+  position:fixed;right:20px;bottom:max(24px, env(safe-area-inset-bottom));z-index:50;
+  /* Round, like the app's other floating icon buttons (the detail
+     masthead's nav, the favourite, the account chip). v3 gives a bordered
+     icon button radius-md, but this one floats free over the page rather
+     than sitting in a row of controls, and a circle reads as a thing you
+     can flick at rather than a control you aim for. */
+  width:44px;height:44px;border-radius:var(--radius-full);
   background:var(--surface-card);
   border:var(--border-w-hairline) solid var(--border-default);color:var(--text-body);
   display:flex;align-items:center;justify-content:center;
@@ -1350,11 +1652,112 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
     border-color var(--dur-fast) var(--ease-standard),
     color var(--dur-fast) var(--ease-standard);
 }
+/* Clears the tab bar rather than sitting on top of the Account tab. */
+@media(max-width:860px){
+  .back-to-top{bottom:calc(var(--nav-h, 88px) + 12px)}
+}
 .back-to-top .ico{width:19px;height:19px}
 .back-to-top:hover{border-color:var(--border-strong);color:var(--text-title)}
 .back-to-top.show:active{transform:scale(var(--press-scale))}
 
-/* ---------- sign-in gate ---------- */
+/* ---------- account page ----------
+   What the topbar's overflow menu used to hold. Rows rather than menu
+   items, because a page has room to say what each one does. */
+.account{max-width:560px;margin:0 auto;padding:26px 0 40px;display:flex;flex-direction:column;gap:26px}
+.acc-card{
+  display:flex;align-items:center;gap:14px;padding:18px;
+  background:var(--surface-inverse);background-image:var(--texture-paper);
+  border-radius:var(--radius-lg);color:var(--text-on-inverse);
+}
+.acc-av{width:52px;height:52px;border-radius:var(--radius-full);flex:none;object-fit:cover}
+.acc-av-letter{
+  display:flex;align-items:center;justify-content:center;background:var(--pine-600);
+  font:var(--weight-semibold) 18px/1 var(--font-text);color:var(--text-on-inverse);
+}
+.acc-id{display:flex;flex-direction:column;gap:3px;min-width:0}
+.acc-name{font:var(--weight-regular) 20px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display)}
+.acc-email{font:var(--type-caption);color:var(--text-on-inverse-muted);word-break:break-all}
+.acc-group{display:flex;flex-direction:column;gap:8px}
+.acc-group .section-title{margin-bottom:2px}
+.segs{display:flex;gap:4px;padding:4px;background:var(--surface-sunken);border-radius:var(--radius-md)}
+.seg{
+  flex:1;min-height:38px;border-radius:var(--radius-sm);
+  font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-muted);
+  transition:var(--transition-control);
+}
+.seg:hover{color:var(--text-title)}
+.seg.on{background:var(--action-primary);color:var(--action-primary-text)}
+.acc-row{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:var(--control-h-lg);padding:0 14px;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  border-radius:var(--radius-md);font:var(--type-body-sm);color:var(--text-title);text-align:left;
+  transition:var(--transition-control);
+}
+.acc-row:hover{background:var(--surface-sunken);border-color:var(--border-default)}
+.acc-row .ico{color:var(--text-muted);flex:none}
+.acc-row .grow{flex:1;min-width:0}
+.acc-meta{font:var(--type-caption);color:var(--text-muted)}
+.acc-row.danger,.acc-row.danger .ico{color:var(--state-error)}
+.acc-row.danger:hover{background:var(--state-error-surface);border-color:var(--state-error)}
+.acc-sync{display:flex;align-items:center;gap:9px;margin-top:4px;font:var(--type-caption);color:var(--text-muted)}
+.acc-sync i{width:7px;height:7px;border-radius:var(--radius-full);background:var(--state-success);flex:none}
+
+/* ---------- sign-in ----------
+   Two bands: a pine hero carrying the drawing and the wordmark, and a
+   paper sheet lifted over its edge carrying the offer and the button.
+   Full-bleed out of .wrap, since this screen is the whole window. */
+.gate-screen{
+  /* Breaks all the way out of .wrap's centred measure: this screen is the
+     whole window, not a page inside the app's column. */
+  width:100vw;margin-left:calc(50% - 50vw);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  animation:cardIn var(--dur-slow) var(--ease-out) both;
+}
+.gate-hero{
+  flex:1 1 auto;min-height:340px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+  padding:40px 32px;
+  background:var(--surface-inverse-deep);background-image:var(--texture-paper);
+}
+/* Drawn, not photographed: v3 is a line system throughout, and every
+   coffee app already owns the stock photo of a cup on a table. */
+.gate-art{
+  width:min(210px,52vw);height:auto;color:var(--sage-300);
+  fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;
+}
+.gate-steam{color:var(--pine-300);opacity:.55;stroke-width:1.2}
+.gate-wordmark{display:flex;align-items:center;gap:10px;color:var(--text-on-inverse)}
+.gate-wordmark .brand-mark{stroke:currentColor}
+.gate-wordmark .brand-text{font-size:23px;color:var(--text-on-inverse)}
+.gate-wordmark .brand-text em{color:var(--pine-300)}
+
+.gate-sheet{
+  position:relative;flex:none;margin-top:-28px;
+  padding:34px var(--gutter-screen) 40px;
+  background:var(--bg-app);border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;
+  display:flex;flex-direction:column;gap:22px;
+}
+.gate-sheet h1{
+  font:var(--weight-regular) clamp(26px,5.4vw,32px)/1.14 var(--font-display);
+  letter-spacing:var(--tracking-display);text-wrap:pretty;
+}
+.gate-lede{margin-top:10px;color:var(--text-muted);font:var(--type-body)}
+.gate-points{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.gate-point{display:flex;align-items:flex-start;gap:11px;font:var(--type-body-sm);color:var(--text-body)}
+.gate-point .ico{width:17px;height:17px;color:var(--action-primary);flex:none;margin-top:2px}
+.gate-sheet .btn-google{min-height:var(--control-h-lg)}
+.gate-foot{font:var(--type-caption);color:var(--text-faint);text-align:center;max-width:46ch;margin:0 auto}
+
+@media(min-width:641px){
+  .gate-hero{min-height:0}
+  .gate-sheet{
+    max-width:560px;width:100%;margin:-28px auto 0;border-radius:var(--radius-sheet);
+    padding:34px 40px 40px;
+  }
+}
+
+/* Loading and the connection error keep the old quiet card — they are
+   momentary states, and dressing up a failure only draws the eye to it. */
 .gate{min-height:72vh;display:flex;align-items:center;justify-content:center;padding:40px 0}
 .gate-card{
   width:100%;max-width:420px;text-align:center;padding:40px 32px;
