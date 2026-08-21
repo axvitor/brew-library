@@ -658,7 +658,8 @@ var TRANSLATIONS = {
     'Matching recipes': 'Receitas encontradas',
     'Brew': 'Preparar',
     'Open': 'Abrir',
-    'brewed': 'preparada',
+    'opened': 'aberta',
+    'Pick up where you left off': 'Continue de onde parou',
     'just now': 'agora mesmo',
     'min ago': 'min atrás',
     'hour ago': 'hora atrás',
@@ -1066,6 +1067,7 @@ var ICON = {
     '<circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="20" r="2"/></svg>',
   chevUp: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 15l-6-6-6 6"/></svg>',
   chevDown: '<svg viewBox="0 0 24 24" class="ico"><path d="M6 9l6 6 6-6"/></svg>',
+  chevRight: '<svg viewBox="0 0 24 24" class="ico"><path d="M9 6l6 6-6 6"/></svg>',
   soundOn: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
     '<path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 5.2a9 9 0 0 1 0 13.6"/></svg>',
   soundOff: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
@@ -1327,23 +1329,32 @@ function comboHTML(type) {
   '</div>';
 }
 
-/* Stamped when the brew timer is first started for a recipe — see
-   timerRun. Written straight to the library so it syncs like anything
-   else; a brew you started on your phone shows on the tablet too. */
-function markBrewed(id) {
-  var r = id && recipeById(id);
-  if (!r) return;
-  r.lastBrewedAt = Date.now();
-  save();
+/* The last recipe you opened, for the home screen to hand back.
+
+   Deliberately local rather than part of the synced library: this is one
+   write every time any recipe is opened, where the library is otherwise
+   written only when something actually changes. Pushing that to Firestore
+   would turn ordinary browsing into a stream of writes for a fact that is
+   really about this device — what you had open on this phone, not what
+   the library knows. Only ever one entry; the previous one is replaced. */
+var SEEN_KEY = 'brewLastSeen';
+
+function markSeen(id) {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify({ id: id, at: Date.now() })); }
+  catch (e) { /* private mode — the card just won't appear */ }
 }
 
-function lastBrewed() {
-  var best = null;
-  state.recipes.forEach(function (r) {
-    if (!r.lastBrewedAt) return;
-    if (!best || r.lastBrewedAt > best.lastBrewedAt) best = r;
-  });
-  return best;
+function lastSeen() {
+  var raw;
+  try { raw = localStorage.getItem(SEEN_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+  var v;
+  try { v = JSON.parse(raw); } catch (e) { return null; }
+  if (!v || !v.id) return null;
+  // The recipe may have been deleted, or belong to an account that has
+  // since signed out on this device.
+  var r = recipeById(v.id);
+  return r ? { recipe: r, at: v.at } : null;
 }
 
 // Coarse on purpose: "3 days ago" is what you want to know here, not a
@@ -1409,10 +1420,13 @@ function methodChipsHTML() {
    while filtering — you came here looking for something else. */
 function resumeHTML() {
   if (filtersActive()) return '';
-  var r = lastBrewed();
-  if (!r || !timerPlan(r)) return '';
+  var seen = lastSeen();
+  if (!seen) return '';
+  var r = seen.recipe;
   var roaster = roasterOf(r);
-  return '<section class="resume">' +
+  return '<div class="sechead"><span class="section-title">' +
+      esc(t('Pick up where you left off')) + '</span></div>' +
+    '<section class="resume">' +
     '<a class="resume-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' +
       esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
     '<svg class="resume-mark" viewBox="0 0 24 24" aria-hidden="true">' +
@@ -1424,7 +1438,7 @@ function resumeHTML() {
           esc(nameOf('style', r.styleId)) + '</span>' +
         '<span class="resume-name">' + esc(titleOf(r)) + '</span>' +
         '<span class="resume-meta">' + (roaster ? esc(roaster) + ' · ' : '') +
-          esc(t('brewed')) + ' ' + esc(agoLabel(r.lastBrewedAt)) + '</span>' +
+          esc(t('opened')) + ' ' + esc(agoLabel(seen.at)) + '</span>' +
       '</div>' +
       '<div class="resume-row">' +
         '<div class="resume-stats">' +
@@ -1432,8 +1446,10 @@ function resumeHTML() {
           '<div class="rs"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
           '<div class="rs"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
         '</div>' +
-        '<button class="resume-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
-          ICON.play + '<span>' + esc(t('Brew')) + '</span></button>' +
+        (timerPlan(r)
+          ? '<button class="resume-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
+            ICON.play + '<span>' + esc(t('Brew')) + '</span></button>'
+          : '<span class="resume-open">' + esc(t('Open')) + ICON.chevRight + '</span>') +
       '</div>' +
     '</div>' +
   '</section>';
@@ -1821,6 +1837,7 @@ function renderDetail(id) {
   '</div>';
 
   view.innerHTML = html;
+  markSeen(r.id);
   window.scrollTo(0, 0);
 }
 
@@ -2106,7 +2123,7 @@ function openTimer(id) {
 
   stopTimer();
   timer = {
-    plan: plan, el: buildTimerEl(r, plan), sheet: null, recipeId: r.id,
+    plan: plan, el: buildTimerEl(r, plan), sheet: null,
     elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null,
     cueSeg: null, warned: false, tick: 0
   };
@@ -2226,10 +2243,6 @@ function timerRun(on) {
   if (!timer) return;
   timer.running = on;
   if (on) {
-    // Pressing play is the only honest definition of "brewed" the app has:
-    // opening a recipe is reading it, starting the ring is making it. The
-    // home screen offers the most recent one back.
-    markBrewed(timer.recipeId);
     timer.from = timer.elapsed;
     timer.at = performance.now();
     // Pressing play is the gesture browsers require before audio may start.

@@ -441,7 +441,16 @@ svg.ico-fill{fill:currentColor;stroke:none}
 
 /* ---------- method chips ----------
    A shortcut past the combo filters for the methods actually in use. */
-.chips{display:flex;gap:8px;overflow-x:auto;padding:0 0 22px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips{
+  display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  /* Full-bleed: the row runs to both screen edges and scrolls off them,
+     rather than stopping short at the page gutter and reading as a
+     complete list. Padding restores the gutter for the first and last
+     chip so nothing sits flush against the edge. */
+  margin:0 calc(var(--gutter-screen) * -1) 22px;
+  padding:0 var(--gutter-screen);
+}
+@media(min-width:641px){ .chips{margin:0 -24px 22px;padding:0 24px} }
 .chips::-webkit-scrollbar{display:none}
 .chip{
   flex:none;min-height:38px;padding:0 15px;border-radius:var(--radius-full);
@@ -493,6 +502,13 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .resume-brew:hover{background:var(--roast-500)}
 .resume-brew:active{transform:scale(var(--press-scale))}
 .resume-brew .ico{width:16px;height:16px}
+/* Espresso has no pour schedule, so there is no ring to start — the
+   control says what it can actually do instead of offering a dead timer. */
+.resume-open{
+  pointer-events:none;flex:none;display:inline-flex;align-items:center;gap:6px;
+  font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-on-inverse-muted);
+}
+.resume-open .ico{width:15px;height:15px}
 
 /* ---------- section heading ---------- */
 .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px}
@@ -1424,7 +1440,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    Filled AND outlined at rest, so per v3's IconButton rule (radius-full
    only for the bare ghost state) this takes radius-md like .addbtn. */
 .back-to-top{
-  position:fixed;right:20px;bottom:max(24px, env(safe-area-inset-bottom));z-index:90;
+  position:fixed;right:20px;bottom:max(24px, env(safe-area-inset-bottom));z-index:50;
   width:44px;height:44px;border-radius:var(--radius-md);
   background:var(--surface-card);
   border:var(--border-w-hairline) solid var(--border-default);color:var(--text-body);
@@ -1448,6 +1464,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
     box-shadow var(--dur-fast) var(--ease-standard),
     border-color var(--dur-fast) var(--ease-standard),
     color var(--dur-fast) var(--ease-standard);
+}
+/* Clears the tab bar rather than sitting on top of the Account tab.
+   104px is the bar's own height reservation (see body padding-bottom). */
+@media(max-width:860px){
+  .back-to-top{bottom:calc(104px + 12px)}
 }
 .back-to-top .ico{width:19px;height:19px}
 .back-to-top:hover{border-color:var(--border-strong);color:var(--text-title)}
