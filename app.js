@@ -103,7 +103,7 @@ function builtinStyles() {
     // which is exactly what makes them editable: hasFormula() is false for
     // them, so they open in the step builder like any style you'd write
     // yourself.
-    { id: 'st-hedrick', name: 'AeroPress (Inverted)', author: '',
+    { id: 'st-aeropress-inverted', name: 'AeroPress (Inverted)', author: '',
       notes: 'Brewed upside down, so the coffee steeps in full contact with the water instead of ' +
         'draining early — that buys a longer, more even extraction before you flip and press. ' +
         'A 1:15 ratio is a solid starting point; scale to taste.',
