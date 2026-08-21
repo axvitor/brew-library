@@ -102,18 +102,16 @@ function builtinStyles() {
     // The one seeded style with written steps rather than a built-in formula,
     // which is exactly what makes it editable: hasFormula() is false for it,
     // so it opens in the step builder like any style you'd write yourself.
-    // Figures are his published Ultimate Pour Over at a 20 g dose — the pours
-    // are cumulative totals, not per-pour amounts.
-    { id: 'st-hedrick', name: 'Lance Hedrick — Ultimate', author: 'Lance Hedrick',
-      notes: 'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, ' +
-        'and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. ' +
-        'Water 100°C for light roasts, 92°C medium, 85°C dark.',
+    { id: 'st-hedrick', name: 'AeroPress (Inverted)', author: '',
+      notes: 'Brewed upside down, so the coffee steeps in full contact with the water instead of ' +
+        'draining early — that buys a longer, more even extraction before you flip and press. ' +
+        'A 1:15 ratio is a solid starting point; scale to taste.',
       steps: [
-        { t: '0:00', label: 'Bloom to 60 g — three times the dose. Swirl gently to wet every ground.' },
-        { t: '0:30', label: 'Pour to 100 g total in a slow, steady circle.' },
-        { t: '1:00', label: 'Pour to 200 g total.' },
-        { t: '1:30', label: 'Pour to 300 g total, or your target weight.' },
-        { t: '2:00', label: 'Let it draw down — aim to finish around 3:00.' }
+        { t: '0:00', label: 'Flip the AeroPress upside down, seat the plunger a few rings in, then add the coffee.' },
+        { t: '0:15', label: 'Pour in all the water and stir well to saturate every ground.' },
+        { t: '1:00', label: 'Wet the filter, screw on the cap, then let it steep undisturbed.' },
+        { t: '1:30', label: 'Flip upright onto your mug.' },
+        { t: '1:45', label: 'Press slowly and evenly — about 30 seconds.' }
       ] }
   ]));
 }
@@ -848,11 +846,10 @@ var TRANSLATIONS = {
     'All roasters': 'Todas as torrefações',
     // --- built-in pouring steps ---
     'Bloom — pour the first fifth of the water.': 'Pré-infusão — despeje o primeiro quinto da água.',
-    'Bloom to 60 g — three times the dose. Swirl gently to wet every ground.': 'Pré-infusão até 60 g — três vezes a dose. Gire suavemente para molhar todo o pó.',
-    'Pour to 100 g total in a slow, steady circle.': 'Despeje até 100 g no total em círculos lentos e constantes.',
-    'Pour to 200 g total.': 'Despeje até 200 g no total.',
-    'Pour to 300 g total, or your target weight.': 'Despeje até 300 g no total, ou o seu peso alvo.',
-    'Let it draw down — aim to finish around 3:00.': 'Deixe escoar — busque terminar por volta de 3:00.',
+    'Flip the AeroPress upside down, seat the plunger a few rings in, then add the coffee.': 'Vire a AeroPress de cabeça para baixo, encaixe o êmbolo alguns aneis e adicione o café.',
+    'Pour in all the water and stir well to saturate every ground.': 'Despeje toda a água e mexa bem para saturar todo o pó.',
+    'Wet the filter, screw on the cap, then let it steep undisturbed.': 'Molhe o filtro, rosqueie a tampa e deixe em infusão sem mexer.',
+    'Flip upright onto your mug.': 'Vire de volta sobre a sua xícara.',
     'Pour the second fifth.': 'Despeje o segundo quinto.',
     'Pour the third fifth.': 'Despeje o terceiro quinto.',
     'Pour the fourth fifth.': 'Despeje o quarto quinto.',
@@ -885,7 +882,7 @@ var TRANSLATIONS = {
     'This method': 'Este método',
     'doesn’t use a pour schedule — nothing to show here.': 'não usa cronograma de despejos — nada a mostrar aqui.',
     'Defaults to the coffee name': 'Usa o nome do café por padrão',
-    'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. Water 100°C for light roasts, 92°C medium, 85°C dark.': 'Coado versátil que serve a qualquer suporte e qualquer torra. Nivele o leito antes da pré-infusão e despeje devagar — despejos agressivos agitam demais o pó e deixam a xícara amarga. Água a 100°C para torras claras, 92°C médias, 85°C escuras.',
+    'Brewed upside down, so the coffee steeps in full contact with the water instead of draining early — that buys a longer, more even extraction before you flip and press. A 1:15 ratio is a solid starting point; scale to taste.': 'Preparado de cabeça para baixo, para que o café fique em contato total com a água em vez de escoar cedo demais — isso garante uma extração mais longa e uniforme antes de virar e prensar. Uma proporção de 1:15 é um bom ponto de partida; ajuste ao seu gosto.',
     'nothing matches — try clearing a filter': 'nada corresponde — tente limpar um filtro',
     'Ultimate AeroPress technique — all the water at once, a long steep, a swirl, then a gentle press. His published figures are 11 g to 200 g of water just off the boil; the schedule scales to whatever dose and water the recipe carries.': 'Técnica definitiva da AeroPress — toda a água de uma vez, uma infusão longa, um giro e uma prensagem suave. Os números publicados por ele são 11 g para 200 g de água logo abaixo da fervura; o cronograma se ajusta à dose e à água da receita.',
     // --- messages ---
