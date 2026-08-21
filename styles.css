@@ -1417,9 +1417,24 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .timer-readout .rv small{font:var(--weight-medium) 12px/1 var(--font-text);color:var(--text-muted);margin-left:2px}
 .timer-readout .rk{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
 
-/* The instruction itself — the display serif, the largest text here. */
-.timer-now{flex:none;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 2px;width:100%;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px}
-.timer-now-label{font:var(--weight-regular) 22px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
+/* The instruction itself — the display serif, the largest text here, and
+   the only thing on this screen you read while pouring. A card rather
+   than a rule-and-a-line: mid-brew it has to be findable at a glance
+   from a metre away, and roast marks it as the live one. */
+.timer-now{
+  flex:none;width:100%;display:flex;flex-direction:column;gap:6px;
+  padding:14px 16px;border-radius:var(--radius-lg);
+  background:rgba(194,104,59,.16);
+  border:var(--border-w-hairline) solid rgba(224,167,131,.28);
+}
+.timer-now-kicker{
+  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--roast-300);
+}
+.timer-now-label{font:var(--weight-regular) 21px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--paper-000);text-wrap:pretty}
+/* Finished: the ring has gone pine, and so does this. */
+.sheet-timer.is-done .timer-now{background:rgba(186,195,179,.12);border-color:rgba(186,195,179,.24)}
+.sheet-timer.is-done .timer-now-kicker{color:var(--sage-300)}
 
 .sheet-timer.pulse .timer-ring{animation:ringPulse var(--dur-slow) var(--ease-out)}
 .sheet-timer.pulse .timer-now-label{animation:nowIn var(--dur-base) var(--ease-out)}
@@ -1476,48 +1491,71 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   .timer-ring{width:min(320px,90%)}
 }
 
-/* Dark mode: v3's own inverse-pine BrewTimer, same light-default/
-   dark-override pattern every other surface in this file follows. */
-@media (prefers-color-scheme: dark){
-  .overlay-full{background-color:var(--surface-inverse);background-image:var(--texture-paper)}
-  .sheet-timer{background:var(--surface-inverse);border-color:var(--pine-900);color:var(--text-on-inverse)}
-  .sheet-timer .sheet-head{border-bottom-color:var(--border-inverse)}
-  .sheet-timer .sheet-head h2{color:var(--paper-000)}
-  .timer-eyebrow,.timer-clock{color:var(--text-on-inverse-muted)}
-  .sheet-timer .iconbtn{color:var(--paper-200)}
-  .sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
-
-  .ttrack{stroke:rgba(246,241,232,.10)}
-  .tseg{stroke:var(--paper-000)}
-  .timer-ring .thead circle{stroke:var(--pine-700)}
-  .sheet-timer.is-done .tprog{stroke:var(--sage-300)}
-  .sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
-  .sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
-
-  .timer-elapsed{color:var(--paper-000)}
-  .timer-total{color:var(--text-on-inverse-muted)}
-  .timer-readout .rv{color:var(--paper-000)}
-  .timer-readout .rv small,.timer-readout .rk{color:var(--text-on-inverse-muted)}
-  .timer-now{border-top-color:var(--border-inverse)}
-  .timer-now-label{color:var(--paper-000)}
-
-  .timer-steps{border-top-color:var(--border-inverse)}
-  .timer-step{color:var(--paper-200)}
-  .timer-step .ts-t,.timer-step .ts-w{color:var(--text-on-inverse-muted)}
-  .timer-step.is-past{color:var(--text-on-inverse-muted)}
-  .timer-step.is-past .ts-l{text-decoration-color:var(--border-inverse)}
-  .timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
-  .timer-step.is-now .ts-t{color:var(--roast-300)}
-
-  .timer-next{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
-  .timer-next .ico{color:var(--sage-300)}
-  .timer-next .nx{color:var(--paper-200)}
-  .timer-next .nt{color:var(--text-on-inverse-muted)}
-
-  .timer-foot{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
-  .timer-foot .timer-side{border-color:var(--border-inverse);color:var(--paper-200)}
-  .timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
+/* The timer is always the inverse-pine surface, whatever the OS theme is
+   set to. This is v3's own BrewTimer spec — the app previously followed
+   the system here, which meant the one screen you stand over in a dim
+   kitchen could come up bright paper. Everything else in the app still
+   follows the system. */
+/* Rebinding the tokens rather than restating every rule: the timer's own
+   styles above are written against the semantic aliases, so pinning the
+   dark values on the container makes all of them resolve dark. Overriding
+   rule by rule does not work here — .overlay.overlay-full carries two
+   classes and outranks anything written as .overlay-full. */
+.overlay.overlay-full,.overlay-full .sheet-timer{
+  --surface-card:var(--pine-800);
+  --surface-sunken:#1F2A23;
+  --surface-inverse:var(--pine-800);
+  --surface-inverse-deep:#141C17;
+  --surface-accent:rgba(186,195,179,.12);
+  --text-title:var(--paper-100);
+  --text-body:var(--paper-200);
+  --text-muted:var(--pine-300);
+  --text-faint:#7D8F82;
+  --text-link:var(--sage-300);
+  --border-hairline:rgba(246,241,232,.10);
+  --border-default:rgba(246,241,232,.16);
+  --action-primary:var(--sage-300);
+  --action-primary-text:var(--pine-900);
+  --accent-star-empty:rgba(246,241,232,.20);
+  /* Black noise vanishes on a dark ground — invert the tooth. */
+  --texture-paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' fill='%23fff' opacity='.03'/%3E%3C/svg%3E");
 }
+.overlay.overlay-full{background-color:var(--surface-inverse);background-image:var(--texture-paper)}
+.overlay-full .sheet-timer{background:var(--surface-inverse);border-color:var(--pine-900);color:var(--text-on-inverse)}
+.sheet-timer .sheet-head{border-bottom-color:var(--border-inverse)}
+.sheet-timer .sheet-head h2{color:var(--paper-000)}
+.timer-eyebrow,.timer-clock{color:var(--text-on-inverse-muted)}
+.sheet-timer .iconbtn{color:var(--paper-200)}
+.sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
+
+.ttrack{stroke:rgba(246,241,232,.10)}
+.tseg{stroke:var(--paper-000)}
+.timer-ring .thead circle{stroke:var(--pine-700)}
+.sheet-timer.is-done .tprog{stroke:var(--sage-300)}
+.sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
+.sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
+
+.timer-elapsed{color:var(--paper-000)}
+.timer-total{color:var(--text-on-inverse-muted)}
+.timer-readout .rv{color:var(--paper-000)}
+.timer-readout .rv small,.timer-readout .rk{color:var(--text-on-inverse-muted)}
+
+.timer-steps{border-top-color:var(--border-inverse)}
+.timer-step{color:var(--paper-200)}
+.timer-step .ts-t,.timer-step .ts-w{color:var(--text-on-inverse-muted)}
+.timer-step.is-past{color:var(--text-on-inverse-muted)}
+.timer-step.is-past .ts-l{text-decoration-color:var(--border-inverse)}
+.timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
+.timer-step.is-now .ts-t{color:var(--roast-300)}
+
+.timer-next{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
+.timer-next .ico{color:var(--sage-300)}
+.timer-next .nx{color:var(--paper-200)}
+.timer-next .nt{color:var(--text-on-inverse-muted)}
+
+.timer-foot{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
+.timer-foot .timer-side{border-color:var(--border-inverse);color:var(--paper-200)}
+.timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
 
 /* play button on library cards */
 .card-tools{display:flex;align-items:center;gap:6px;flex:none}

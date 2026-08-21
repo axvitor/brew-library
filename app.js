@@ -659,6 +659,9 @@ var TRANSLATIONS = {
     'Brew': 'Preparar',
     'Open': 'Abrir',
     'opened': 'aberta',
+    'Pouring now': 'Despejando agora',
+    'Now': 'Agora',
+    'Done': 'Pronto',
     // --- sign-in ---
     'Every recipe you have dialled in, on every device.': 'Cada receita que você ajustou, em todos os aparelhos.',
     'Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.': 'Entre para abrir sua biblioteca — os despejos se ajustam à dose que você preparar hoje.',
@@ -2221,7 +2224,10 @@ function buildTimerEl(r, plan) {
                 '</div>'
               : '') +
           '</div>' +
-          '<div class="timer-now"><span class="timer-now-label"></span></div>' +
+          '<div class="timer-now">' +
+            '<span class="timer-now-kicker"></span>' +
+            '<span class="timer-now-label"></span>' +
+          '</div>' +
         '<p class="sr-only timer-announce" role="status" aria-live="polite"></p>' +
         '</div>' +
         '<div class="timer-list">' +
@@ -2326,6 +2332,14 @@ function timerPaint() {
     rows[k].classList.toggle('is-past', k < i);
   }
   el.querySelector('.timer-now-label').textContent = t(plan.segs[i].label);
+  // Steps that add no water are not pours — a drawdown or a steep says so
+  // rather than announcing a pour of nothing.
+  var kick = el.querySelector('.timer-now-kicker');
+  if (kick) {
+    kick.textContent = seg.water
+      ? t('Pouring now') + ' · +' + seg.water + ' g'
+      : t('Now');
+  }
   var say = el.querySelector('.timer-announce');
   if (say) say.textContent = t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length + '. ' + t(plan.segs[i].label);
   if (rows[i]) rows[i].scrollIntoView({ block: 'nearest' });
@@ -2347,6 +2361,8 @@ function timerTick() {
     timerPaint();
     timer.sheet.classList.add('is-done');
     timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
+    var doneKick = timer.el.querySelector('.timer-now-kicker');
+    if (doneKick) doneKick.textContent = t('Done');
     var say = timer.el.querySelector('.timer-announce');
     if (say) say.textContent = t('Brew complete.');
     timerCue('done');
