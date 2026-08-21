@@ -409,12 +409,94 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .menu-account[hidden]{display:none}
 
 
+/* ---------- greeting ----------
+   Who you are and what day it is, above the headline. The avatar is the
+   way to the account page now that there is no top bar to hang it in. */
+.greet{display:flex;align-items:center;gap:12px;padding:22px 0 20px}
+.greet-av{
+  width:var(--control-h-md);height:var(--control-h-md);border-radius:var(--radius-full);
+  overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--action-primary);color:var(--action-primary-text);
+  font:var(--weight-semibold) 15px/1 var(--font-text);
+  border:var(--border-w-hairline) solid var(--border-default);
+  transition:var(--transition-control);
+}
+.greet-av:hover{border-color:var(--border-strong)}
+.greet-av img{width:100%;height:100%;object-fit:cover;display:block}
+.greet-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.greet-day{
+  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--text-muted);
+}
+.greet-name{font:var(--weight-semibold) 16px/1.2 var(--font-text);color:var(--text-title)}
+
 /* ---------- hero ---------- */
-.hero{padding:44px 0 24px}
+.hero{padding:0 0 22px}
 .hero h1{font:var(--weight-regular) clamp(30px,4.6vw,44px)/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
+/* The one italic in the app, and the one place roast carries type — it
+   marks the question, not a control, so it doesn't spend the accent. */
+.hero h1 em{font-style:italic;color:var(--text-accent)}
 .hero p{color:var(--text-muted);margin-top:12px;font:var(--type-body-sm);max-width:52ch}
 .hero .count{font-family:var(--font-mono);font-weight:var(--weight-bold);font-variant-numeric:tabular-nums;color:var(--text-title)}
-@media(max-width:640px){ .hero{padding:28px 0 18px} }
+
+/* ---------- method chips ----------
+   A shortcut past the combo filters for the methods actually in use. */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:0 0 22px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;min-height:38px;padding:0 15px;border-radius:var(--radius-full);
+  border:var(--border-w-hairline) solid var(--border-default);background:var(--surface-card);
+  font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-body);
+  white-space:nowrap;transition:var(--transition-control);
+}
+.chip:hover{background:var(--surface-sunken)}
+.chip.on{background:var(--action-primary);border-color:var(--action-primary);color:var(--action-primary-text)}
+.chip:active{transform:scale(var(--press-scale))}
+
+/* ---------- resume card ----------
+   The last brew, handed back. Inverse surface so it reads as the one
+   offer on the page rather than another card in the list. */
+.resume{
+  position:relative;overflow:hidden;margin-bottom:28px;
+  background:var(--surface-inverse);background-image:var(--texture-paper);
+  border-radius:var(--radius-lg);color:var(--text-on-inverse);
+}
+.resume-link{position:absolute;inset:0;z-index:0}
+.resume-mark{
+  position:absolute;right:-26px;top:-22px;width:150px;height:150px;
+  opacity:.13;color:var(--sage-300);fill:none;stroke:currentColor;stroke-width:1;
+}
+.resume-body{position:relative;z-index:1;display:flex;flex-direction:column;gap:16px;padding:18px;pointer-events:none}
+.resume-top{display:flex;flex-direction:column;gap:6px}
+.resume-kicker{
+  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--sage-300);
+}
+.resume-name{font:var(--weight-regular) 23px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display)}
+.resume-meta{font:var(--type-body-sm);font-size:13px;color:var(--text-on-inverse-muted)}
+.resume-row{display:flex;align-items:center;gap:12px}
+.resume-stats{display:flex;gap:18px;flex:1;min-width:0}
+.rs{display:flex;flex-direction:column;gap:2px}
+.rs .k{
+  font:var(--type-eyebrow);font-size:10px;letter-spacing:var(--tracking-eyebrow);
+  text-transform:uppercase;color:var(--text-on-inverse-muted);
+}
+.rs .v{font:var(--weight-bold) 16px/1.1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-on-inverse)}
+/* Roast, and the one on this screen: this is the brew action. */
+.resume-brew{
+  pointer-events:auto;flex:none;display:inline-flex;align-items:center;gap:8px;
+  min-height:var(--control-h-md);padding:0 18px;border-radius:var(--radius-full);
+  background:var(--accent-timer);color:var(--paper-000);
+  font:var(--weight-semibold) 14px/1 var(--font-text);letter-spacing:var(--tracking-label);
+  transition:var(--transition-control);
+}
+.resume-brew:hover{background:var(--roast-500)}
+.resume-brew:active{transform:scale(var(--press-scale))}
+.resume-brew .ico{width:16px;height:16px}
+
+/* ---------- section heading ---------- */
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px}
+.sechead-count{font:var(--weight-bold) var(--text-caption)/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-faint)}
 
 /* ---------- filter bar ---------- */
 .filters{

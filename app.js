@@ -638,6 +638,33 @@ function tPlural(n, one, many) {
 var TRANSLATIONS = {
   pt: {
     // --- shell and menu ---
+    'Home': 'Início',
+    'Saved': 'Salvos',
+    'Account': 'Conta',
+    'Export data': 'Exportar dados',
+    'Backup': 'Backup',
+    'Device': 'Dispositivo',
+    // --- greeting and home ---
+    'Morning': 'Bom dia',
+    'Afternoon': 'Boa tarde',
+    'Evening': 'Boa noite',
+    'What are you': 'O que você vai',
+    'brewing': 'preparar',
+    'today?': 'hoje?',
+    'roaster': 'torrefação',
+    'roasters': 'torrefações',
+    'All': 'Todos',
+    'All recipes': 'Todas as receitas',
+    'Matching recipes': 'Receitas encontradas',
+    'Brew': 'Preparar',
+    'Open': 'Abrir',
+    'brewed': 'preparada',
+    'just now': 'agora mesmo',
+    'min ago': 'min atrás',
+    'hour ago': 'hora atrás',
+    'hours ago': 'horas atrás',
+    'yesterday': 'ontem',
+    'days ago': 'dias atrás',
     'Library': 'Biblioteca',
     'Add recipe': 'Adicionar receita',
     'Export data (.json)': 'Exportar dados (.json)',
@@ -1300,21 +1327,134 @@ function comboHTML(type) {
   '</div>';
 }
 
+/* Stamped when the brew timer is first started for a recipe — see
+   timerRun. Written straight to the library so it syncs like anything
+   else; a brew you started on your phone shows on the tablet too. */
+function markBrewed(id) {
+  var r = id && recipeById(id);
+  if (!r) return;
+  r.lastBrewedAt = Date.now();
+  save();
+}
+
+function lastBrewed() {
+  var best = null;
+  state.recipes.forEach(function (r) {
+    if (!r.lastBrewedAt) return;
+    if (!best || r.lastBrewedAt > best.lastBrewedAt) best = r;
+  });
+  return best;
+}
+
+// Coarse on purpose: "3 days ago" is what you want to know here, not a
+// timestamp. Anything past a fortnight stops counting and gives a date.
+function agoLabel(ms) {
+  var mins = Math.floor((Date.now() - ms) / 60000);
+  if (mins < 2) return t('just now');
+  if (mins < 60) return mins + ' ' + t('min ago');
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + ' ' + t(hrs === 1 ? 'hour ago' : 'hours ago');
+  var days = Math.floor(hrs / 24);
+  if (days === 1) return t('yesterday');
+  if (days < 15) return days + ' ' + t('days ago');
+  return new Date(ms).toLocaleDateString();
+}
+
+function greetingKey() {
+  var h = new Date().getHours();
+  if (h < 12) return 'Morning';
+  if (h < 18) return 'Afternoon';
+  return 'Evening';
+}
+
+function greetingHTML() {
+  var name = (currentUser && currentUser.displayName || '').split(' ')[0];
+  var photo = currentUser && currentUser.photoURL;
+  var letter = (name || (currentUser && currentUser.email) || '?').trim().charAt(0).toUpperCase();
+  return '<div class="greet">' +
+    '<a class="greet-av" href="#/account" aria-label="' + esc(t('Account')) + '">' +
+      (photo ? '<img src="' + esc(photo) + '" alt="" />' : '<span>' + esc(letter) + '</span>') +
+    '</a>' +
+    '<div class="greet-txt">' +
+      '<span class="greet-day">' + esc(new Date().toLocaleDateString(undefined,
+        { weekday: 'long', day: 'numeric', month: 'long' })) + '</span>' +
+      '<span class="greet-name">' + esc(t(greetingKey())) + (name ? ', ' + esc(name) : '') + '</span>' +
+    '</div>' +
+  '</div>';
+}
+
+/* The methods you actually brew with, most-used first — a shortcut past
+   the full combo below for the two or three you reach for every day.
+   Methods nothing is filed under are left out; the combo still lists them. */
+function methodChipsHTML() {
+  var counts = coll('method').map(function (me) {
+    return { id: me.id, name: me.name, n: state.recipes.filter(function (r) { return r.methodId === me.id; }).length };
+  }).filter(function (m) { return m.n > 0; })
+    .sort(function (a, b) { return b.n - a.n; })
+    .slice(0, 5);
+  if (counts.length < 2) return '';
+
+  var html = '<div class="chips">' +
+    '<button class="chip' + (filters.method ? '' : ' on') + '" data-action="pick-method" data-id="">' +
+      esc(t('All')) + '</button>';
+  counts.forEach(function (m) {
+    html += '<button class="chip' + (filters.method === m.id ? ' on' : '') + '" ' +
+      'data-action="pick-method" data-id="' + esc(m.id) + '">' + esc(m.name) + '</button>';
+  });
+  return html + '</div>';
+}
+
+/* Hands back the last thing you brewed, with the two numbers you need to
+   weigh it out and a control that goes straight to the ring. Suppressed
+   while filtering — you came here looking for something else. */
+function resumeHTML() {
+  if (filtersActive()) return '';
+  var r = lastBrewed();
+  if (!r || !timerPlan(r)) return '';
+  var roaster = roasterOf(r);
+  return '<section class="resume">' +
+    '<a class="resume-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' +
+      esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
+    '<svg class="resume-mark" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+      '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
+    '<div class="resume-body">' +
+      '<div class="resume-top">' +
+        '<span class="resume-kicker">' + esc(nameOf('method', r.methodId)) + ' · ' +
+          esc(nameOf('style', r.styleId)) + '</span>' +
+        '<span class="resume-name">' + esc(titleOf(r)) + '</span>' +
+        '<span class="resume-meta">' + (roaster ? esc(roaster) + ' · ' : '') +
+          esc(t('brewed')) + ' ' + esc(agoLabel(r.lastBrewedAt)) + '</span>' +
+      '</div>' +
+      '<div class="resume-row">' +
+        '<div class="resume-stats">' +
+          '<div class="rs"><span class="k">' + esc(t('Dose')) + '</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
+          '<div class="rs"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
+          '<div class="rs"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
+        '</div>' +
+        '<button class="resume-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
+          ICON.play + '<span>' + esc(t('Brew')) + '</span></button>' +
+      '</div>' +
+    '</div>' +
+  '</section>';
+}
+
 function renderHome() {
   var list = visibleRecipes();
   var total = state.recipes.length;
 
   var html = '';
+  html += greetingHTML();
   html += '<section class="hero">' +
-    '<h1>' + esc(t('Your brewing library')) + '</h1>' +
+    '<h1>' + esc(t('What are you')) + '<br>' + esc(t('brewing')) +
+      ' <em>' + esc(t('today?')) + '</em></h1>' +
     (filtersActive()
       ? '<p><span class="count">' + list.length + '</span> ' +
         esc(tPlural(list.length, 'recipe', 'recipes')) + ' ' + esc(t('of')) + ' ' + total +
         (list.length ? '' : ' · ' + esc(t('nothing matches — try clearing a filter'))) + '</p>'
       : '<p><span class="count">' + total + '</span> ' + esc(tPlural(total, 'recipe', 'recipes')) +
-        ' ' + esc(t('across')) + ' ' + state.coffees.length + ' ' +
-        esc(tPlural(state.coffees.length, 'coffee', 'coffees')) + '. ' +
-        esc(t('Filter to find the one you want, then brew it.')) + '</p>') +
+        ' · ' + state.coffees.length + ' ' + esc(tPlural(state.coffees.length, 'coffee', 'coffees')) +
+        ' · ' + state.roasters.length + ' ' + esc(tPlural(state.roasters.length, 'roaster', 'roasters')) + '</p>') +
     '</section>';
 
   var moreCount = moreFiltersCount();
@@ -1345,6 +1485,15 @@ function renderHome() {
       (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">' + esc(t('Clear')) + '</button>' : '') +
     '</div>' +
     '</div>';
+
+  html += methodChipsHTML();
+  html += resumeHTML();
+
+  if (list.length) {
+    html += '<div class="sechead"><span class="section-title">' +
+      esc(t(filtersActive() ? 'Matching recipes' : 'All recipes')) + '</span>' +
+      '<span class="sechead-count">' + list.length + '</span></div>';
+  }
 
   if (!list.length) {
     html += '<div class="empty">' + ICON.bean +
@@ -1957,7 +2106,7 @@ function openTimer(id) {
 
   stopTimer();
   timer = {
-    plan: plan, el: buildTimerEl(r, plan), sheet: null,
+    plan: plan, el: buildTimerEl(r, plan), sheet: null, recipeId: r.id,
     elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null,
     cueSeg: null, warned: false, tick: 0
   };
@@ -2077,6 +2226,10 @@ function timerRun(on) {
   if (!timer) return;
   timer.running = on;
   if (on) {
+    // Pressing play is the only honest definition of "brewed" the app has:
+    // opening a recipe is reading it, starting the ring is making it. The
+    // home screen offers the most recent one back.
+    markBrewed(timer.recipeId);
     timer.from = timer.elapsed;
     timer.at = performance.now();
     // Pressing play is the gesture browsers require before audio may start.
@@ -4402,6 +4555,12 @@ document.addEventListener('click', function (ev) {
           toast(t('Recipe deleted.'));
         }
       });
+      return;
+
+    case 'pick-method':
+      ev.preventDefault();
+      filters.method = id || '';
+      renderHome();
       return;
 
     case 'clear-filters':
