@@ -565,7 +565,9 @@ svg.ico-fill{fill:currentColor;stroke:none}
   background:var(--surface-card);background-image:var(--texture-paper);
   border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-lg);
   box-shadow:var(--shadow-card);
-  position:sticky;top:68px;z-index:40;
+  /* 68px was the top bar's height; with the bar gone it sticks to the
+     top of the scroll area like anything else. */
+  position:sticky;top:0;z-index:40;
 }
 .search{position:relative;flex:1 1 210px;min-width:170px}
 .search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-faint);width:17px;height:17px}
@@ -668,6 +670,20 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .combo-opt.is-empty .combo-opt-meta{opacity:.6}
 .combo-opt .ico{width:15px;height:15px;color:var(--pine-700);flex:none}
 .combo-empty{padding:14px 10px;font:var(--type-body-sm);color:var(--text-muted)}
+
+@media(max-width:640px){
+  /* Not sticky on a phone: the bar is tall enough that pinning it costs
+     more of the list than it saves. */
+  .filters{position:static;padding:12px}
+  /* Search owns its own row, then the two toggles split the next one
+     evenly rather than sizing to their labels and leaving a ragged gap.
+     A full 999px capsule reads fine at a chip's natural width, but
+     stretched across half a row it becomes an elongated stadium — so
+     they drop to radius-lg at this width only. */
+  .filters .search{flex:1 1 100%;min-width:0}
+  .filters>.pill-toggle{flex:1 1 0;justify-content:center;border-radius:var(--radius-lg)}
+  .filters>.btn-quiet{flex:1 1 100%;justify-content:center}
+}
 
 /* v3 rounds fully in exactly two places: chips and the timer's start
    button. This is the chip. */
