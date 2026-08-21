@@ -1355,6 +1355,82 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .rate button:hover{transform:scale(1.12)}
 .rate button:active{transform:scale(var(--press-scale))}
 
+/* ---------- ranking ----------
+   Which bags were worth it. The top three carry the page on the inverse
+   surface; everything below is a compact row, because a leaderboard whose
+   every entry shouts has no leader. */
+.ranking{padding:26px 0 40px;display:flex;flex-direction:column;animation:cardIn var(--dur-slow) var(--ease-out) both}
+.ranking-head{margin-bottom:24px}
+.ranking-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
+.ranking-head p{margin-top:10px;color:var(--text-muted);font:var(--type-body-sm);max-width:44ch}
+
+.rank-podium{display:flex;flex-direction:column;gap:10px;margin-bottom:26px}
+.rank-top{
+  position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;padding:16px;
+  background:var(--surface-inverse);background-image:var(--texture-paper);
+  border-radius:var(--radius-lg);color:var(--text-on-inverse);
+}
+/* First place gets the deepest ground and the mark; second and third step
+   back a shade each, so the order reads before you read a number. */
+.rank-1{background:var(--pine-800)}
+.rank-2{background:var(--pine-700)}
+.rank-3{background:var(--pine-600)}
+.rank-mark{
+  position:absolute;right:-24px;top:-18px;width:120px;height:120px;
+  opacity:.12;color:var(--sage-300);fill:none;stroke:currentColor;stroke-width:1;pointer-events:none;
+}
+.rank-top .rank-no{
+  width:34px;height:34px;border-radius:var(--radius-full);flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font:var(--weight-bold) 14px/1 var(--font-mono);
+  background:var(--accent-timer);color:var(--paper-000);
+}
+.rank-2 .rank-no{background:var(--roast-500)}
+.rank-3 .rank-no{background:var(--roast-300);color:var(--ink-900)}
+.rank-top .rank-info{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;position:relative}
+.rank-top .rank-nm{font:var(--weight-regular) 21px/1.15 var(--font-display);letter-spacing:var(--tracking-display)}
+.rank-top .rank-meta{font:var(--type-caption);color:var(--text-on-inverse-muted)}
+.rank-top .rank-score{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;position:relative}
+.rank-top .rank-v{font:var(--weight-bold) 20px/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--paper-000)}
+.rank-top .rank-k{font:var(--type-caption);font-size:11px;color:var(--text-on-inverse-muted);white-space:nowrap}
+
+.rank-list{display:flex;flex-direction:column;gap:8px}
+.rank-row{
+  display:flex;align-items:center;gap:12px;padding:13px 14px;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-md);
+}
+.rank-row .rank-no{
+  width:28px;height:28px;border-radius:var(--radius-full);flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font:var(--weight-bold) 12px/1 var(--font-mono);
+  background:var(--surface-sunken);color:var(--text-body);
+}
+.rank-row .rank-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.rank-row .rank-nm{font:var(--type-body-sm);color:var(--text-title)}
+.rank-row .rank-meta{font:var(--type-caption);color:var(--text-muted)}
+.rank-row .rank-score{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none}
+.rank-row .rank-k{font:var(--weight-bold) var(--text-caption)/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-title)}
+.rank-foot{margin-top:26px;padding:14px 16px;background:var(--surface-sunken);border-radius:var(--radius-md);font:var(--type-body-sm);color:var(--text-muted)}
+
+/* Day one. The board is empty and says so, then offers the quickest way
+   to put something on it. */
+.rank-empty{padding:34px 22px;border:var(--border-w-hairline) dashed var(--border-default);border-radius:var(--radius-lg);background:var(--surface-card);background-image:var(--texture-paper)}
+.rank-empty-beans{margin-bottom:14px}
+.rank-empty-beans .stars svg{width:24px;height:24px}
+.rank-starter{
+  display:flex;flex-direction:column;gap:14px;padding:16px;
+  background:var(--surface-card);background-image:var(--texture-paper);
+  border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-md);
+  box-shadow:var(--shadow-card);
+}
+.rank-starter-top{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.rank-starter-nm{font:var(--weight-regular) 20px/1.2 var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-title)}
+.rank-starter-nm:hover{color:var(--text-accent)}
+.rank-starter-meta{font:var(--type-caption);color:var(--text-muted)}
+.rank-rate{display:flex;align-items:center;gap:12px;padding-top:12px;border-top:var(--border-w-hairline) dashed var(--border-default)}
+.rank-rate-k{flex:1;font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-faint)}
+
 /* ---------- library view ----------
    A destination reached from the nav, so it sits in the page like home
    and account do rather than covering them. */

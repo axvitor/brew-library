@@ -647,7 +647,16 @@ var TRANSLATIONS = {
   pt: {
     // --- shell and menu ---
     'Home': 'Início',
-    'Saved': 'Salvos',
+    'Ranking': 'Ranking',
+    'Best in the cup': 'Melhores na xícara',
+    'Your coffees ranked by average cup score across every recipe that uses them.': 'Seus cafés ordenados pela nota média em todas as receitas que os usam.',
+    'Nothing scored yet': 'Nada avaliado ainda',
+    'Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.': 'Dê uma nota a um preparo e o café entra no ranking. Dois ou três já bastam para ver quais pacotes valem repetir.',
+    'Start with the one you just opened': 'Comece pela que você acabou de abrir',
+    'The rest': 'Os demais',
+    'avg score': 'nota média',
+    'scored': 'avaliadas',
+    'with no score yet. Rate a brew and it joins the ranking.': 'sem nota ainda. Avalie um preparo e ele entra no ranking.',
     'Account': 'Conta',
     'Export data': 'Exportar dados',
     'Backup': 'Backup',
@@ -1251,7 +1260,7 @@ function updateNav() {
   var hash = location.hash || '#/';
   var here = hash === '#/account' ? 'account'
     : hash === '#/library' ? 'library'
-    : hash === '#/saved' ? 'saved'
+    : hash === '#/ranking' ? 'ranking'
     : hash.indexOf('#/r/') === 0 ? 'home'
     : 'home';
   var items = nav.querySelectorAll('[data-nav]');
@@ -1342,8 +1351,8 @@ function render() {
   if (m) renderDetail(decodeURIComponent(m[1]));
   else if (hash === '#/account') renderAccount();
   else if (hash === '#/library') renderLibrary();
-  else if (hash === '#/saved') { enterSaved(); renderHome(true); }
-  else { leaveSaved(); renderHome(true); }
+  else if (hash === '#/ranking') renderRanking();
+  else renderHome(true);
   closeMenu();
 }
 
@@ -1551,31 +1560,6 @@ function resumeHTML() {
    arriving at home should animate, but renderHome() also runs on every
    search keystroke and every filter change, and replaying the whole page
    under the caret each time you type is unusable. */
-/* #/saved is the recipe list with the favourites filter forced on. It has
-   to put that filter back when you leave, or the filter follows you home
-   and the list silently stays narrowed — the whole library looking like
-   an empty state because a route you visited once turned a filter on and
-   never turned it off.
-
-   Whatever you had set yourself before visiting is what gets restored,
-   not simply "off". */
-var savedRoute = false;
-var favBeforeSaved = false;
-
-function enterSaved() {
-  if (!savedRoute) {
-    favBeforeSaved = filters.fav;
-    savedRoute = true;
-  }
-  filters.fav = true;
-}
-
-function leaveSaved() {
-  if (!savedRoute) return;
-  filters.fav = favBeforeSaved;
-  savedRoute = false;
-}
-
 function repaintFilters() {
   if (filterTarget === filters) renderHome();
   else renderModals();
@@ -1836,6 +1820,139 @@ function bigstat(label, value, unit, style) {
   return '<div class="bigstat"><div class="k">' + esc(label) + '</div>' +
     '<div class="v"' + (style ? ' style="' + style + '"' : '') + '>' + v +
     (unit ? '<small>' + esc(unit) + '</small>' : '') + '</div></div>';
+}
+
+/* ---- ranking ----
+   Which bags were actually worth it, as opposed to which you have spent
+   the most time dialling in. Scored per coffee rather than per recipe: a
+   coffee you have four recipes for is one bag you have an opinion about,
+   not four, so its recipes' scores average into a single standing.
+
+   Only scored recipes count toward the average. An unrated recipe is not
+   a zero — it is a brew you never got round to judging — and averaging it
+   in as one would push good coffees down for the crime of being brewed
+   often. Coffees with nothing scored sit out entirely and are counted at
+   the foot of the page. */
+function rankedCoffees() {
+  var out = [];
+  coll('coffee').forEach(function (c) {
+    var scored = state.recipes.filter(function (r) {
+      return r.coffeeId === c.id && (r.rating || 0) > 0;
+    });
+    if (!scored.length) return;
+    var sum = scored.reduce(function (n, r) { return n + r.rating; }, 0);
+    out.push({
+      coffee: c,
+      avg: sum / scored.length,
+      scored: scored.length,
+      total: state.recipes.filter(function (r) { return r.coffeeId === c.id; }).length
+    });
+  });
+  out.sort(function (a, b) {
+    return b.avg - a.avg || b.scored - a.scored || a.coffee.name.localeCompare(b.coffee.name);
+  });
+  return out;
+}
+
+function rankRowHTML(e, i) {
+  var roaster = roasterNameOf(e.coffee);
+  var meta = [roaster, e.scored + ' ' + t(e.scored === 1 ? 'scored' : 'scored')].filter(Boolean).join(' · ');
+  // The top three carry the page; everything below is a compact row.
+  if (i < 3) {
+    return '<div class="rank-top rank-' + (i + 1) + '">' +
+      (i === 0
+        ? '<svg class="rank-mark" viewBox="0 0 24 24" aria-hidden="true">' +
+          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>'
+        : '') +
+      '<span class="rank-no">' + (i + 1) + '</span>' +
+      '<div class="rank-info">' +
+        '<span class="rank-nm">' + esc(e.coffee.name) + '</span>' +
+        '<span class="rank-meta">' + esc(meta) + '</span>' +
+      '</div>' +
+      '<div class="rank-score">' +
+        '<span class="rank-v">' + e.avg.toFixed(1) + '</span>' +
+        '<span class="rank-k">' + esc(t('avg score')) + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+  return '<div class="rank-row">' +
+    '<span class="rank-no">' + (i + 1) + '</span>' +
+    '<div class="rank-info">' +
+      '<span class="rank-nm">' + esc(e.coffee.name) + '</span>' +
+      '<span class="rank-meta">' + esc(meta) + '</span>' +
+    '</div>' +
+    '<div class="rank-score">' +
+      stars(Math.round(e.avg)) +
+      '<span class="rank-k">' + e.avg.toFixed(1) + '</span>' +
+    '</div>' +
+  '</div>';
+}
+
+/* Day one is an empty board, so it offers the shortest way off it: the
+   recipe you last looked at, with its score control inline. */
+function rankStarterHTML() {
+  var seen = lastSeen();
+  var r = seen && seen.recipe;
+  if (!r) return '';
+  return '<div class="section-title" style="padding-top:30px">' +
+      esc(t('Start with the one you just opened')) + '</div>' +
+    '<div class="rank-starter">' +
+      '<div class="rank-starter-top">' +
+        '<span class="tag tag-accent">' + esc(nameOf('method', r.methodId)) + ' · ' +
+          esc(nameOf('style', r.styleId)) + '</span>' +
+        '<a class="rank-starter-nm" href="#/r/' + encodeURIComponent(r.id) + '">' + esc(titleOf(r)) + '</a>' +
+        '<span class="rank-starter-meta">' +
+          (roasterOf(r) ? esc(roasterOf(r)) + ' · ' : '') +
+          num(r.dose, ' g') + ' / ' + num(r.water, ' g') + '</span>' +
+      '</div>' +
+      '<div class="rank-rate">' +
+        '<span class="rank-rate-k">' + esc(t('Cup score')) + '</span>' +
+        '<div class="rate">' +
+          [1, 2, 3, 4, 5].map(function (n) {
+            return '<button type="button" class="' + (n <= (r.rating || 0) ? 'on' : '') + '" ' +
+              'data-action="rate-recipe" data-id="' + esc(r.id) + '" data-v="' + n + '" ' +
+              'aria-label="' + esc(t('Rate') + ' ' + n) + '">' + iconBean(n <= (r.rating || 0)) + '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderRanking() {
+  view.classList.remove('view-enter');
+  var ranked = rankedCoffees();
+  var unscored = coll('coffee').length - ranked.length;
+
+  var html = '<div class="ranking">' +
+    '<div class="ranking-head">' +
+      '<h1>' + esc(t('Best in the cup')) + '</h1>' +
+      '<p>' + esc(t('Your coffees ranked by average cup score across every recipe that uses them.')) + '</p>' +
+    '</div>';
+
+  if (!ranked.length) {
+    html += '<div class="empty rank-empty">' +
+        '<div class="rank-empty-beans">' + stars(0) + '</div>' +
+        '<h3>' + esc(t('Nothing scored yet')) + '</h3>' +
+        '<p>' + esc(t('Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.')) + '</p>' +
+      '</div>' + rankStarterHTML();
+  } else {
+    html += '<div class="rank-podium">' +
+      ranked.slice(0, 3).map(rankRowHTML).join('') + '</div>';
+    if (ranked.length > 3) {
+      html += '<div class="section-title">' + esc(t('The rest')) + '</div>' +
+        '<div class="rank-list">' +
+        ranked.slice(3).map(function (e, i) { return rankRowHTML(e, i + 3); }).join('') +
+        '</div>';
+    }
+    if (unscored) {
+      html += '<p class="rank-foot">' + unscored + ' ' +
+        esc(tPlural(unscored, 'coffee', 'coffees') + ' ' + t('with no score yet. Rate a brew and it joins the ranking.')) + '</p>';
+    }
+  }
+
+  view.innerHTML = html + '</div>';
+  window.scrollTo(0, 0);
 }
 
 /* ---- account ----
@@ -4817,7 +4934,6 @@ document.addEventListener('click', function (ev) {
       return;
 
     case 'toggle-fav-filter':
-      savedRoute = false;
       filters.fav = !filters.fav;
       render();
       return;
@@ -4943,6 +5059,19 @@ document.addEventListener('click', function (ev) {
       mArr[mFrom] = mArr[mTo];
       mArr[mTo] = moved;
       renderModals();
+      return;
+
+    case 'rate-recipe':
+      ev.preventDefault();
+      var rr = recipeById(id);
+      if (rr) {
+        // Tapping the score you already have clears it, so a mis-tap is
+        // undoable with the same control that made it.
+        var want = Number(btn.getAttribute('data-v')) || 0;
+        rr.rating = rr.rating === want ? 0 : want;
+        save();
+        render();
+      }
       return;
 
     case 'rate':
