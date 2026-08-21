@@ -12,7 +12,13 @@
 <!-- Cupform v3, pairing 3 "Press Room": Libre Caslon Display carries voice,
      Archivo carries UI, Courier Prime carries every measurement. -->
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Archivo:ital,wght@0,400..700;1,400..700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css" />
+<!-- Assets carry a ?v= stamp because GitHub Pages serves them with
+     max-age=600 and no build step rewrites their names. Without it a
+     deploy leaves a window where the browser has the new index.html but
+     the previous app.js — which is worse than plain staleness, since the
+     markup and the code that drives it disagree. Bump this on every
+     deploy that changes app.js or styles.css. -->
+<link rel="stylesheet" href="styles.css?v=20260821" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E" />
 </head>
 <body>
@@ -65,7 +71,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-init.js"></script>
-<script src="app.js"></script>
+<script src="firebase-init.js?v=20260821"></script>
+<script src="app.js?v=20260821"></script>
 </body>
 </html>
