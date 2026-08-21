@@ -1013,6 +1013,9 @@ function stars(n) {
 var ICON = {
   edit: '<svg viewBox="0 0 24 24" class="ico"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="M15 5l4 4"/></svg>',
   copy: '<svg viewBox="0 0 24 24" class="ico"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg>',
+  download: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 4v11M8 11l4 4 4-4M5 20h14"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 15V4M8 8l4-4 4 4M5 20h14"/></svg>',
+  signout: '<svg viewBox="0 0 24 24" class="ico"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h9"/></svg>',
   trash: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14"/></svg>',
   close: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 6 6 18M6 6l12 12"/></svg>',
@@ -1170,28 +1173,25 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
 // just reflect currentUser — Sign out itself now lives as a menu item
 // (see index.html), so the topbar doesn't need a dedicated button for it.
 function updateAccountChip() {
-  var chip = document.getElementById('accountChip');
-  var actions = document.getElementById('appActions');
-  var menuAccount = document.getElementById('menuAccount');
-  if (!chip) return;
+  var nav = document.getElementById('appNav');
+  if (!nav) return;
 
-  if (currentUser) {
-    chip.hidden = false;
-    var avatar = document.getElementById('accountAvatar');
-    if (avatar) {
-      avatar.src = currentUser.photoURL || '';
-      avatar.style.visibility = currentUser.photoURL ? 'visible' : 'hidden';
-    }
-    if (menuAccount) {
-      menuAccount.hidden = false;
-      var emailEl = document.getElementById('menuAccountEmail');
-      if (emailEl) emailEl.textContent = currentUser.email || '';
-    }
-  } else {
-    chip.hidden = true;
-    if (menuAccount) menuAccount.hidden = true;
+  // The nav is the app's whole chrome now, so it only exists once there is
+  // an app to navigate — the sign-in gate owns the screen on its own.
+  nav.hidden = authPhase !== 'ready' || !currentUser;
+
+  var hash = location.hash || '#/';
+  var here = hash === '#/account' ? 'account'
+    : hash === '#/saved' ? 'saved'
+    : hash.indexOf('#/r/') === 0 ? 'home'
+    : 'home';
+  var items = nav.querySelectorAll('[data-nav]');
+  for (var i = 0; i < items.length; i++) {
+    var on = items[i].getAttribute('data-nav') === here;
+    items[i].classList.toggle('on', on);
+    if (on) items[i].setAttribute('aria-current', 'page');
+    else items[i].removeAttribute('aria-current');
   }
-  if (actions) actions.hidden = authPhase !== 'ready';
 }
 
 function renderGate(title, message, footHTML) {
@@ -1226,6 +1226,8 @@ function render() {
   var hash = location.hash || '#/';
   var m = hash.match(/^#\/r\/(.+)$/);
   if (m) renderDetail(decodeURIComponent(m[1]));
+  else if (hash === '#/account') renderAccount();
+  else if (hash === '#/saved') { filters.fav = true; renderHome(); }
   else renderHome();
   closeMenu();
 }
@@ -1501,6 +1503,60 @@ function bigstat(label, value, unit, style) {
   return '<div class="bigstat"><div class="k">' + esc(label) + '</div>' +
     '<div class="v"' + (style ? ' style="' + style + '"' : '') + '>' + v +
     (unit ? '<small>' + esc(unit) + '</small>' : '') + '</div></div>';
+}
+
+/* ---- account ----
+   Everything that used to hang off the topbar's overflow menu: identity,
+   language, the export/import backup hatch, and the two destructive verbs.
+   A page rather than a dropdown, because the nav gives it a home now and a
+   menu anchored to a bar that no longer exists had nowhere to hang. */
+function renderAccount() {
+  var name = (currentUser && (currentUser.displayName || '')) || '';
+  var email = (currentUser && currentUser.email) || '';
+  var initial = (name || email || '?').trim().charAt(0).toUpperCase();
+  var photo = currentUser && currentUser.photoURL;
+
+  function langBtn(code, label) {
+    return '<button class="seg' + (langChoice === code ? ' on' : '') + '" ' +
+      'data-action="set-lang" data-lang="' + code + '">' + esc(label) + '</button>';
+  }
+  function row(action, icon, label, meta, danger) {
+    return '<button class="acc-row' + (danger ? ' danger' : '') + '" data-action="' + action + '">' +
+      icon + '<span class="grow">' + esc(label) + '</span>' +
+      (meta ? '<span class="acc-meta">' + esc(meta) + '</span>' : '') + '</button>';
+  }
+
+  view.innerHTML = '<div class="account">' +
+    '<div class="acc-card">' +
+      (photo
+        ? '<img class="acc-av" src="' + esc(photo) + '" alt="" />'
+        : '<div class="acc-av acc-av-letter">' + esc(initial) + '</div>') +
+      '<div class="acc-id">' +
+        (name ? '<span class="acc-name">' + esc(name) + '</span>' : '') +
+        '<span class="acc-email">' + esc(email) + '</span>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="acc-group">' +
+      '<div class="section-title">' + esc(t('Language')) + '</div>' +
+      '<div class="segs">' +
+        langBtn('auto', t('Device')) + langBtn('en', 'English') + langBtn('pt', 'Português') +
+      '</div>' +
+    '</div>' +
+
+    '<div class="acc-group">' +
+      '<div class="section-title">' + esc(t('Backup')) + '</div>' +
+      row('export', ICON.download, t('Export data'), '.json') +
+      row('import', ICON.upload, t('Import data…')) +
+      '<p class="acc-sync"><i></i>' + esc(t('Synced across your signed-in devices.')) + '</p>' +
+    '</div>' +
+
+    '<div class="acc-group">' +
+      row('sign-out', ICON.signout, t('Sign out')) +
+      row('reset', ICON.trash, t('Reset library…'), '', true) +
+    '</div>' +
+  '</div>';
+  window.scrollTo(0, 0);
 }
 
 function renderDetail(id) {

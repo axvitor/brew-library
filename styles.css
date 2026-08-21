@@ -286,72 +286,96 @@ svg.ico-fill{fill:currentColor;stroke:none}
   text-transform:uppercase;color:var(--text-muted);
 }
 
-/* ---------- top bar ----------
-   v3's AppBar: 52px compact, paper, hairline underneath. No blur —
-   v3 allows transparency only on the scrim. */
-.topbar{
-  position:sticky;top:0;z-index:60;
-  background:var(--bg-app);
-  border-bottom:var(--border-w-hairline) solid var(--border-hairline);
-}
-.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:60px}
-.brand{display:inline-flex;align-items:center;gap:10px;min-width:0;flex:none;padding:12px 4px;margin:-12px -4px}
+/* ---------- brand ----------
+   v3 has no logo: the brand is a lowercase wordmark in the display serif.
+   The bean mark is this app's own and predates v3, so it stays. Lives in
+   the sidebar now that the top bar is gone. */
 .brand-mark{width:22px;height:22px;fill:none;stroke:var(--pine-700);stroke-width:1.6;stroke-linecap:round;flex:none}
-/* v3 has no logo: the brand is a lowercase wordmark in the display
-   serif. The bean mark is this app's own and predates v3, so it
-   stays — but the wordmark now follows the system. */
-.brand-text{font-family:var(--font-display);font-weight:var(--weight-regular);font-size:22px;letter-spacing:var(--tracking-display);white-space:nowrap;color:var(--text-title);text-transform:lowercase}
-.brand-text em{font-style:normal;color:var(--text-muted);margin-left:.3em}
-.topbar-actions{display:flex;align-items:center;gap:8px;flex:none;min-width:0}
-@media(max-width:560px){
-  .topbar-inner{gap:6px;height:56px}
-  .topbar-actions{gap:6px}
-  .brand-text{font-size:20px}
-  /* Icon-only on narrow screens — the label crowds the header next to
-     the Library button and account chip. */
-  .hdr-cta{width:var(--control-h-md);padding:0}
-  .hdr-cta span{display:none}
+.brand-text{
+  font-family:var(--font-display);font-weight:var(--weight-regular);font-size:22px;
+  letter-spacing:var(--tracking-display);white-space:nowrap;color:var(--text-title);
+  text-transform:lowercase;
 }
+.brand-text em{font-style:normal;color:var(--text-muted);margin-left:.3em}
 @media (prefers-color-scheme: dark){ .brand-mark{stroke:var(--sage-300)} }
 
-/* ---------- buttons (v3 core/Button) ---------- */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  min-height:var(--control-h-md);padding:0 18px;border-radius:var(--radius-md);
-  font:var(--weight-semibold) 15px/1 var(--font-text);
-  letter-spacing:var(--tracking-label);white-space:nowrap;
-  border:var(--border-w-hairline) solid transparent;
-  transition:var(--transition-control);
-  -webkit-tap-highlight-color:transparent;
-}
-.btn-primary{background:var(--action-primary);color:var(--action-primary-text);border-color:var(--action-primary)}
-.btn-primary:hover{background:var(--action-primary-hover);border-color:var(--action-primary-hover)}
-.btn-primary:active{background:var(--action-primary-press)}
-/* v3's "secondary": paper fill, ink hairline. */
-.btn-ghost{background:var(--surface-card);color:var(--text-title);border-color:var(--action-secondary-border)}
-.btn-ghost:hover{background:var(--surface-sunken)}
-.btn-quiet{color:var(--text-muted);border-color:transparent;background:transparent}
-.btn-quiet:hover{color:var(--text-title);background:var(--surface-sunken)}
-/* v3 danger is an outlined destructive, not a text link. */
-/* Roast fill, matching the timer's own start control so the brew action
-   looks the same wherever it appears. Rationed to exactly that: v3 reserves
-   roast for the live timer, and a second accent button would spend it. */
-.btn-accent{background:var(--roast-600);color:var(--paper-000);border-color:var(--roast-600)}
-.btn-accent:hover{background:var(--roast-500);border-color:var(--roast-500)}
-.btn-accent:active{background:var(--roast-700)}
-.btn-danger{color:var(--state-error);border-color:var(--state-error);background:transparent}
-.btn-danger:hover{background:var(--state-error-surface);border-color:var(--state-error)}
-.btn-icon{width:var(--control-h-md);padding:0}
-.btn-sm{min-height:var(--control-h-sm);font-size:var(--text-label);padding:0 14px}
-.btn-sm.btn-icon{width:var(--control-h-sm)}
-.btn:disabled{background:var(--action-disabled);color:var(--action-disabled-text);border-color:var(--action-disabled);pointer-events:none}
-.btn:active:not(:disabled){transform:scale(var(--press-scale));box-shadow:var(--shadow-press)}
+/* ---------- app nav ----------
+   One element, two shapes. Under 861px it is a bottom tab bar with the
+   primary action raised out of the row; at 861px and up it becomes a fixed
+   sidebar and takes over what the top bar used to carry (brand, Library,
+   Add recipe) plus the account menu's contents, which are a page now.
 
-/* Google sign-in keeps its own neutral treatment. */
-.btn-google{background:var(--surface-card);color:var(--text-title);border-color:var(--action-secondary-border)}
-.btn-google:hover{background:var(--surface-sunken)}
-.btn-google .ico{width:19px;height:19px}
-.btn-google:active{transform:scale(var(--press-scale))}
+   861px is the breakpoint the brew timer already splits on, reused rather
+   than invented so the app only ever has one idea of "wide". */
+.appnav[hidden]{display:none}
+.appnav{
+  position:fixed;z-index:60;
+  background:var(--surface-card);background-image:var(--texture-paper);
+}
+.nav-items{display:flex}
+.nav-item{
+  display:flex;align-items:center;color:var(--text-faint);
+  transition:var(--transition-control);-webkit-tap-highlight-color:transparent;
+}
+.nav-item .ico{width:21px;height:21px;stroke-width:1.6}
+.nav-item.on{color:var(--action-primary)}
+.nav-add .ico{stroke-width:1.9}
+
+/* --- phone: bottom tab bar --- */
+@media(max-width:860px){
+  .nav-brand{display:none}
+  .appnav{
+    left:0;right:0;bottom:0;
+    border-top:var(--border-w-hairline) solid var(--border-hairline);
+    padding:10px 12px max(26px, env(safe-area-inset-bottom));
+  }
+  .nav-items{gap:2px}
+  .nav-item{
+    flex:1 1 0;flex-direction:column;justify-content:center;gap:5px;min-height:44px;
+    font:var(--weight-semibold) 10px/1 var(--font-text);letter-spacing:.04em;text-align:center;
+  }
+  /* The primary action is a raised disc, and it is pine: v3 rations roast
+     to the brew action and the live timer, and a permanent roast disc on
+     every screen would spend it. */
+  .nav-add .nav-add-mark{
+    width:52px;height:52px;border-radius:var(--radius-full);
+    background:var(--action-primary);color:var(--action-primary-text);
+    display:flex;align-items:center;justify-content:center;margin-top:-16px;
+    box-shadow:0 4px 12px rgba(46,61,51,.30);
+    transition:var(--transition-control);
+  }
+  .nav-add:active .nav-add-mark{transform:scale(var(--press-scale))}
+  .nav-add span{white-space:nowrap}
+  /* The bar floats over the page, so the page has to end above it. */
+  body{padding-bottom:104px}
+}
+
+/* --- desktop: sidebar --- */
+@media(min-width:861px){
+  .appnav{
+    top:0;left:0;bottom:0;width:232px;
+    display:flex;flex-direction:column;gap:26px;
+    padding:22px 14px;
+    border-right:var(--border-w-hairline) solid var(--border-hairline);
+  }
+  .nav-brand{display:flex;align-items:center;gap:10px;padding:6px 10px;min-width:0}
+  .nav-items{flex-direction:column;gap:2px}
+  .nav-item{
+    gap:12px;min-height:var(--control-h-md);padding:0 12px;border-radius:var(--radius-md);
+    font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-body);
+  }
+  .nav-item:hover{background:var(--surface-sunken);color:var(--text-title)}
+  .nav-item.on{background:var(--surface-accent);color:var(--action-primary);font-weight:var(--weight-bold)}
+  .nav-item .ico{color:inherit}
+  /* Add recipe is the one filled row — the sidebar's single primary. */
+  .nav-add{
+    margin-top:6px;background:var(--action-primary);color:var(--action-primary-text);
+    font-weight:var(--weight-semibold);
+  }
+  .nav-add:hover{background:var(--action-primary-hover);color:var(--action-primary-text)}
+  .nav-add .nav-add-mark{display:flex;align-items:center}
+  body{padding-left:232px}
+}
 
 /* ---------- menu ---------- */
 @keyframes menuPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -384,13 +408,6 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .menu-account-email{font:var(--weight-medium) var(--text-caption)/1.3 var(--font-text);color:var(--text-muted);word-break:break-all}
 .menu-account[hidden]{display:none}
 
-.account-chip{width:var(--control-h-md);height:var(--control-h-md);border-radius:var(--radius-full);overflow:hidden;flex:none;border:var(--border-w-hairline) solid var(--border-default);transition:var(--transition-control)}
-.account-chip:hover{border-color:var(--border-strong)}
-.account-chip:active{transform:scale(var(--press-scale))}
-.account-chip[hidden]{display:none}
-.account-avatar{width:100%;height:100%;object-fit:cover;display:block}
-.app-actions{display:flex;align-items:center;gap:8px}
-.app-actions[hidden]{display:none}
 
 /* ---------- hero ---------- */
 .hero{padding:44px 0 24px}
@@ -1353,6 +1370,48 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .back-to-top .ico{width:19px;height:19px}
 .back-to-top:hover{border-color:var(--border-strong);color:var(--text-title)}
 .back-to-top.show:active{transform:scale(var(--press-scale))}
+
+/* ---------- account page ----------
+   What the topbar's overflow menu used to hold. Rows rather than menu
+   items, because a page has room to say what each one does. */
+.account{max-width:560px;margin:0 auto;padding:26px 0 40px;display:flex;flex-direction:column;gap:26px}
+.acc-card{
+  display:flex;align-items:center;gap:14px;padding:18px;
+  background:var(--surface-inverse);background-image:var(--texture-paper);
+  border-radius:var(--radius-lg);color:var(--text-on-inverse);
+}
+.acc-av{width:52px;height:52px;border-radius:var(--radius-full);flex:none;object-fit:cover}
+.acc-av-letter{
+  display:flex;align-items:center;justify-content:center;background:var(--pine-600);
+  font:var(--weight-semibold) 18px/1 var(--font-text);color:var(--text-on-inverse);
+}
+.acc-id{display:flex;flex-direction:column;gap:3px;min-width:0}
+.acc-name{font:var(--weight-regular) 20px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display)}
+.acc-email{font:var(--type-caption);color:var(--text-on-inverse-muted);word-break:break-all}
+.acc-group{display:flex;flex-direction:column;gap:8px}
+.acc-group .section-title{margin-bottom:2px}
+.segs{display:flex;gap:4px;padding:4px;background:var(--surface-sunken);border-radius:var(--radius-md)}
+.seg{
+  flex:1;min-height:38px;border-radius:var(--radius-sm);
+  font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-muted);
+  transition:var(--transition-control);
+}
+.seg:hover{color:var(--text-title)}
+.seg.on{background:var(--action-primary);color:var(--action-primary-text)}
+.acc-row{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:var(--control-h-lg);padding:0 14px;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  border-radius:var(--radius-md);font:var(--type-body-sm);color:var(--text-title);text-align:left;
+  transition:var(--transition-control);
+}
+.acc-row:hover{background:var(--surface-sunken);border-color:var(--border-default)}
+.acc-row .ico{color:var(--text-muted);flex:none}
+.acc-row .grow{flex:1;min-width:0}
+.acc-meta{font:var(--type-caption);color:var(--text-muted)}
+.acc-row.danger,.acc-row.danger .ico{color:var(--state-error)}
+.acc-row.danger:hover{background:var(--state-error-surface);border-color:var(--state-error)}
+.acc-sync{display:flex;align-items:center;gap:9px;margin-top:4px;font:var(--type-caption);color:var(--text-muted)}
+.acc-sync i{width:7px;height:7px;border-radius:var(--radius-full);background:var(--state-success);flex:none}
 
 /* ---------- sign-in gate ---------- */
 .gate{min-height:72vh;display:flex;align-items:center;justify-content:center;padding:40px 0}
