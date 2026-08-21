@@ -101,6 +101,10 @@
   --action-disabled:var(--paper-300);
   --action-disabled-text:var(--ink-400);
 
+  /* Add recipe: the app's standing call to action, in roast wherever it
+     appears — the nav's two shapes and the empty state's button. */
+  --nav-add-bg:var(--roast-600);
+
   --accent-star:var(--roast-500);
   --accent-star-empty:var(--paper-400);
   --accent-favorite:var(--roast-600);
@@ -334,16 +338,19 @@ svg.ico-fill{fill:currentColor;stroke:none}
     flex:1 1 0;flex-direction:column;justify-content:center;gap:5px;min-height:44px;
     font:var(--weight-semibold) 10px/1 var(--font-text);letter-spacing:.04em;text-align:center;
   }
-  /* The primary action is a raised disc, and it is pine: v3 rations roast
-     to the brew action and the live timer, and a permanent roast disc on
-     every screen would spend it. */
+  /* The primary action is a raised disc in roast. That widens what roast
+     covers — it was the brew action and the live timer only — to include
+     the one thing the nav exists to offer. Deliberate: the disc is the
+     app's single standing call to action, and pine made it read as one
+     more piece of navigation. */
   .nav-add .nav-add-mark{
     width:52px;height:52px;border-radius:var(--radius-full);
-    background:var(--action-primary);color:var(--action-primary-text);
+    background:var(--nav-add-bg);color:var(--paper-000);
     display:flex;align-items:center;justify-content:center;margin-top:-16px;
-    box-shadow:0 4px 12px rgba(46,61,51,.30);
+    box-shadow:0 4px 12px rgba(174,82,44,.32);
     transition:var(--transition-control);
   }
+  .nav-add:active .nav-add-mark{background:var(--roast-700)}
   .nav-add:active .nav-add-mark{transform:scale(var(--press-scale))}
   .nav-add span{white-space:nowrap}
   /* The bar floats over the page, so the page has to end above it.
@@ -370,10 +377,11 @@ svg.ico-fill{fill:currentColor;stroke:none}
   .nav-item .ico{color:inherit}
   /* Add recipe is the one filled row — the sidebar's single primary. */
   .nav-add{
-    margin-top:6px;background:var(--action-primary);color:var(--action-primary-text);
+    margin-top:6px;background:var(--nav-add-bg);color:var(--paper-000);
     font-weight:var(--weight-semibold);
   }
-  .nav-add:hover{background:var(--action-primary-hover);color:var(--action-primary-text)}
+  .nav-add:hover{background:var(--roast-500);color:var(--paper-000)}
+  .nav-add:active{background:var(--roast-700)}
   .nav-add .nav-add-mark{display:flex;align-items:center}
   /* Measured in app.js — zero while the nav is hidden, so the sign-in
      screen is not inset by a sidebar that is not there. */
@@ -391,6 +399,10 @@ svg.ico-fill{fill:currentColor;stroke:none}
   -webkit-tap-highlight-color:transparent;
 }
 .btn-primary{background:var(--action-primary);color:var(--action-primary-text);border-color:var(--action-primary)}
+/* Same action as the nav's, so the same colour. */
+.btn-primary[data-action="new-recipe"]{background:var(--nav-add-bg);border-color:var(--nav-add-bg);color:var(--paper-000)}
+.btn-primary[data-action="new-recipe"]:hover{background:var(--roast-500);border-color:var(--roast-500)}
+.btn-primary[data-action="new-recipe"]:active{background:var(--roast-700)}
 .btn-primary:hover{background:var(--action-primary-hover);border-color:var(--action-primary-hover)}
 .btn-primary:active{background:var(--action-primary-press)}
 /* v3's "secondary": paper fill, ink hairline. */
