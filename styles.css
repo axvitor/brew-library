@@ -565,9 +565,22 @@ svg.ico-fill{fill:currentColor;stroke:none}
   background:var(--surface-card);background-image:var(--texture-paper);
   border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-lg);
   box-shadow:var(--shadow-card);
-  /* 68px was the top bar's height; with the bar gone it sticks to the
-     top of the scroll area like anything else. */
-  position:sticky;top:0;z-index:40;
+  /* 68px was the top bar's height; with the bar gone it needs only enough
+     offset to keep the card off the very edge. */
+  position:sticky;top:10px;z-index:40;
+}
+/* Cards used to slide visibly past the card's rounded corners and through
+   the 10px of daylight above it. A band of the page's own colour, bled to
+   both gutters and tucked behind the card, hides them a moment earlier so
+   they end at a clean edge rather than at the corner radius.
+
+   A fade would read better still, but v3 forbids gradients outright (see
+   --texture-paper) — flat colour is the system's answer here. */
+.filters::before{
+  content:"";position:absolute;z-index:-1;
+  top:-14px;bottom:auto;height:calc(100% + 20px);
+  left:calc(var(--gutter-screen) * -1);right:calc(var(--gutter-screen) * -1);
+  background:var(--bg-app);
 }
 .search{position:relative;flex:1 1 210px;min-width:170px}
 .search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-faint);width:17px;height:17px}
@@ -673,8 +686,10 @@ svg.ico-fill{fill:currentColor;stroke:none}
 
 @media(max-width:640px){
   /* Not sticky on a phone: the bar is tall enough that pinning it costs
-     more of the list than it saves. */
+     more of the list than it saves — and with nothing sliding under it,
+     the band behind it has nothing to hide. */
   .filters{position:static;padding:12px}
+  .filters::before{display:none}
   /* Search owns its own row, then the two toggles split the next one
      evenly rather than sizing to their labels and leaving a ragged gap.
      A full 999px capsule reads fine at a chip's natural width, but
