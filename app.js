@@ -1775,6 +1775,9 @@ function renderDetail(id) {
     // The masthead is an inverse block that runs to the screen edges: the
     // recipe's identity, set apart from the numbers you read off it below.
     '<header class="detail-head">' +
+      '<svg class="detail-mark" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+        '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
       '<div class="detail-head-inner">' +
         '<div class="detail-nav">' +
           '<a class="navbtn" href="#/" aria-label="' + esc(t('Library')) + '">' + ICON.back + '</a>' +

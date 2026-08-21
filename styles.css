@@ -835,11 +835,22 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .detail-head{
   /* Full-bleed out of .wrap's gutter — the masthead runs to the screen
      edges while its contents stay on the page's measure. */
+  position:relative;overflow:hidden;
   margin:0 calc(var(--gutter-screen) * -1);
   padding:0 var(--gutter-screen);
   background:var(--surface-inverse-deep);background-image:var(--texture-paper);
   color:var(--text-on-inverse);
 }
+/* The bean, cropped by the masthead's edge. Watermark weight only — it is
+   texture behind the title, never something to read, so it stays well
+   under the kicker's contrast and never grows into the title's column. */
+.detail-mark{
+  position:absolute;right:-40px;top:4px;width:200px;height:200px;
+  opacity:.10;color:var(--sage-300);
+  fill:none;stroke:currentColor;stroke-width:1;
+  pointer-events:none;
+}
+@media(max-width:520px){ .detail-mark{width:164px;height:164px;right:-34px} }
 .detail-head-inner{padding:14px 0 34px;display:flex;flex-direction:column;gap:22px}
 .detail-nav{display:flex;align-items:center;gap:8px}
 .detail-nav-gap{flex:1}
@@ -857,7 +868,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .navbtn.fav{color:var(--text-on-inverse)}
 .navbtn.fav.on{color:var(--roast-300)}
 .navbtn.fav svg{width:20px;height:20px}
-.detail-title{display:flex;flex-direction:column;gap:9px}
+.detail-title{display:flex;flex-direction:column;gap:9px;position:relative;max-width:min(100%, 30ch)}
 .detail-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-on-inverse)}
 .detail-head .kicker{color:var(--sage-300)}
 .detail-meta{display:flex;align-items:center;flex-wrap:wrap;gap:9px;font:var(--type-body-sm);font-size:13px;color:var(--text-on-inverse-muted)}
