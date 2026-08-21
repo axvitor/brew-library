@@ -1201,6 +1201,18 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
 // The avatar chip and the "Signed in as…" line inside the ⋮ menu both
 // just reflect currentUser — Sign out itself now lives as a menu item
 // (see index.html), so the topbar doesn't need a dedicated button for it.
+/* The tab bar's height is not a constant: it grows by the home-indicator
+   inset on phones that have one, and the bar disappears entirely on
+   desktop. Anything that has to sit above it — the pinned brew action,
+   Back to top, the page's own bottom padding — measures it rather than
+   guessing, which is how a 16px gap opened up under the brew bar. */
+function measureNav() {
+  var nav = document.getElementById('appNav');
+  var h = (nav && !nav.hidden && getComputedStyle(nav).position === 'fixed')
+    ? nav.offsetHeight : 0;
+  document.documentElement.style.setProperty('--nav-h', h + 'px');
+}
+
 function updateAccountChip() {
   var nav = document.getElementById('appNav');
   if (!nav) return;
@@ -1208,6 +1220,7 @@ function updateAccountChip() {
   // The nav is the app's whole chrome now, so it only exists once there is
   // an app to navigate — the sign-in gate owns the screen on its own.
   nav.hidden = authPhase !== 'ready' || !currentUser;
+  measureNav();
 
   var hash = location.hash || '#/';
   var here = hash === '#/account' ? 'account'
@@ -4982,3 +4995,6 @@ trackVisualViewport();
 boot();
 
 })();
+
+window.addEventListener('resize', measureNav);
+window.addEventListener('orientationchange', measureNav);

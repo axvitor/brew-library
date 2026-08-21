@@ -346,8 +346,9 @@ svg.ico-fill{fill:currentColor;stroke:none}
   }
   .nav-add:active .nav-add-mark{transform:scale(var(--press-scale))}
   .nav-add span{white-space:nowrap}
-  /* The bar floats over the page, so the page has to end above it. */
-  body{padding-bottom:104px}
+  /* The bar floats over the page, so the page has to end above it.
+     --nav-h is measured in app.js; the fallback covers first paint. */
+  body{padding-bottom:calc(var(--nav-h, 88px) + 16px)}
 }
 
 /* --- desktop: sidebar --- */
@@ -883,12 +884,14 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .detail-bar-note{flex:1;font:var(--type-caption);color:var(--text-muted)}
 @media(max-width:860px){
   .detail-bar{
-    position:fixed;left:0;right:0;bottom:104px;z-index:55;margin:0;
+    /* Flush against the top of the tab bar — the two read as one stacked
+       control surface, with no strip of page showing between them. */
+    position:fixed;left:0;right:0;bottom:var(--nav-h, 88px);z-index:55;margin:0;
     padding:12px var(--gutter-screen);
     background:var(--surface-card);border-top:var(--border-w-hairline) solid var(--border-hairline);
   }
   /* Clears the pinned bar as well as the tab bar. */
-  .detail{padding-bottom:88px}
+  .detail{padding-bottom:76px}
 }
 
 /* Announced by screen readers, never painted — the tone and the buzz carry
@@ -1547,10 +1550,9 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
     border-color var(--dur-fast) var(--ease-standard),
     color var(--dur-fast) var(--ease-standard);
 }
-/* Clears the tab bar rather than sitting on top of the Account tab.
-   104px is the bar's own height reservation (see body padding-bottom). */
+/* Clears the tab bar rather than sitting on top of the Account tab. */
 @media(max-width:860px){
-  .back-to-top{bottom:calc(104px + 12px)}
+  .back-to-top{bottom:calc(var(--nav-h, 88px) + 12px)}
 }
 .back-to-top .ico{width:19px;height:19px}
 .back-to-top:hover{border-color:var(--border-strong);color:var(--text-title)}
