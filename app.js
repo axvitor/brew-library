@@ -605,6 +605,14 @@ var langChoice = (function () {
 
 var LANG = langChoice === 'auto' ? deviceLang() : langChoice;
 
+/* Dates and any other Intl formatting follow the app's language, not the
+   browser's. Passing undefined as the locale — which is what the home
+   screen's date did — means setting the app to Português leaves the date
+   in whatever the device is set to. */
+function locale() {
+  return LANG === 'pt' ? 'pt-BR' : 'en-GB';
+}
+
 function setLang(choice) {
   langChoice = choice;
   LANG = choice === 'auto' ? deviceLang() : choice;
@@ -659,6 +667,7 @@ var TRANSLATIONS = {
     'Brew': 'Preparar',
     'Open': 'Abrir',
     'opened': 'aberta',
+    'Coffees, roasters and gear your recipes refer to. Edit one here and every recipe using it follows.': 'Cafés, torrefações e equipamentos que suas receitas usam. Edite aqui e toda receita que os usa acompanha.',
     'Pouring now': 'Despejando agora',
     'Now': 'Agora',
     'Done': 'Pronto',
@@ -1241,6 +1250,7 @@ function updateNav() {
 
   var hash = location.hash || '#/';
   var here = hash === '#/account' ? 'account'
+    : hash === '#/library' ? 'library'
     : hash === '#/saved' ? 'saved'
     : hash.indexOf('#/r/') === 0 ? 'home'
     : 'home';
@@ -1331,6 +1341,7 @@ function render() {
   var m = hash.match(/^#\/r\/(.+)$/);
   if (m) renderDetail(decodeURIComponent(m[1]));
   else if (hash === '#/account') renderAccount();
+  else if (hash === '#/library') renderLibrary();
   else if (hash === '#/saved') { filters.fav = true; renderHome(true); }
   else renderHome(true);
   closeMenu();
@@ -1443,7 +1454,7 @@ function agoLabel(ms) {
   var days = Math.floor(hrs / 24);
   if (days === 1) return t('yesterday');
   if (days < 15) return days + ' ' + t('days ago');
-  return new Date(ms).toLocaleDateString();
+  return new Date(ms).toLocaleDateString(locale());
 }
 
 function greetingKey() {
@@ -1462,7 +1473,7 @@ function greetingHTML() {
       (photo ? '<img src="' + esc(photo) + '" alt="" />' : '<span>' + esc(letter) + '</span>') +
     '</a>' +
     '<div class="greet-txt">' +
-      '<span class="greet-day">' + esc(new Date().toLocaleDateString(undefined,
+      '<span class="greet-day">' + esc(new Date().toLocaleDateString(locale(),
         { weekday: 'long', day: 'numeric', month: 'long' })) + '</span>' +
       '<span class="greet-name">' + esc(t(greetingKey())) + (name ? ', ' + esc(name) : '') + '</span>' +
     '</div>' +
@@ -2708,6 +2719,9 @@ function crumbTrail(trail, depth) {
    if the form was opened from one. Everything after this comes from the
    stack itself. */
 function baseCrumbs() {
+  if ((location.hash || '') === '#/library') {
+    return [{ label: t('Library'), hash: '#/library' }];
+  }
   var out = [{ label: t('Recipes'), hash: '#/' }];
   var m = (location.hash || '').match(/^#\/r\/(.+)$/);
   if (m) {
@@ -4426,39 +4440,77 @@ function saveEntity(m) {
    11. Library manager
    --------------------------------------------------------- */
 
-function openLibrary(tab) {
-  var m = {
-    tab: tab || 'coffee',
-    render: function () {
-      var def = ENTITIES[m.tab];
-      var list = coll(m.tab).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+/* ---- library ----
+   A destination, not a modal. It is reached from the nav, so it keeps the
+   nav: a full-screen page laid over the tab bar hid the very control you
+   used to get here, and left the Library tab lit behind a sheet covering
+   it. Entity forms still open as pages on top — those are tasks you
+   finish and leave, which is a different thing from a place you are. */
+var libraryTab = 'coffee';
 
-      var tabs = '<div class="tabs">' + Object.keys(ENTITIES).map(function (tab) {
-        return '<button data-action="lib-tab" data-type="' + tab + '" class="' + (tab === m.tab ? 'on' : '') + '">' +
-          esc(t(ENTITIES[tab].plural)) + ' <span style="opacity:.55">' + coll(tab).length + '</span></button>';
-      }).join('') + '</div>';
+function libraryListHTML(tab) {
+  var def = ENTITIES[tab];
+  var list = coll(tab).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+  if (!list.length) {
+    return '<div class="empty" style="padding:44px 20px">' +
+      '<h3 style="font-size:18px">' + esc(t('Nothing here yet')) + '</h3>' +
+      '<p>' + esc(t('Add your first ' + def.label.toLowerCase() + '.')) + '</p></div>';
+  }
+  return list.map(function (e) {
+    var used = def.usedBy ? def.usedBy(e.id) : state.recipes.filter(function (r) { return r[def.ref] === e.id; }).length;
+    var noun = def.usedLabel || 'recipe';
+    var meta = def.meta(e);
+    return '<div class="list-item">' +
+      '<div class="txt"><div class="nm">' + esc(e.name) + '</div>' +
+        (meta ? '<div class="mt">' + esc(meta) + '</div>' : '') + '</div>' +
+      '<span class="cnt">' + used + ' ' + (used === 1 ? noun : noun + 's') + '</span>' +
+      '<button class="iconbtn" data-action="lib-edit" data-type="' + tab + '" data-id="' + esc(e.id) + '" aria-label="' + esc(t('Edit')) + '">' + ICON.edit + '</button>' +
+      '<button class="iconbtn danger" data-action="lib-del" data-type="' + tab + '" data-id="' + esc(e.id) + '" aria-label="' + esc(t('Delete')) + '">' + ICON.trash + '</button>' +
+    '</div>';
+  }).join('');
+}
 
-      var items = list.length ? list.map(function (e) {
-        var used = def.usedBy ? def.usedBy(e.id) : state.recipes.filter(function (r) { return r[def.ref] === e.id; }).length;
-        var noun = def.usedLabel || 'recipe';
-        var meta = def.meta(e);
-        return '<div class="list-item">' +
-          '<div class="txt"><div class="nm">' + esc(e.name) + '</div>' +
-            (meta ? '<div class="mt">' + esc(meta) + '</div>' : '') + '</div>' +
-          '<span class="cnt">' + used + ' ' + (used === 1 ? noun : noun + 's') + '</span>' +
-          '<button class="iconbtn" data-action="lib-edit" data-type="' + m.tab + '" data-id="' + esc(e.id) + '" aria-label="Edit">' + ICON.edit + '</button>' +
-          '<button class="iconbtn danger" data-action="lib-del" data-type="' + m.tab + '" data-id="' + esc(e.id) + '" aria-label="Delete">' + ICON.trash + '</button>' +
-        '</div>';
-      }).join('') : '<div class="empty" style="padding:44px 20px"><h3 style="font-size:18px">' + esc(t('Nothing here yet')) + '</h3>' +
-        '<p>' + esc(t('Add your first ' + def.label.toLowerCase() + '.')) + '</p></div>';
+function libraryTabsHTML() {
+  return Object.keys(ENTITIES).map(function (tab) {
+    return '<button data-action="lib-tab" data-type="' + tab + '" class="' + (tab === libraryTab ? 'on' : '') + '">' +
+      esc(t(ENTITIES[tab].plural)) + ' <span style="opacity:.55">' + coll(tab).length + '</span></button>';
+  }).join('');
+}
 
-      var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Done')) + '</button>' +
-        '<button class="btn btn-primary" data-action="lib-add" data-type="' + m.tab + '">' + ICON.plus + esc(t('Add ' + def.label.toLowerCase())) + '</button>';
+function libraryAddHTML() {
+  var def = ENTITIES[libraryTab];
+  return ICON.plus + '<span>' + esc(t('Add ' + def.label.toLowerCase())) + '</span>';
+}
 
-      return sheet({ title: t('Library'), body: tabs + '<div class="list">' + items + '</div>', foot: foot });
-    }
-  };
-  openModal(m);
+function renderLibrary() {
+  view.classList.remove('view-enter');
+  view.innerHTML = '<div class="library">' +
+    '<div class="library-head">' +
+      '<h1>' + esc(t('Library')) + '</h1>' +
+      '<p>' + esc(t('Coffees, roasters and gear your recipes refer to. Edit one here and every recipe using it follows.')) + '</p>' +
+    '</div>' +
+    '<div class="tabs" id="libTabs">' + libraryTabsHTML() + '</div>' +
+    '<div class="list" id="libList">' + libraryListHTML(libraryTab) + '</div>' +
+    '<button class="btn btn-primary library-add" data-action="lib-add" data-type="' + libraryTab + '">' +
+      libraryAddHTML() + '</button>' +
+  '</div>';
+  window.scrollTo(0, 0);
+}
+
+/* Swaps the tab strip and the list in place. A full re-render rebuilt the
+   whole page for what is a change of context inside it, which reads as a
+   reload and throws away your scroll position. */
+function paintLibraryTab() {
+  var tabs = document.getElementById('libTabs');
+  var list = document.getElementById('libList');
+  var add = document.querySelector('.library-add');
+  if (!tabs || !list) { renderLibrary(); return; }
+  tabs.innerHTML = libraryTabsHTML();
+  list.innerHTML = libraryListHTML(libraryTab);
+  if (add) {
+    add.innerHTML = libraryAddHTML();
+    add.setAttribute('data-type', libraryTab);
+  }
 }
 
 function deleteEntity(type, id) {
@@ -4617,7 +4669,7 @@ document.addEventListener('click', function (ev) {
       render();
       return;
 
-    case 'open-library': ev.preventDefault(); openLibrary('coffee'); return;
+    case 'open-library': ev.preventDefault(); location.hash = '#/library'; return;
 
     case 'fav':
       ev.preventDefault(); ev.stopPropagation();
@@ -4930,7 +4982,7 @@ document.addEventListener('click', function (ev) {
         : null);
       return;
 
-    case 'lib-tab': top.tab = type; renderModals(); return;
+    case 'lib-tab': libraryTab = type; paintLibraryTab(); return;
     case 'lib-add': openEntityForm(type, null, null); return;
     case 'lib-edit': openEntityForm(type, findIn(type, id), null); return;
     case 'lib-del': deleteEntity(type, id); return;

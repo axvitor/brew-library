@@ -1355,6 +1355,16 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .rate button:hover{transform:scale(1.12)}
 .rate button:active{transform:scale(var(--press-scale))}
 
+/* ---------- library view ----------
+   A destination reached from the nav, so it sits in the page like home
+   and account do rather than covering them. */
+.library{padding:26px 0 40px;display:flex;flex-direction:column;animation:cardIn var(--dur-slow) var(--ease-out) both}
+.library-head{margin-bottom:22px}
+.library-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
+.library-head p{margin-top:10px;color:var(--text-muted);font:var(--type-body-sm);max-width:52ch}
+.library-add{align-self:flex-start;margin-top:20px}
+@media(max-width:640px){ .library-add{align-self:stretch;justify-content:center} }
+
 /* ---------- library manager ---------- */
 /* v3's segmented Tabs track is squared (radius-md), with each tab a
    smaller radius-sm chip inside it — the 999px-round treatment is
