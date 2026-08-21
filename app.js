@@ -87,6 +87,10 @@ function builtinStyles() {
   return JSON.parse(JSON.stringify([
     { id: 'st-hoffmann', name: 'James Hoffmann V60', author: 'James Hoffmann',
       notes: 'Ultimate V60 technique — bloom, two pours, swirl, even drawdown.' },
+    { id: 'st-hoffmann-aeropress', name: 'James Hoffmann AeroPress', author: 'James Hoffmann',
+      notes: 'Ultimate AeroPress technique — all the water at once, a long steep, a swirl, ' +
+        'then a gentle press. His published figures are 11 g to 200 g of water just off the boil; ' +
+        'the schedule scales to whatever dose and water the recipe carries.' },
     { id: 'st-tetsu-sweet', name: 'Tetsu Kasuya — Sweet', author: 'Tetsu Kasuya',
       notes: '4:6 method. A smaller first pour pushes the cup toward sweetness.' },
     { id: 'st-tetsu-acid', name: 'Tetsu Kasuya — Acid', author: 'Tetsu Kasuya',
@@ -117,7 +121,7 @@ function builtinStyles() {
 /* Bump when a new built-in style is added. Tracked per library so the
    backfill runs exactly once: a style the user then deletes stays deleted
    rather than reappearing on every load. */
-var BUILTIN_STYLES_VERSION = 2;
+var BUILTIN_STYLES_VERSION = 3;
 
 function seed() {
   var coffees = [
@@ -227,12 +231,12 @@ function seed() {
   addRecipe({ c: "cof-encantos-agrado", m: "me-esp-dex", g: "gr-kingrinder", gr: "1 turn + 5 clicks", s: "st-espresso", dose: 22, temp: '', time: "~0:28", notes: "" });
   addRecipe({ c: "cof-moka-bela-epoca", m: "me-esp-dex", g: "gr-kingrinder", gr: "1 turn + 6 clicks", s: "st-espresso", dose: 22, temp: '', time: "~0:26", notes: "" });
   addRecipe({ c: "cof-moka-bela-epoca", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 25 clicks", s: "st-hoffmann", dose: '', temp: '', time: "", notes: "" });
-  addRecipe({ c: "cof-moka-bela-epoca", m: "me-aeropress", g: "gr-timemore-c2", gr: "21 clicks", s: "st-hoffmann", dose: '', temp: '', time: "", notes: "" });
+  addRecipe({ c: "cof-moka-bela-epoca", m: "me-aeropress", g: "gr-timemore-c2", gr: "21 clicks", s: "st-hoffmann-aeropress", dose: '', temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-familia-protazio", m: "me-esp-3bomber", g: "gr-kingrinder", gr: "1 turn + 4 clicks", s: "st-espresso", dose: 18, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-familia-protazio", m: "me-v60", g: "gr-kingrinder", gr: "3 turns + 39 clicks", s: "st-hoffmann", dose: 15, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-familia-protazio", m: "me-origami", g: "gr-kingrinder", gr: "1 turn + 49 clicks", s: "st-hoffmann", dose: 15, temp: '', time: "", notes: "" });
-  addRecipe({ c: "cof-moka-familia-protazio", m: "me-aeropress", g: "gr-kingrinder", gr: "1 turn + 49 clicks", s: "st-hoffmann", dose: 15, temp: '', time: "2:30", notes: "Press for one more minute after 2:30." });
-  addRecipe({ c: "cof-moka-tropical", m: "me-aeropress", g: "gr-kingrinder", gr: "1 turn + 40 clicks", s: "st-hoffmann", dose: '', temp: '', time: "", notes: "" });
+  addRecipe({ c: "cof-moka-familia-protazio", m: "me-aeropress", g: "gr-kingrinder", gr: "1 turn + 49 clicks", s: "st-hoffmann-aeropress", dose: 15, temp: '', time: "2:30", notes: "Press for one more minute after 2:30." });
+  addRecipe({ c: "cof-moka-tropical", m: "me-aeropress", g: "gr-kingrinder", gr: "1 turn + 40 clicks", s: "st-hoffmann-aeropress", dose: '', temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-tropical", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 10 clicks", s: "st-hoffmann", dose: '', temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-tropical", m: "me-b75", g: "gr-kingrinder", gr: "1 turn + 40 clicks", s: "st-hoffmann", dose: '', temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-irmaos-moscardini", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 20 clicks", s: "st-hoffmann", dose: '', temp: '', time: "", notes: "" });
@@ -247,7 +251,7 @@ function seed() {
   addRecipe({ c: "cof-brazuca-chocolate-belga", m: "me-esp-3bomber", g: "gr-kingrinder", gr: "1 turn + 5 clicks", s: "st-espresso", dose: 18, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-santa-luzia", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 20 clicks", s: "st-hoffmann", dose: '', temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-santa-luzia", m: "me-esp-3bomber", g: "gr-kingrinder", gr: "1 turn + 4 clicks", s: "st-espresso", dose: 18, temp: '', time: "", notes: "" });
-  addRecipe({ c: "cof-moka-santa-luzia", m: "me-aeropress", g: "gr-timemore-c2", gr: "22 clicks", s: "st-hoffmann", dose: '', temp: '', time: "", notes: "" });
+  addRecipe({ c: "cof-moka-santa-luzia", m: "me-aeropress", g: "gr-timemore-c2", gr: "22 clicks", s: "st-hoffmann-aeropress", dose: '', temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-flor-de-cacau", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 15 clicks", s: "st-hoffmann", dose: '', temp: '', time: "3:20", notes: "" });
   addRecipe({ c: "cof-moka-salada-de-frutas", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 30 clicks", s: "st-tetsu-sweet", dose: '', temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-salada-de-frutas", m: "me-filtro-oster", g: "gr-kingrinder", gr: "1 turn", s: "st-hoffmann", dose: 18, temp: '', time: "", notes: "" });
@@ -256,10 +260,10 @@ function seed() {
   addRecipe({ c: "cof-moka-coopiata-bahia", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 40 clicks", s: "st-tetsu-sweet", dose: 18, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-coopiata-bahia", m: "me-b75", g: "gr-kingrinder", gr: "2 turns + 20 clicks", s: "st-hoffmann", dose: 15, temp: '', time: "2:30", notes: "" });
   addRecipe({ c: "cof-moka-boa-vista-pinhal", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 55 clicks", s: "st-tetsu-sweet", dose: 18, temp: '', time: "", notes: "" });
-  addRecipe({ c: "cof-moka-boa-vista-pinhal", m: "me-aeropress", g: "gr-kingrinder", gr: "2 turns + 50 clicks", s: "st-hoffmann", dose: 12, temp: '', time: "", notes: "" });
+  addRecipe({ c: "cof-moka-boa-vista-pinhal", m: "me-aeropress", g: "gr-kingrinder", gr: "2 turns + 50 clicks", s: "st-hoffmann-aeropress", dose: 12, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-boa-vista-pinhal", m: "me-esp-3bomber", g: "gr-kingrinder", gr: "1 turn + 1 click", s: "st-espresso", dose: 18, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-olhos-dagua", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 33 clicks", s: "st-tetsu-sweet", dose: 18, temp: '', time: "", notes: "" });
-  addRecipe({ c: "cof-moka-olhos-dagua", m: "me-aeropress", g: "gr-kingrinder", gr: "2 turns + 40 clicks", s: "st-hoffmann", dose: 12, temp: '', time: "", notes: "" });
+  addRecipe({ c: "cof-moka-olhos-dagua", m: "me-aeropress", g: "gr-kingrinder", gr: "2 turns + 40 clicks", s: "st-hoffmann-aeropress", dose: 12, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-bala-de-caramelo", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 45 clicks", s: "st-tetsu-sweet", dose: 18, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-bala-de-caramelo", m: "me-b75", g: "gr-kingrinder", gr: "2 turns + 50 clicks", s: "st-hoffmann", dose: 15, temp: '', time: "2:30", notes: "" });
   addRecipe({ c: "cof-moka-maca-do-amor", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 50 clicks", s: "st-tetsu-sweet", dose: 18, temp: '', time: "", notes: "" });
@@ -302,7 +306,7 @@ function seed() {
   addRecipe({ c: "cof-moka-fazenda-capadocia", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 5 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "3:10", notes: "" });
   addRecipe({ c: "cof-moka-fazenda-capadocia", m: "me-esp-3bomber", g: "gr-kingrinder", gr: "55 clicks", s: "st-espresso", dose: 18, temp: '', time: "", notes: "" });
   addRecipe({ c: "cof-moka-sitio-palmito", m: "me-origami", g: "gr-kingrinder", gr: "1 turn + 58 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "3:10", notes: "" });
-  addRecipe({ c: "cof-moka-sitio-palmito", m: "me-aeropress", g: "gr-kingrinder", gr: "1 turn + 45 clicks", s: "st-hoffmann", dose: 12, temp: 98, time: "3:00", notes: "Finish the brew by 3:00." });
+  addRecipe({ c: "cof-moka-sitio-palmito", m: "me-aeropress", g: "gr-kingrinder", gr: "1 turn + 45 clicks", s: "st-hoffmann-aeropress", dose: 12, temp: 98, time: "3:00", notes: "Finish the brew by 3:00." });
   addRecipe({ c: "cof-five-nosso-talhao", m: "me-origami", g: "gr-kingrinder", gr: "1 turn + 37 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "3:15", notes: "" });
   addRecipe({ c: "cof-lucca-honey-coffee-moka", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 25 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "3:10", notes: "" });
   addRecipe({ c: "cof-lucca-fazenda-samambaia", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 40 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "3:15", notes: "" });
@@ -312,7 +316,7 @@ function seed() {
   addRecipe({ c: "cof-arbor-10-anos", m: "me-origami", g: "gr-kingrinder", gr: "1 turn + 55 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "2:45", notes: "" });
   addRecipe({ c: "cof-leve-cafeina", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 15 clicks", s: "st-hoffmann", dose: 15, temp: 96, time: "3:10", notes: "" });
   addRecipe({ c: "cof-sabino-nivaldo-rocha", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 25 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "3:00", notes: "" });
-  addRecipe({ c: "cof-sabino-nivaldo-rocha", m: "me-aeropress", g: "gr-kingrinder", gr: "2 turns + 15 clicks", s: "st-hoffmann", dose: 15, temp: 96, time: "", notes: "Swirl at 1:45; press between 2:00 and 2:30–2:45." });
+  addRecipe({ c: "cof-sabino-nivaldo-rocha", m: "me-aeropress", g: "gr-kingrinder", gr: "2 turns + 15 clicks", s: "st-hoffmann-aeropress", dose: 15, temp: 96, time: "", notes: "Swirl at 1:45; press between 2:00 and 2:30–2:45." });
   addRecipe({ c: "cof-arbor-laranjinha", m: "me-origami", g: "gr-kingrinder", gr: "2 turns + 45 clicks", s: "st-hoffmann", dose: 15, temp: 96, time: "3:05", notes: "" });
   addRecipe({ c: "cof-sabino-thais-paiva", m: "me-v60", g: "gr-kingrinder", gr: "2 turns + 50 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "2:50", notes: "" });
   addRecipe({ c: "cof-williams-gabriel-lamounier", m: "me-v60", g: "gr-kingrinder", gr: "1 turn + 57 clicks", s: "st-hoffmann", dose: 15, temp: 94, time: "3:10", notes: "" });
@@ -424,6 +428,20 @@ function normalizeLibrary(lib) {
       var st = lib.styles.filter(function (x) { return x.id === ren[0]; })[0];
       if (st && st.name === ren[1]) st.name = ren[2];
     });
+
+    /* The Hoffmann AeroPress schedule used to hide inside the V60 style,
+       which switched on the method behind the scenes. Now that it is a
+       style of its own, recipes relying on that switch have to be pointed
+       at it — otherwise they would quietly lose the steps they have always
+       shown. Matched on the method's own name, since a library can carry
+       several AeroPress methods under different ids. */
+    var aeroIds = {};
+    lib.methods.forEach(function (me) {
+      if (/aeropress/i.test(me.name || '')) aeroIds[me.id] = true;
+    });
+    lib.recipes.forEach(function (r) {
+      if (r.styleId === 'st-hoffmann' && aeroIds[r.methodId]) r.styleId = 'st-hoffmann-aeropress';
+    });
     lib.builtinStylesVersion = BUILTIN_STYLES_VERSION;
     libraryMigrated = true;
   }
@@ -474,6 +492,7 @@ function g(n) { return Math.round(n); }
 // A style can be formula-owned and still yield no steps (Espresso, moka pot).
 var FORMULA_STYLES = {
   'st-hoffmann': true,
+  'st-hoffmann-aeropress': true,
   'st-tetsu-sweet': true,
   'st-tetsu-acid': true,
   'st-tetsu-strength': true,
@@ -490,16 +509,18 @@ function preset(styleId, dose, water, methodName) {
   // Espresso is dialled in by dose, grind and shot time — there is no pour schedule.
   if (styleId === 'st-espresso') return [];
 
+  // James Hoffmann's "Ultimate AeroPress": everything in at once, steep to
+  // 2:00, swirl, let it settle, then press gently over about 30 seconds.
+  if (styleId === 'st-hoffmann-aeropress') {
+    return [
+      { t: '0:00', label: 'Add the coffee, then pour all the water in one go.', water: g(water) },
+      { t: '0:15', label: 'Insert the plunger just enough to seal, then leave it alone.', water: 0 },
+      { t: '2:00', label: 'Remove the plunger and swirl gently to settle the bed.', water: 0 },
+      { t: '2:30', label: 'Press slowly and evenly — about 30 seconds.', water: 0 }
+    ];
+  }
+
   if (styleId === 'st-hoffmann') {
-    // James Hoffmann's "Ultimate AeroPress" technique.
-    if (m.indexOf('aeropress') > -1) {
-      return [
-        { t: '0:00', label: 'Add the coffee, then pour all the water in one go.', water: g(water) },
-        { t: '0:15', label: 'Insert the plunger just enough to seal, then leave it alone.', water: 0 },
-        { t: '2:00', label: 'Remove the plunger and swirl gently to settle the bed.', water: 0 },
-        { t: '2:30', label: 'Press slowly and evenly — about 30 seconds.', water: 0 }
-      ];
-    }
     if (m.indexOf('espresso') > -1 || m.indexOf('moka') > -1) return [];
     // James Hoffmann's V60: five equal pours (each a fifth of the total
     // water) at 0:00, 0:45, 1:10, 1:30 and 1:50, then let it draw down —
@@ -866,6 +887,7 @@ var TRANSLATIONS = {
     'Defaults to the coffee name': 'Usa o nome do café por padrão',
     'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. Water 100°C for light roasts, 92°C medium, 85°C dark.': 'Coado versátil que serve a qualquer suporte e qualquer torra. Nivele o leito antes da pré-infusão e despeje devagar — despejos agressivos agitam demais o pó e deixam a xícara amarga. Água a 100°C para torras claras, 92°C médias, 85°C escuras.',
     'nothing matches — try clearing a filter': 'nada corresponde — tente limpar um filtro',
+    'Ultimate AeroPress technique — all the water at once, a long steep, a swirl, then a gentle press. His published figures are 11 g to 200 g of water just off the boil; the schedule scales to whatever dose and water the recipe carries.': 'Técnica definitiva da AeroPress — toda a água de uma vez, uma infusão longa, um giro e uma prensagem suave. Os números publicados por ele são 11 g para 200 g de água logo abaixo da fervura; o cronograma se ajusta à dose e à água da receita.',
     // --- messages ---
     'Recipe saved.': 'Receita salva.',
     'Recipe deleted.': 'Receita excluída.',
