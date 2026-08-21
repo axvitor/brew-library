@@ -463,6 +463,35 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .menu-account[hidden]{display:none}
 
 
+/* ---------- home entrance ----------
+   The page assembles top to bottom as you arrive. Gated on .view-enter,
+   which app.js sets only when you actually arrive at home — renderHome()
+   also runs on every search keystroke, and replaying this under the caret
+   as you type would be unusable.
+
+   Reduced motion is already covered globally: the block at the end of
+   this file collapses every duration to near zero.
+
+   The order is the reading order, one 40ms beat apart. Anything slower
+   stops reading as the page settling and starts reading as a queue. */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.view-enter .greet,
+.view-enter .hero,
+.view-enter .chips,
+.view-enter .sechead,
+.view-enter .resume{animation:cardIn var(--dur-slow) var(--ease-out) both}
+
+.view-enter .greet{animation-delay:0s}
+.view-enter .hero{animation-delay:.04s}
+/* Opacity only, no transform. .filters is position:sticky, and an element
+   with a transform becomes the containing block for its fixed and sticky
+   behaviour — animating it would break the stick. */
+.view-enter .filters{animation:fadeIn var(--dur-slow) var(--ease-out) both;animation-delay:.08s}
+.view-enter .chips{animation-delay:.12s}
+.view-enter .sechead{animation-delay:.16s}
+.view-enter .resume{animation-delay:.16s}
+
 /* ---------- greeting ----------
    Who you are and what day it is, above the headline. The avatar is the
    way to the account page now that there is no top bar to hang it in. */

@@ -1331,8 +1331,8 @@ function render() {
   var m = hash.match(/^#\/r\/(.+)$/);
   if (m) renderDetail(decodeURIComponent(m[1]));
   else if (hash === '#/account') renderAccount();
-  else if (hash === '#/saved') { filters.fav = true; renderHome(); }
-  else renderHome();
+  else if (hash === '#/saved') { filters.fav = true; renderHome(true); }
+  else renderHome(true);
   closeMenu();
 }
 
@@ -1532,6 +1532,10 @@ function resumeHTML() {
 }
 
 /* Repaints whichever surface owns the comboboxes right now. */
+/* Which view was last painted. Entrance animations are gated on this:
+   arriving at home should animate, but renderHome() also runs on every
+   search keystroke and every filter change, and replaying the whole page
+   under the caret each time you type is unusable. */
 function repaintFilters() {
   if (filterTarget === filters) renderHome();
   else renderModals();
@@ -1590,7 +1594,11 @@ function openFilters() {
   openModal(m);
 }
 
-function renderHome() {
+function renderHome(entering) {
+  // Only the router passes this. Every other caller — a keystroke in the
+  // search field, a chip, applying filters — repaints without replaying
+  // the page's entrance under the caret.
+  view.classList.toggle('view-enter', entering === true);
   var list = visibleRecipes();
   var total = state.recipes.length;
 
@@ -1796,6 +1804,7 @@ function bigstat(label, value, unit, style) {
    A page rather than a dropdown, because the nav gives it a home now and a
    menu anchored to a bar that no longer exists had nowhere to hang. */
 function renderAccount() {
+  view.classList.remove('view-enter');
   var name = (currentUser && (currentUser.displayName || '')) || '';
   var email = (currentUser && currentUser.email) || '';
   var initial = (name || email || '?').trim().charAt(0).toUpperCase();
@@ -1845,6 +1854,7 @@ function renderAccount() {
 }
 
 function renderDetail(id) {
+  view.classList.remove('view-enter');
   var r = recipeById(id);
   if (!r) {
     view.innerHTML = '<div class="detail"><a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
