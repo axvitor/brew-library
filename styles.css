@@ -375,7 +375,9 @@ svg.ico-fill{fill:currentColor;stroke:none}
   }
   .nav-add:hover{background:var(--action-primary-hover);color:var(--action-primary-text)}
   .nav-add .nav-add-mark{display:flex;align-items:center}
-  body{padding-left:232px}
+  /* Measured in app.js — zero while the nav is hidden, so the sign-in
+     screen is not inset by a sidebar that is not there. */
+  body{padding-left:var(--nav-w, 0px)}
 }
 
 /* ---------- buttons (v3 core/Button) ---------- */
@@ -542,13 +544,15 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .resume-brew:hover{background:var(--roast-500)}
 .resume-brew:active{transform:scale(var(--press-scale))}
 .resume-brew .ico{width:16px;height:16px}
-/* Espresso has no pour schedule, so there is no ring to start — the
-   control says what it can actually do instead of offering a dead timer. */
+/* Espresso has no pour schedule, so there is no ring to start. Same pill
+   as Brew so the card's shape never changes, but outlined rather than
+   filled — it opens a recipe, it does not start anything, and roast is
+   the brew action's colour alone. */
 .resume-open{
-  pointer-events:none;flex:none;display:inline-flex;align-items:center;gap:6px;
-  font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-on-inverse-muted);
+  background:transparent;color:var(--text-on-inverse);
+  border:var(--border-w-hairline) solid var(--border-inverse);
 }
-.resume-open .ico{width:15px;height:15px}
+.resume-open:hover{background:rgba(246,241,232,.10);color:var(--text-on-inverse)}
 
 /* ---------- section heading ---------- */
 .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px}
@@ -1611,7 +1615,62 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .acc-sync{display:flex;align-items:center;gap:9px;margin-top:4px;font:var(--type-caption);color:var(--text-muted)}
 .acc-sync i{width:7px;height:7px;border-radius:var(--radius-full);background:var(--state-success);flex:none}
 
-/* ---------- sign-in gate ---------- */
+/* ---------- sign-in ----------
+   Two bands: a pine hero carrying the drawing and the wordmark, and a
+   paper sheet lifted over its edge carrying the offer and the button.
+   Full-bleed out of .wrap, since this screen is the whole window. */
+.gate-screen{
+  /* Breaks all the way out of .wrap's centred measure: this screen is the
+     whole window, not a page inside the app's column. */
+  width:100vw;margin-left:calc(50% - 50vw);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  animation:cardIn var(--dur-slow) var(--ease-out) both;
+}
+.gate-hero{
+  flex:1 1 auto;min-height:340px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+  padding:40px 32px;
+  background:var(--surface-inverse-deep);background-image:var(--texture-paper);
+}
+/* Drawn, not photographed: v3 is a line system throughout, and every
+   coffee app already owns the stock photo of a cup on a table. */
+.gate-art{
+  width:min(210px,52vw);height:auto;color:var(--sage-300);
+  fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;
+}
+.gate-steam{color:var(--pine-300);opacity:.55;stroke-width:1.2}
+.gate-wordmark{display:flex;align-items:center;gap:10px;color:var(--text-on-inverse)}
+.gate-wordmark .brand-mark{stroke:currentColor}
+.gate-wordmark .brand-text{font-size:23px;color:var(--text-on-inverse)}
+.gate-wordmark .brand-text em{color:var(--pine-300)}
+
+.gate-sheet{
+  position:relative;flex:none;margin-top:-28px;
+  padding:34px var(--gutter-screen) 40px;
+  background:var(--bg-app);border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;
+  display:flex;flex-direction:column;gap:22px;
+}
+.gate-sheet h1{
+  font:var(--weight-regular) clamp(26px,5.4vw,32px)/1.14 var(--font-display);
+  letter-spacing:var(--tracking-display);text-wrap:pretty;
+}
+.gate-lede{margin-top:10px;color:var(--text-muted);font:var(--type-body)}
+.gate-points{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.gate-point{display:flex;align-items:flex-start;gap:11px;font:var(--type-body-sm);color:var(--text-body)}
+.gate-point .ico{width:17px;height:17px;color:var(--action-primary);flex:none;margin-top:2px}
+.gate-sheet .btn-google{min-height:var(--control-h-lg)}
+.gate-foot{font:var(--type-caption);color:var(--text-faint);text-align:center;max-width:46ch;margin:0 auto}
+
+@media(min-width:641px){
+  .gate-hero{min-height:0}
+  .gate-sheet{
+    max-width:560px;width:100%;margin:-28px auto 0;border-radius:var(--radius-sheet);
+    padding:34px 40px 40px;
+  }
+}
+
+/* Loading and the connection error keep the old quiet card — they are
+   momentary states, and dressing up a failure only draws the eye to it. */
 .gate{min-height:72vh;display:flex;align-items:center;justify-content:center;padding:40px 0}
 .gate-card{
   width:100%;max-width:420px;text-align:center;padding:40px 32px;

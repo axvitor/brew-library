@@ -659,6 +659,13 @@ var TRANSLATIONS = {
     'Brew': 'Preparar',
     'Open': 'Abrir',
     'opened': 'aberta',
+    // --- sign-in ---
+    'Every recipe you have dialled in, on every device.': 'Cada receita que você ajustou, em todos os aparelhos.',
+    'Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.': 'Entre para abrir sua biblioteca — os despejos se ajustam à dose que você preparar hoje.',
+    'Pour steps computed live from the recipe style': 'Despejos calculados na hora a partir do estilo da receita',
+    'Real-time sync, nothing to save by hand': 'Sincronização em tempo real, nada para salvar à mão',
+    'Your library stays private to your account': 'Sua biblioteca fica privada na sua conta',
+    'Open to anyone with a Google account. Your recipes are never shared between accounts.': 'Aberto a qualquer conta Google. Suas receitas nunca são compartilhadas entre contas.',
     'Pick up where you left off': 'Continue de onde parou',
     'just now': 'agora mesmo',
     'min ago': 'min atrás',
@@ -1208,9 +1215,15 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
    guessing, which is how a 16px gap opened up under the brew bar. */
 function measureNav() {
   var nav = document.getElementById('appNav');
-  var h = (nav && !nav.hidden && getComputedStyle(nav).position === 'fixed')
-    ? nav.offsetHeight : 0;
-  document.documentElement.style.setProperty('--nav-h', h + 'px');
+  var shown = nav && !nav.hidden;
+  var side = shown && getComputedStyle(nav).position === 'fixed' &&
+    window.matchMedia('(min-width:861px)').matches;
+  // Height when it is a bottom bar, width when it is a sidebar, zero for
+  // both when it is not on screen at all — the sign-in screen has no nav,
+  // and reserving the sidebar's width there left the page inset by 232px
+  // with the hero unable to reach the left edge.
+  document.documentElement.style.setProperty('--nav-h', (shown && !side ? nav.offsetHeight : 0) + 'px');
+  document.documentElement.style.setProperty('--nav-w', (side ? nav.offsetWidth : 0) + 'px');
 }
 
 function updateAccountChip() {
@@ -1249,9 +1262,54 @@ function renderLoading() {
   renderGate('Brew Library', 'Loading your library…', '');
 }
 
+/* The one screen a first-time visitor sees, so it gets a picture and a
+   reason rather than a bean and a button. Its own layout, not renderGate:
+   loading and the connection error are momentary states that want to stay
+   small and quiet, and dressing them up would be dressing up a failure. */
 function renderSignIn() {
-  renderGate('Brew Library', t('Sign in to see your recipes — synced across every device.'),
-    '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON + '<span>' + esc(t('Continue with Google')) + '</span></button>');
+  function point(text) {
+    return '<li class="gate-point">' + ICON.check + '<span>' + esc(t(text)) + '</span></li>';
+  }
+  view.innerHTML = '<div class="gate-screen">' +
+    '<div class="gate-hero">' +
+      // Line art rather than a photograph: v3 is a drawn system, and a
+      // stock photo of coffee is the one thing every coffee app already has.
+      '<svg class="gate-art" viewBox="0 0 120 106" aria-hidden="true">' +
+        '<g class="gate-steam">' +
+          '<path d="M50 20c-3-4-3-7 0-11s3-7 0-11"/>' +
+          '<path d="M60 17c-3-4-3-7 0-11s3-7 0-11"/>' +
+          '<path d="M70 20c-3-4-3-7 0-11s3-7 0-11"/>' +
+        '</g>' +
+        '<path d="M34 34h52l-16 30H50z"/>' +
+        '<path d="M45 41h30" stroke-dasharray="3 4"/>' +
+        '<path d="M60 64v9"/>' +
+        '<path d="M42 75h36v18a8 8 0 0 1-8 8H50a8 8 0 0 1-8-8z"/>' +
+        '<path d="M42 82h36" stroke-dasharray="3 4"/>' +
+        '<path d="M78 79h5a6 6 0 0 1 0 12h-5"/>' +
+      '</svg>' +
+      '<div class="gate-wordmark">' +
+        '<svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">' +
+          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
+        '<span class="brand-text">Brew<em>Library</em></span>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="gate-sheet">' +
+      '<div>' +
+        '<h1>' + esc(t('Every recipe you have dialled in, on every device.')) + '</h1>' +
+        '<p class="gate-lede">' + esc(t('Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.')) + '</p>' +
+      '</div>' +
+      '<ul class="gate-points">' +
+        point('Pour steps computed live from the recipe style') +
+        point('Real-time sync, nothing to save by hand') +
+        point('Your library stays private to your account') +
+      '</ul>' +
+      '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON +
+        '<span>' + esc(t('Continue with Google')) + '</span></button>' +
+      '<p class="gate-foot">' + esc(t('Open to anyone with a Google account. Your recipes are never shared between accounts.')) + '</p>' +
+    '</div>' +
+  '</div>';
 }
 
 function renderFirebaseError() {
@@ -1462,7 +1520,8 @@ function resumeHTML() {
         (timerPlan(r)
           ? '<button class="resume-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
             ICON.play + '<span>' + esc(t('Brew')) + '</span></button>'
-          : '<span class="resume-open">' + esc(t('Open')) + ICON.chevRight + '</span>') +
+          : '<a class="resume-brew resume-open" href="#/r/' + encodeURIComponent(r.id) + '">' +
+            ICON.chevRight + '<span>' + esc(t('Open')) + '</span></a>') +
       '</div>' +
     '</div>' +
   '</section>';
