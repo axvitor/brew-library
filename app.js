@@ -1470,14 +1470,18 @@ function greetingHTML() {
 }
 
 /* The methods you actually brew with, most-used first — a shortcut past
-   the full combo below for the two or three you reach for every day.
-   Methods nothing is filed under are left out; the combo still lists them. */
+   the full combo below.
+
+   Every method with recipes filed under it gets a chip. There is no cap:
+   the row scrolls, so a limit only decides which of your own methods you
+   are not allowed to see, and at five it was cutting off V60. Methods
+   nothing is filed under are still left out, since tapping one would only
+   ever empty the list; the combo lists those with a zero beside them. */
 function methodChipsHTML() {
   var counts = coll('method').map(function (me) {
     return { id: me.id, name: me.name, n: state.recipes.filter(function (r) { return r.methodId === me.id; }).length };
   }).filter(function (m) { return m.n > 0; })
-    .sort(function (a, b) { return b.n - a.n; })
-    .slice(0, 5);
+    .sort(function (a, b) { return b.n - a.n; });
   if (counts.length < 2) return '';
 
   var html = '<div class="chips">' +
