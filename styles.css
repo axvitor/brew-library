@@ -1594,7 +1594,12 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    only for the bare ghost state) this takes radius-md like .addbtn. */
 .back-to-top{
   position:fixed;right:20px;bottom:max(24px, env(safe-area-inset-bottom));z-index:50;
-  width:44px;height:44px;border-radius:var(--radius-md);
+  /* Round, like the app's other floating icon buttons (the detail
+     masthead's nav, the favourite, the account chip). v3 gives a bordered
+     icon button radius-md, but this one floats free over the page rather
+     than sitting in a row of controls, and a circle reads as a thing you
+     can flick at rather than a control you aim for. */
+  width:44px;height:44px;border-radius:var(--radius-full);
   background:var(--surface-card);
   border:var(--border-w-hairline) solid var(--border-default);color:var(--text-body);
   display:flex;align-items:center;justify-content:center;
