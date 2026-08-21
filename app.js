@@ -1522,7 +1522,7 @@ function resumeHTML() {
           ? '<button class="resume-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
             ICON.play + '<span>' + esc(t('Brew')) + '</span></button>'
           : '<a class="resume-brew resume-open" href="#/r/' + encodeURIComponent(r.id) + '">' +
-            ICON.chevRight + '<span>' + esc(t('Open')) + '</span></a>') +
+            '<span>' + esc(t('Open')) + '</span>' + ICON.chevRight + '</a>') +
       '</div>' +
     '</div>' +
   '</section>';
