@@ -684,48 +684,20 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .pill-toggle .ico{width:15px;height:15px}
 .filters .spacer{flex:1}
 
-/* "More filters" — desktop shows every filter inline as always, so the
-   toggle is hidden and .filters-more's children flow straight into the
-   parent flex row (display:contents unwraps the group with no visual
-   trace). Mobile hides the group behind the toggle by default so the bar
-   collapses to just Search, Favourites and the toggle; see the media
-   query below. */
-.filters-toggle{display:none}
-.filters-more{display:contents}
-/* Only ever rendered alongside .on (moreCount > 0 implies the pill is
-   filled), so it's styled purely for contrast against that pine fill. */
-.filter-count{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:18px;height:18px;padding:0 5px;margin:0 -4px 0 -1px;
-  border-radius:var(--radius-full);
-  font:var(--weight-bold) 11px/1 var(--font-mono);
-  background:rgba(255,255,255,.22);color:inherit;
-}
+/* ---------- filters page ----------
+   The five entity combos, favourites and sort, as a committed form:
+   nothing here reaches the list until Apply. */
+.filter-page{display:flex;flex-direction:column;gap:16px}
+.filter-page .pill-toggle{align-self:flex-start}
+.filter-page .field{margin-bottom:0}
+/* The combos size themselves for the home bar's flex row; here each one
+   owns a full field width. */
+.filter-page .combo{flex:none;width:100%;max-width:none;min-width:0}
+.sheet-foot .filters-clear{margin-right:auto}
 @media(max-width:640px){
-  .filters{position:static;padding:12px}
-  .sel select{max-width:none;width:100%}
-  .sel{flex:1 1 46%}
-  /* Search stays put; coffee, roaster, grinder, method, style, sort and
-     Clear all fold under "More filters" so the bar still opens small.
-     .filters-more reverts from display:contents to a real
-     collapsed/expandable box only at this width — each combobox gets a
-     full-width row there, same as a type-in field wants more room than
-     a two-up plain select does. */
-  .combo{flex:1 1 100%;min-width:0;max-width:none}
-  /* Favourites and More filters share the row edge-to-edge, matching the
-     two-column rhythm the selects below already use, instead of sitting
-     as small left-aligned pills with empty space to their right. A true
-     999px capsule reads fine at a chip's normal compact width (that's
-     v3's Chip spec, kept as-is on desktop) but stretched across half the
-     row it becomes an elongated stadium shape rather than a button —
-     scaled down to radius-lg here, at full width only. */
-  .filters>.pill-toggle{flex:1 1 0;justify-content:center;border-radius:var(--radius-lg)}
-  .filters-toggle{display:inline-flex}
-  .filters-more{
-    display:none;width:100%;flex-wrap:wrap;gap:10px;
-    margin-top:2px;padding-top:12px;border-top:var(--border-w-hairline) dashed var(--border-default);
-  }
-  .filters.expanded .filters-more{display:flex}
+  /* Clear is a text button and should not take a third of the row from
+     the two that commit. */
+  .sheet-foot .filters-clear{flex:0 0 auto}
 }
 
 /* ---------- recipe grid (v3 recipe/RecipeCard) ---------- */

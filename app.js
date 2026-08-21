@@ -1116,12 +1116,15 @@ var COMBO_ICON = {
    --------------------------------------------------------- */
 
 var filters = { q: '', coffee: '', roaster: '', grinder: '', method: '', style: '', fav: false, sort: 'new' };
+/* Which set the comboboxes read and write. Home points it at the live
+   filters; the filters page points it at its own draft, so nothing the
+   page touches reaches the list until Apply. */
+var filterTarget = filters;
 
 // Mobile only: whether the coffee/roaster/grinder/method/style/sort group
 // is expanded under "More filters". A module-level flag rather than
 // something read off the DOM, since renderHome() rebuilds the filter bar
 // on every keystroke and every filter change — it has to survive that.
-var filtersExpanded = false;
 
 // Cupform v3.1's Combobox: "Select for a list that outgrew a list. Typing
 // filters the options; the field still resolves to exactly one value."
@@ -1164,15 +1167,16 @@ function allRoasters() {
   return coll('roaster').slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
 }
 
-function visibleRecipes() {
-  var q = filters.q.trim().toLowerCase();
+function visibleRecipes(f) {
+  f = f || filters;
+  var q = f.q.trim().toLowerCase();
   var out = state.recipes.filter(function (r) {
-    if (filters.coffee && r.coffeeId !== filters.coffee) return false;
-    if (filters.roaster && roasterIdOf(r) !== filters.roaster) return false;
-    if (filters.grinder && r.grinderId !== filters.grinder) return false;
-    if (filters.method && r.methodId !== filters.method) return false;
-    if (filters.style && r.styleId !== filters.style) return false;
-    if (filters.fav && !r.fav) return false;
+    if (f.coffee && r.coffeeId !== f.coffee) return false;
+    if (f.roaster && roasterIdOf(r) !== f.roaster) return false;
+    if (f.grinder && r.grinderId !== f.grinder) return false;
+    if (f.method && r.methodId !== f.method) return false;
+    if (f.style && r.styleId !== f.style) return false;
+    if (f.fav && !r.fav) return false;
     if (q) {
       var hay = [titleOf(r), nameOf('coffee', r.coffeeId), roasterOf(r), nameOf('grinder', r.grinderId),
         nameOf('method', r.methodId), nameOf('style', r.styleId), r.notes, r.grindSize]
@@ -1183,9 +1187,9 @@ function visibleRecipes() {
   });
 
   out.sort(function (a, b) {
-    if (filters.sort === 'old') return a.createdAt - b.createdAt;
-    if (filters.sort === 'rating') return (b.rating || 0) - (a.rating || 0) || b.createdAt - a.createdAt;
-    if (filters.sort === 'coffee') return titleOf(a).localeCompare(titleOf(b));
+    if (f.sort === 'old') return a.createdAt - b.createdAt;
+    if (f.sort === 'rating') return (b.rating || 0) - (a.rating || 0) || b.createdAt - a.createdAt;
+    if (f.sort === 'coffee') return titleOf(a).localeCompare(titleOf(b));
     return b.createdAt - a.createdAt;
   });
   return out;
@@ -1369,7 +1373,7 @@ function comboListHTML(type) {
     html += '<div class="combo-empty">' + esc(t('Nothing matches') + ' “' + comboQuery.trim() + '”') + '</div>';
   } else {
     shown.forEach(function (o) {
-      var on = (filters[type] || '') === o.id;
+      var on = (filterTarget[type] || '') === o.id;
       html += '<div class="combo-opt' + (on ? ' on' : '') + (o.id && !o.count ? ' is-empty' : '') + '" role="option" aria-selected="' + on +
         '" data-action="combo-pick" data-type="' + type + '" data-id="' + esc(o.id) + '">' +
         '<span class="combo-opt-label">' + esc(o.name) + '</span>' +
@@ -1383,9 +1387,9 @@ function comboListHTML(type) {
 
 function comboHTML(type) {
   var isOpen = openCombo === type;
-  var current = filters[type] ? findIn(type, filters[type]) : null;
+  var current = filterTarget[type] ? findIn(type, filterTarget[type]) : null;
   var shown = isOpen ? comboQuery : (current ? current.name : '');
-  return '<div class="combo' + (filters[type] ? ' on' : '') + '">' +
+  return '<div class="combo' + (filterTarget[type] ? ' on' : '') + '">' +
     '<div class="combo-field' + (isOpen ? ' open' : '') + '">' +
       ICON[COMBO_ICON[type]] +
       '<input id="f-combo-' + type + '" class="combo-input" role="combobox" aria-haspopup="listbox" ' +
@@ -1527,6 +1531,65 @@ function resumeHTML() {
   '</section>';
 }
 
+/* Repaints whichever surface owns the comboboxes right now. */
+function repaintFilters() {
+  if (filterTarget === filters) renderHome();
+  else renderModals();
+}
+
+/* ---- filters page ----
+   Was an inline group that expanded under the search bar and applied
+   every change to the list as you made it. As a page it commits instead:
+   changes land in a draft, the button counts what they would leave you
+   with, and nothing reaches the list until Apply. Search is not part of
+   it — typing a query is inherently live, and it stays on the home bar. */
+function openFilters() {
+  var m = {
+    draft: {
+      q: filters.q,
+      coffee: filters.coffee, roaster: filters.roaster, grinder: filters.grinder,
+      method: filters.method, style: filters.style,
+      fav: filters.fav, sort: filters.sort
+    },
+    onClose: function () { filterTarget = filters; openCombo = null; comboQuery = ''; },
+    render: function () {
+      filterTarget = m.draft;
+      var n = visibleRecipes(m.draft).length;
+      var touched = m.draft.coffee || m.draft.roaster || m.draft.grinder ||
+        m.draft.method || m.draft.style || m.draft.fav || m.draft.sort !== 'new';
+
+      var body =
+        '<div class="filter-page">' +
+          '<button class="pill-toggle' + (m.draft.fav ? ' on' : '') + '" data-action="filters-toggle-fav">' +
+            ICON.star + esc(t('Favourites only')) + '</button>' +
+          '<div class="field"><label>' + esc(t('Coffee')) + '</label>' + comboHTML('coffee') + '</div>' +
+          '<div class="field"><label>' + esc(t('Roaster')) + '</label>' + comboHTML('roaster') + '</div>' +
+          '<div class="field"><label>' + esc(t('Grinder')) + '</label>' + comboHTML('grinder') + '</div>' +
+          '<div class="field"><label>' + esc(t('Brewing method')) + '</label>' + comboHTML('method') + '</div>' +
+          '<div class="field"><label>' + esc(t('Recipe style')) + '</label>' + comboHTML('style') + '</div>' +
+          '<div class="field"><label for="f-sort">' + esc(t('Sort')) + '</label>' +
+            '<select class="inp" id="f-sort" data-filter="sort">' +
+              '<option value="new"' + (m.draft.sort === 'new' ? ' selected' : '') + '>' + esc(t('Newest first')) + '</option>' +
+              '<option value="old"' + (m.draft.sort === 'old' ? ' selected' : '') + '>' + esc(t('Oldest first')) + '</option>' +
+              '<option value="rating"' + (m.draft.sort === 'rating' ? ' selected' : '') + '>' + esc(t('Top rated')) + '</option>' +
+              '<option value="coffee"' + (m.draft.sort === 'coffee' ? ' selected' : '') + '>' + esc(t('A–Z')) + '</option>' +
+            '</select></div>' +
+        '</div>';
+
+      var foot =
+        (touched ? '<button class="btn btn-quiet filters-clear" data-action="filters-clear-draft">' +
+          esc(t('Clear')) + '</button>' : '') +
+        '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
+        '<button class="btn btn-primary" data-action="filters-apply"' + (n ? '' : ' disabled') + '>' +
+          esc(n ? t('Show') + ' ' + n + ' ' + tPlural(n, 'recipe', 'recipes') : t('No matches')) +
+        '</button>';
+
+      return sheet({ title: t('Filters'), body: body, foot: foot, narrow: true });
+    }
+  };
+  openModal(m);
+}
+
 function renderHome() {
   var list = visibleRecipes();
   var total = state.recipes.length;
@@ -1546,33 +1609,18 @@ function renderHome() {
     '</section>';
 
   var moreCount = moreFiltersCount();
-  html += '<div class="filters' + (filtersExpanded ? ' expanded' : '') + '">' +
+  html += '<div class="filters">' +
     '<div class="search">' + ICON.search +
       '<input id="q" type="search" placeholder="' + esc(t('Search recipes…')) + '" value="' + esc(filters.q) + '" />' +
     '</div>' +
     '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
       ICON.star + esc(t('Favourites')) + '</button>' +
-    // Mobile only (see CSS) — everything below folds under this toggle so
-    // the bar collapses to just Search, Favourites and the toggle.
-    '<button class="pill-toggle filters-toggle' + (moreCount ? ' on' : '') + '" data-action="toggle-more-filters" ' +
-      'aria-expanded="' + filtersExpanded + '">' + ICON.sliders + esc(t('More filters')) +
+    '<button class="pill-toggle' + (moreCount ? ' on' : '') + '" data-action="filters-open">' +
+      ICON.sliders + esc(t('Filters')) +
       (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
     '</button>' +
-    '<div class="filters-more">' +
-      comboHTML('coffee') +
-      comboHTML('roaster') +
-      comboHTML('grinder') +
-      comboHTML('method') +
-      comboHTML('style') +
-      '<div class="sel"><select id="f-sort" data-filter="sort" aria-label="' + esc(t('Sort recipes')) + '">' +
-        '<option value="new"' + (filters.sort === 'new' ? ' selected' : '') + '>' + esc(t('Newest first')) + '</option>' +
-        '<option value="old"' + (filters.sort === 'old' ? ' selected' : '') + '>' + esc(t('Oldest first')) + '</option>' +
-        '<option value="rating"' + (filters.sort === 'rating' ? ' selected' : '') + '>' + esc(t('Top rated')) + '</option>' +
-        '<option value="coffee"' + (filters.sort === 'coffee' ? ' selected' : '') + '>' + esc(t('A–Z')) + '</option>' +
-      '</select></div>' +
-      (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">' + esc(t('Clear')) + '</button>' : '') +
-    '</div>' +
-    '</div>';
+    (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">' + esc(t('Clear')) + '</button>' : '') +
+  '</div>';
 
   html += methodChipsHTML();
   html += resumeHTML();
@@ -4669,30 +4717,59 @@ document.addEventListener('click', function (ev) {
       render();
       return;
 
-    case 'toggle-more-filters':
-      filtersExpanded = !filtersExpanded;
-      render();
-      return;
-
     case 'combo-toggle':
       openCombo = openCombo === type ? null : type;
       comboQuery = '';
-      renderHome();
+      repaintFilters();
       if (openCombo) { var cf = document.getElementById('f-combo-' + openCombo); if (cf) cf.focus(); }
       return;
 
     case 'combo-clear':
       comboQuery = '';
-      renderHome();
+      repaintFilters();
       var cc = document.getElementById('f-combo-' + openCombo);
       if (cc) cc.focus();
       return;
 
     case 'combo-pick':
-      filters[type] = id;
+      filterTarget[type] = id;
       openCombo = null;
       comboQuery = '';
-      render();
+      repaintFilters();
+      return;
+
+    case 'filters-open':
+      ev.preventDefault();
+      openFilters();
+      return;
+
+    case 'filters-clear-draft':
+      ev.preventDefault();
+      if (top && top.draft) {
+        top.draft.coffee = top.draft.roaster = top.draft.grinder = '';
+        top.draft.method = top.draft.style = '';
+        top.draft.fav = false;
+        top.draft.sort = 'new';
+        renderModals();
+      }
+      return;
+
+    case 'filters-toggle-fav':
+      ev.preventDefault();
+      if (top && top.draft) { top.draft.fav = !top.draft.fav; renderModals(); }
+      return;
+
+    case 'filters-apply':
+      ev.preventDefault();
+      if (top && top.draft) {
+        // q stays live from the home search field and is never part of
+        // the draft, so it is deliberately not copied back.
+        ['coffee', 'roaster', 'grinder', 'method', 'style', 'fav', 'sort'].forEach(function (k) {
+          filters[k] = top.draft[k];
+        });
+      }
+      closeModal();
+      renderHome();
       return;
 
     case 'sign-in':
@@ -4889,9 +4966,9 @@ document.addEventListener('click', function (ev) {
 document.addEventListener('change', function (ev) {
   var f = ev.target.getAttribute && ev.target.getAttribute('data-filter');
   if (!f) return;
-  if (f === 'sort') filters.sort = ev.target.value;
-  else filters[f] = ev.target.value;
-  renderHome();
+  if (f === 'sort') filterTarget.sort = ev.target.value;
+  else filterTarget[f] = ev.target.value;
+  repaintFilters();
 });
 
 document.addEventListener('keydown', function (ev) {
