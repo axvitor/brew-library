@@ -1008,10 +1008,13 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .step::before{content:"";position:absolute;left:5px;top:16px;bottom:-6px;width:1px;background:var(--border-default)}
 .step:last-child::before{display:none}
 .step .bullet{position:absolute;left:0;top:7px;width:11px;height:11px;border-radius:50%;background:var(--surface-card);border:var(--border-w-strong) solid var(--action-primary)}
-.step .t{padding-left:24px;font:var(--weight-bold) 13px/var(--leading-body) var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);color:var(--text-title);white-space:nowrap}
+/* Quieted: the action sentence is the row's one loud element. The
+   timestamp reads as a label (muted, medium weight) the way DOSE/WATER
+   already do next to their bold values elsewhere in the app. */
+.step .t{padding-left:24px;font:var(--weight-medium) 13px/var(--leading-body) var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);color:var(--text-muted);white-space:nowrap}
 .step .body{min-width:0}
 .step .body p{font:var(--type-body-sm);color:var(--text-body)}
-.step .w{font:var(--weight-semibold) 13px/1.2 var(--font-mono);color:var(--text-body);margin-top:6px;font-variant-numeric:tabular-nums}
+.step .w{font:var(--weight-medium) 13px/1.2 var(--font-mono);color:var(--text-muted);margin-top:6px;font-variant-numeric:tabular-nums}
 @media(max-width:520px){
   .step{grid-template-columns:56px minmax(0,1fr);gap:10px}
   .step .t{padding-left:22px;font-size:12px}

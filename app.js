@@ -1752,7 +1752,7 @@ function timelineHTML(steps) {
       '<span class="bullet"></span>' +
       '<div class="t">' + esc(s.t || '') + '</div>' +
       '<div class="body"><p>' + esc(t(s.label || '')) + '</p>' +
-        (w ? '<div class="w">+' + w + ' g&nbsp; · &nbsp;' + running + ' g total</div>' : '') +
+        (w ? '<div class="w">+' + w + ' g · ' + running + ' g total</div>' : '') +
       '</div></li>';
   }).join('');
 }
