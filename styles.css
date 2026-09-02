@@ -1011,7 +1011,10 @@ svg.ico-fill{fill:currentColor;stroke:none}
 /* Quieted: the action sentence is the row's one loud element. The
    timestamp reads as a label (muted, medium weight) the way DOSE/WATER
    already do next to their bold values elsewhere in the app. */
-.step .t{padding-left:24px;font:var(--weight-medium) 13px/var(--leading-body) var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);color:var(--text-muted);white-space:nowrap}
+/* Line-height matches .body p's resolved pixel value (not just the 1.5
+   ratio) — at two different font sizes the same ratio still gives two
+   different line boxes, which put the two first lines back out of step. */
+.step .t{padding-left:24px;font:var(--weight-medium) 13px/1.2 var(--font-mono);line-height:calc(var(--text-body-sm) * var(--leading-body));font-variant-numeric:tabular-nums;letter-spacing:var(--tracking-mono);color:var(--text-muted);white-space:nowrap}
 .step .body{min-width:0}
 .step .body p{font:var(--type-body-sm);color:var(--text-body)}
 .step .w{font:var(--weight-medium) 13px/1.2 var(--font-mono);color:var(--text-muted);margin-top:6px;font-variant-numeric:tabular-nums}
