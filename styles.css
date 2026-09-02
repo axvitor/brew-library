@@ -115,8 +115,8 @@
   --state-error-surface:#F6E0DB;
 
   /* ---- Type (v3 tokens/typography.css) ---------------------- */
-  --font-display:"Libre Caslon Display","Iowan Old Style",Georgia,serif;
-  --font-text:"Archivo","Helvetica Neue",system-ui,sans-serif;
+  --font-display:"Zilla Slab","Iowan Old Style",Georgia,serif;
+  --font-text:"Jost","Helvetica Neue",system-ui,sans-serif;
   --font-mono:"Courier Prime",ui-monospace,"SF Mono",Menlo,monospace;
 
   --text-display-2:34px;
