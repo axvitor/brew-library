@@ -990,7 +990,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .bigstat:nth-child(6){animation-delay:.2s}
 .bigstat .k{display:block}
 /* Every measurement is mono in v3 — this is the "recipe numbers" role. */
-.bigstat .v{font:var(--weight-bold) 24px/1.05 var(--font-mono);margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text-title)}
+.bigstat .v{font:var(--weight-medium) 24px/1.05 var(--font-mono);margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text-title)}
 .bigstat .v small{font:var(--weight-medium) 13px/1 var(--font-text);color:var(--text-muted);margin-left:4px;letter-spacing:var(--tracking-label)}
 @media(max-width:520px){ .bigstats{grid-template-columns:repeat(2,1fr)} }
 
