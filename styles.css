@@ -733,6 +733,18 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .combo-form .combo-input{font:var(--type-body)}
 /* Keyboard position, distinct from hover so arrowing through the list
    is legible even with the pointer resting on another row. */
+/* Shown at the top of the list while browsing with a finger: the field
+   is read-only until tapped again, and this says so. Tapping it works
+   too, for anyone who reads it before they find the field. */
+.combo-hint{
+  display:flex;align-items:center;gap:8px;min-height:40px;padding:0 10px;margin-bottom:2px;
+  border-bottom:var(--border-w-hairline) solid var(--border-hairline);
+  font:var(--type-caption);color:var(--text-muted);cursor:pointer;
+}
+.combo-hint .ico{width:14px;height:14px;flex:none}
+/* No text cursor on a field you cannot type in yet. */
+.combo-form .combo-input[readonly]{cursor:pointer;caret-color:transparent}
+
 /* .combo-clear sets its own display, which outranks the [hidden]
    attribute's default — without this the × shows on empty fields. */
 .combo-form .combo-clear[hidden]{display:none}

@@ -655,6 +655,7 @@ var TRANSLATIONS = {
     'Start with the one you just opened': 'Comece pela que você acabou de abrir',
     'The rest': 'Os demais',
     'Show options': 'Mostrar opções',
+    'Tap to search': 'Toque para buscar',
     'Search ': 'Buscar ',
     'Try a shorter search, or clear it to see all ': 'Tente uma busca mais curta, ou limpe para ver todos os ',
     'avg score': 'nota média',
@@ -3012,23 +3013,31 @@ function enhanceSelect(sel) {
       : '<div class="combo-empty">' + esc(options().length
           ? t('Nothing matches') + ' “' + input.value.trim() + '”'
           : placeholder()) + '</div>';
+    // Browsing with a finger and no keyboard yet: say how to start typing.
+    if (input.readOnly) {
+      list.insertAdjacentHTML('afterbegin', '<div class="combo-hint">' + ICON.search +
+        '<span>' + esc(t('Tap to search')) + '</span></div>');
+    }
     input.setAttribute('aria-activedescendant', active >= 0 ? listId + '-' + active : '');
     var a = list.querySelector('.is-active');
     if (a) a.scrollIntoView({ block: 'nearest' });
   }
 
   function open() {
-    if (!list.hidden) return;
-    active = -1;
-    list.hidden = false;
-    field.classList.add('open');
-    input.setAttribute('aria-expanded', 'true');
+    if (list.hidden) {
+      active = -1;
+      list.hidden = false;
+      field.classList.add('open');
+      input.setAttribute('aria-expanded', 'true');
+    }
     paint();
   }
   function close() {
     list.hidden = true;
     field.classList.remove('open');
     input.setAttribute('aria-expanded', 'false');
+    // Back to browsing, so the next tap opens the list without a keyboard.
+    input.readOnly = true;
     showValue();
   }
   function pick(value) {
@@ -3038,11 +3047,64 @@ function enhanceSelect(sel) {
     if (changed) sel.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  input.addEventListener('focus', function () { input.select(); open(); });
+  /* How the field is reached decides how it opens. A finger opens the list
+     to browse, read-only so no keyboard comes up: on a phone the keyboard
+     takes half the screen and leaves room for about three options. Tapping
+     the field again switches to searching. A mouse or the Tab key goes
+     straight to typing, since a physical keyboard costs no screen. */
+  var viaTouch = false, justOpened = false;
+  (sel.closest('.field') || wrap).addEventListener('pointerdown', function (ev) {
+    viaTouch = ev.pointerType === 'touch' || ev.pointerType === 'pen';
+  }, true);
+
+  function enter() {
+    if (viaTouch) {
+      input.readOnly = true;
+      justOpened = true;
+    } else {
+      input.readOnly = false;
+      input.select();
+    }
+    viaTouch = false;
+    open();
+  }
+
+  // iOS only raises the keyboard for an input that takes focus inside a
+  // tap, so lifting readonly on a field that already has focus is not
+  // enough — drop focus and take it straight back.
+  function startSearching() {
+    viaTouch = false;
+    input.readOnly = false;
+    // Redraw now rather than trusting the refocus below to trigger it —
+    // a focus event is not guaranteed, and the hint would linger.
+    if (!list.hidden) paint();
+    input.blur();
+    input.focus();
+    input.select();
+  }
+
+  input.readOnly = true;
+  input.addEventListener('focus', enter);
+  input.addEventListener('click', function () {
+    // The tap that focused the field also clicks it; that one only opens.
+    if (justOpened) { justOpened = false; return; }
+    if (list.hidden) { enter(); justOpened = false; return; }
+    if (input.readOnly) startSearching();
+  });
   // Typing highlights the first match, so Enter takes the best guess.
   input.addEventListener('input', function () { open(); active = 0; paint(); });
-  input.addEventListener('blur', function () { setTimeout(close, 0); });
+  // Only close if focus really left: startSearching blurs and refocuses
+  // in one go, and that must not shut the list it is about to search.
+  input.addEventListener('blur', function () {
+    setTimeout(function () { if (document.activeElement !== input) close(); }, 0);
+  });
   input.addEventListener('keydown', function (ev) {
+    // A hardware keyboard while browsing (an iPad with a case): the first
+    // letter switches to searching and still lands in the field.
+    if (input.readOnly && ev.key.length === 1 && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
+      input.readOnly = false;
+      input.select();
+    }
     if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
       ev.preventDefault();
       open();
@@ -3070,9 +3132,16 @@ function enhanceSelect(sel) {
     var opt = ev.target.closest('.combo-opt');
     if (opt) pick(shown[Number(opt.getAttribute('data-i'))].value);
   });
+  list.addEventListener('click', function (ev) {
+    if (ev.target.closest('.combo-hint')) startSearching();
+  });
   wrap.querySelector('.combo-toggle').addEventListener('mousedown', function (ev) {
     ev.preventDefault();
-    if (list.hidden) { input.focus(); } else { close(); }
+    if (!list.hidden) close();
+    // Already focused (straight after a pick) means no focus event is
+    // coming, so open it directly rather than waiting for one.
+    else if (document.activeElement === input) { enter(); justOpened = false; }
+    else input.focus();
   });
   clear.addEventListener('mousedown', function (ev) {
     ev.preventDefault();
