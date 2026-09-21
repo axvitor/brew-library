@@ -3014,9 +3014,12 @@ function enhanceSelect(sel) {
           ? t('Nothing matches') + ' “' + input.value.trim() + '”'
           : placeholder()) + '</div>';
     // Browsing with a finger and no keyboard yet: say how to start typing.
-    if (input.readOnly) {
-      list.insertAdjacentHTML('afterbegin', '<div class="combo-hint">' + ICON.search +
-        '<span>' + esc(t('Tap to search')) + '</span></div>');
+    // A <label> for the field rather than a clickable row: tapping it
+    // focuses the field natively, which iOS treats as a real focus and
+    // answers with the keyboard.
+    if (browsing) {
+      list.insertAdjacentHTML('afterbegin', '<label class="combo-hint" for="' + input.id + '">' +
+        ICON.search + '<span>' + esc(t('Tap to search')) + '</span></label>');
     }
     input.setAttribute('aria-activedescendant', active >= 0 ? listId + '-' + active : '');
     var a = list.querySelector('.is-active');
@@ -3036,8 +3039,9 @@ function enhanceSelect(sel) {
     list.hidden = true;
     field.classList.remove('open');
     input.setAttribute('aria-expanded', 'false');
-    // Back to browsing, so the next tap opens the list without a keyboard.
+    // Locked again, so the next tap opens the list without a keyboard.
     input.readOnly = true;
+    browsing = false;
     showValue();
   }
   function pick(value) {
@@ -3048,63 +3052,80 @@ function enhanceSelect(sel) {
   }
 
   /* How the field is reached decides how it opens. A finger opens the list
-     to browse, read-only so no keyboard comes up: on a phone the keyboard
-     takes half the screen and leaves room for about three options. Tapping
-     the field again switches to searching. A mouse or the Tab key goes
-     straight to typing, since a physical keyboard costs no screen. */
-  var viaTouch = false, justOpened = false;
-  (sel.closest('.field') || wrap).addEventListener('pointerdown', function (ev) {
-    viaTouch = ev.pointerType === 'touch' || ev.pointerType === 'pen';
-  }, true);
+     to browse with no keyboard: on a phone the keyboard takes half the
+     screen and leaves room for about three options. Tapping the field
+     again switches to searching. A mouse or the Tab key goes straight to
+     typing, since a physical keyboard costs no screen.
 
-  function enter() {
-    if (viaTouch) {
-      input.readOnly = true;
-      justOpened = true;
-    } else {
-      input.readOnly = false;
-      input.select();
-    }
-    viaTouch = false;
+     iOS decides whether to show the keyboard at one moment only: when a
+     tap moves focus onto a field that is editable right then. So browsing
+     leaves the field unfocused, and the second tap makes it editable in
+     pointerdown, before that tap's focus lands — a real focus onto an
+     editable field, which is the one thing iOS answers with a keyboard.
+     Unlocking a field that already has focus, or refocusing it from code,
+     gets nothing. */
+  var box = sel.closest('.field') || wrap;
+  var touch = false, browsing = false, wantSearch = false;
+
+  function browse() {
+    browsing = true;
+    input.readOnly = true;
     open();
   }
-
-  // iOS only raises the keyboard for an input that takes focus inside a
-  // tap, so lifting readonly on a field that already has focus is not
-  // enough — drop focus and take it straight back.
-  function startSearching() {
-    viaTouch = false;
+  function search() {
+    browsing = false;
     input.readOnly = false;
-    // Redraw now rather than trusting the refocus below to trigger it —
-    // a focus event is not guaranteed, and the hint would linger.
-    if (!list.hidden) paint();
-    input.blur();
-    input.focus();
+    open();
     input.select();
   }
 
+  box.addEventListener('pointerdown', function (ev) {
+    touch = ev.pointerType === 'touch' || ev.pointerType === 'pen';
+    // The second tap, on the field, its label, or the "Tap to search" row:
+    // unlock now, so the focus this tap is about to cause is editable.
+    if (browsing && (ev.target === input || ev.target.closest('label, .combo-hint'))) {
+      wantSearch = true;
+      input.readOnly = false;
+    }
+  }, true);
+
   input.readOnly = true;
-  input.addEventListener('focus', enter);
+  input.addEventListener('focus', function () {
+    if (wantSearch || !touch) {
+      wantSearch = false;
+      search();
+    } else {
+      browse();
+      // Hand focus back, so the next tap arrives on an unfocused field and
+      // its focus is one iOS will raise the keyboard for.
+      input.blur();
+    }
+    touch = false;
+  });
+  // A mouse click on a field still focused from a pick: no focus event is
+  // coming, so open it for typing here.
   input.addEventListener('click', function () {
-    // The tap that focused the field also clicks it; that one only opens.
-    if (justOpened) { justOpened = false; return; }
-    if (list.hidden) { enter(); justOpened = false; return; }
-    if (input.readOnly) startSearching();
+    if (list.hidden && document.activeElement === input) search();
   });
   // Typing highlights the first match, so Enter takes the best guess.
   input.addEventListener('input', function () { open(); active = 0; paint(); });
-  // Only close if focus really left: startSearching blurs and refocuses
-  // in one go, and that must not shut the list it is about to search.
   input.addEventListener('blur', function () {
+    // Browsing keeps the list open with nothing focused; only an outside
+    // tap closes it (below).
+    if (browsing) return;
     setTimeout(function () { if (document.activeElement !== input) close(); }, 0);
   });
+
+  // While browsing nothing has focus, so there is no blur to close on.
+  // Removes itself once the form it belongs to has gone.
+  function outside(ev) {
+    if (!wrap.isConnected) { document.removeEventListener('pointerdown', outside, true); return; }
+    if (list.hidden || !browsing || box.contains(ev.target)) return;
+    close();
+  }
+  document.addEventListener('pointerdown', outside, true);
+
   input.addEventListener('keydown', function (ev) {
-    // A hardware keyboard while browsing (an iPad with a case): the first
-    // letter switches to searching and still lands in the field.
-    if (input.readOnly && ev.key.length === 1 && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
-      input.readOnly = false;
-      input.select();
-    }
     if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
       ev.preventDefault();
       open();
@@ -3128,25 +3149,32 @@ function enhanceSelect(sel) {
   // mousedown, not click: click lands after the input's blur has already
   // closed the list and the option is gone.
   list.addEventListener('mousedown', function (ev) {
+    // The hint is a <label>; let it through so its tap reaches the field.
+    if (ev.target.closest('.combo-hint')) return;
+    // Anything else in the list must not steal focus from the field.
     ev.preventDefault();
     var opt = ev.target.closest('.combo-opt');
-    if (opt) pick(shown[Number(opt.getAttribute('data-i'))].value);
-  });
-  list.addEventListener('click', function (ev) {
-    if (ev.target.closest('.combo-hint')) startSearching();
+    if (!opt) return;
+    var byTouch = touch;
+    pick(shown[Number(opt.getAttribute('data-i'))].value);
+    // On a phone, dismiss the keyboard once the choice is made — and leave
+    // the field unfocused, so the next tap browses again.
+    if (byTouch) input.blur();
   });
   wrap.querySelector('.combo-toggle').addEventListener('mousedown', function (ev) {
     ev.preventDefault();
-    if (!list.hidden) close();
-    // Already focused (straight after a pick) means no focus event is
-    // coming, so open it directly rather than waiting for one.
-    else if (document.activeElement === input) { enter(); justOpened = false; }
+    if (!list.hidden) { close(); if (touch) input.blur(); return; }
+    // Opened by the chevron with a finger: browse, and never focus — the
+    // chevron is not the field, and should not bring a keyboard.
+    if (touch) { touch = false; browse(); }
+    else if (document.activeElement === input) search();
     else input.focus();
   });
   clear.addEventListener('mousedown', function (ev) {
     ev.preventDefault();
+    var byTouch = touch;
     pick('');
-    input.focus();
+    if (byTouch) input.blur();
   });
 
   sel._comboSync = showValue;
