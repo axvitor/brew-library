@@ -725,6 +725,22 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .combo-opt .ico{width:15px;height:15px;color:var(--pine-700);flex:none}
 .combo-empty{padding:14px 10px;font:var(--type-body-sm);color:var(--text-muted)}
 
+/* The same Combobox in the recipe form. The filter bar sizes .combo for a
+   flex row of peers; in a form it owns the field's full width, or shares
+   it with a quick-add button inside .with-add. */
+.combo-form{flex:1 1 auto;width:100%;max-width:none;min-width:0}
+.combo-form .combo-field{min-height:var(--control-h-md);padding-left:14px}
+.combo-form .combo-input{font:var(--type-body)}
+/* Keyboard position, distinct from hover so arrowing through the list
+   is legible even with the pointer resting on another row. */
+/* .combo-clear sets its own display, which outranks the [hidden]
+   attribute's default — without this the × shows on empty fields. */
+.combo-form .combo-clear[hidden]{display:none}
+.combo-opt.is-active{background:var(--surface-accent);color:var(--text-title)}
+/* Long lists — fifty-eight coffees — scroll inside the popover rather
+   than stretching the form's own scroll area. */
+.combo-form .combo-list{max-height:min(44vh,320px)}
+
 @media(max-width:640px){
   /* Not sticky on a phone: the bar is tall enough that pinning it costs
      more of the list than it saves — and with nothing sliding under it,

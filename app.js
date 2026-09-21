@@ -654,6 +654,7 @@ var TRANSLATIONS = {
     'Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.': 'Dê uma nota a um preparo e o café entra no ranking. Dois ou três já bastam para ver quais pacotes valem repetir.',
     'Start with the one you just opened': 'Comece pela que você acabou de abrir',
     'The rest': 'Os demais',
+    'Show options': 'Mostrar opções',
     'Search ': 'Buscar ',
     'Try a shorter search, or clear it to see all ': 'Tente uma busca mais curta, ou limpe para ver todos os ',
     'avg score': 'nota média',
@@ -2929,6 +2930,166 @@ function blankRecipe() {
   };
 }
 
+/* ---- searchable selects ----
+   The recipe form's pickers outgrew a native <select>: fifty-eight coffees
+   is a list you search, not one you scroll. Each select stays in the DOM,
+   hidden, as the single source of truth — readRecipeForm reads it, and the
+   coffee/roaster sync and the steps preview hang off its change events. The
+   field on top only ever writes into it and fires change, so none of that
+   logic has to know it exists.
+
+   Styled with Cupform v3.1's Combobox classes, so these read as the same
+   control as the filters page, minus the "on" fill: a chosen value in a
+   form is an answer, not an active filter. */
+
+// Accents are ignored so "familia" finds "Família" and "epoca" finds
+// "Época" — typing them on a phone keyboard is the slow way round.
+function fold(str) {
+  return String(str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function enhanceSelects(root) {
+  [].forEach.call(root.querySelectorAll('select[data-search]:not([data-enhanced])'), enhanceSelect);
+}
+
+function enhanceSelect(sel) {
+  sel.setAttribute('data-enhanced', '');
+  sel.hidden = true;
+
+  var listId = sel.id + '-list';
+  var wrap = document.createElement('div');
+  wrap.className = 'combo combo-form';
+  wrap.innerHTML =
+    '<div class="combo-field">' +
+      '<input class="combo-input" id="' + sel.id + '-q" type="text" role="combobox" autocomplete="off" ' +
+        'aria-autocomplete="list" aria-expanded="false" aria-controls="' + listId + '" />' +
+      '<button type="button" class="combo-clear" tabindex="-1" aria-label="' + esc(t('Clear')) + '" hidden>' + ICON.close + '</button>' +
+      '<button type="button" class="combo-toggle" tabindex="-1" aria-label="' + esc(t('Show options')) + '">' + ICON.chevDown + '</button>' +
+    '</div>' +
+    '<div class="combo-list" id="' + listId + '" role="listbox" hidden></div>';
+  sel.parentNode.insertBefore(wrap, sel);
+
+  // The field's own label points at the hidden select; move it to the
+  // input so tapping the label still lands somewhere.
+  var lbl = sel.closest('.field') && sel.closest('.field').querySelector('label[for="' + sel.id + '"]');
+  if (lbl) lbl.setAttribute('for', sel.id + '-q');
+
+  var field = wrap.querySelector('.combo-field');
+  var input = wrap.querySelector('.combo-input');
+  var list = wrap.querySelector('.combo-list');
+  var clear = wrap.querySelector('.combo-clear');
+  var active = -1, shown = [];
+
+  function options() {
+    return [].filter.call(sel.options, function (o) { return o.value; });
+  }
+  function placeholder() {
+    var none = [].filter.call(sel.options, function (o) { return !o.value; })[0];
+    return none ? none.text : '';
+  }
+  function current() { return sel.selectedIndex >= 0 && sel.value ? sel.options[sel.selectedIndex].text : ''; }
+
+  function showValue() {
+    input.value = current();
+    input.placeholder = placeholder();
+    clear.hidden = !sel.value;
+  }
+
+  function paint() {
+    var q = fold(input.value.trim());
+    // While the box still shows the chosen value, list everything — you
+    // opened it to change your mind, not to be shown your own answer.
+    if (input.value === current()) q = '';
+    shown = options().filter(function (o) { return !q || fold(o.text).indexOf(q) !== -1; });
+    if (active >= shown.length) active = shown.length - 1;
+    list.innerHTML = shown.length
+      ? shown.map(function (o, i) {
+          var on = o.value === sel.value;
+          return '<div class="combo-opt' + (on ? ' on' : '') + (i === active ? ' is-active' : '') + '" ' +
+            'role="option" id="' + listId + '-' + i + '" aria-selected="' + on + '" data-i="' + i + '">' +
+            '<span class="combo-opt-label">' + esc(o.text) + '</span>' + (on ? ICON.check : '') + '</div>';
+        }).join('')
+      : '<div class="combo-empty">' + esc(options().length
+          ? t('Nothing matches') + ' “' + input.value.trim() + '”'
+          : placeholder()) + '</div>';
+    input.setAttribute('aria-activedescendant', active >= 0 ? listId + '-' + active : '');
+    var a = list.querySelector('.is-active');
+    if (a) a.scrollIntoView({ block: 'nearest' });
+  }
+
+  function open() {
+    if (!list.hidden) return;
+    active = -1;
+    list.hidden = false;
+    field.classList.add('open');
+    input.setAttribute('aria-expanded', 'true');
+    paint();
+  }
+  function close() {
+    list.hidden = true;
+    field.classList.remove('open');
+    input.setAttribute('aria-expanded', 'false');
+    showValue();
+  }
+  function pick(value) {
+    var changed = sel.value !== value;
+    sel.value = value;
+    close();
+    if (changed) sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  input.addEventListener('focus', function () { input.select(); open(); });
+  // Typing highlights the first match, so Enter takes the best guess.
+  input.addEventListener('input', function () { open(); active = 0; paint(); });
+  input.addEventListener('blur', function () { setTimeout(close, 0); });
+  input.addEventListener('keydown', function (ev) {
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      open();
+      if (!shown.length) return;
+      active = ev.key === 'ArrowDown'
+        ? (active + 1) % shown.length
+        : (active <= 0 ? shown.length - 1 : active - 1);
+      paint();
+    } else if (ev.key === 'Enter') {
+      if (list.hidden) return;
+      ev.preventDefault();
+      if (shown[active]) pick(shown[active].value);
+      else if (shown.length === 1) pick(shown[0].value);
+    } else if (ev.key === 'Escape' && !list.hidden) {
+      // Stop here: an Escape that reached the page would close the form.
+      ev.preventDefault();
+      ev.stopPropagation();
+      close();
+    }
+  });
+  // mousedown, not click: click lands after the input's blur has already
+  // closed the list and the option is gone.
+  list.addEventListener('mousedown', function (ev) {
+    ev.preventDefault();
+    var opt = ev.target.closest('.combo-opt');
+    if (opt) pick(shown[Number(opt.getAttribute('data-i'))].value);
+  });
+  wrap.querySelector('.combo-toggle').addEventListener('mousedown', function (ev) {
+    ev.preventDefault();
+    if (list.hidden) { input.focus(); } else { close(); }
+  });
+  clear.addEventListener('mousedown', function (ev) {
+    ev.preventDefault();
+    pick('');
+    input.focus();
+  });
+
+  sel._comboSync = showValue;
+  showValue();
+}
+
+// For code that sets a select's value directly: that fires no event, so
+// the field on top has to be told to show the new value.
+function syncCombo(sel) {
+  if (sel && sel._comboSync) sel._comboSync();
+}
+
 function entitySelect(type, value, id, placeholder) {
   var list = coll(type).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
   var opts = '<option value="">' + esc(placeholder || '— none —') + '</option>';
@@ -2936,7 +3097,7 @@ function entitySelect(type, value, id, placeholder) {
     opts += '<option value="' + esc(e.id) + '"' + (e.id === value ? ' selected' : '') + '>' + esc(e.name) + '</option>';
   });
   return '<div class="with-add">' +
-    '<select class="inp" id="' + id + '" data-role="' + type + '">' + opts + '</select>' +
+    '<select class="inp" id="' + id + '" data-role="' + type + '" data-search>' + opts + '</select>' +
     '<button type="button" class="addbtn" data-action="quick-add" data-type="' + type + '" ' +
       'title="' + esc(t('Add ' + ENTITIES[type].label.toLowerCase())) + '">' + ICON.plus + '</button>' +
   '</div>';
@@ -2952,7 +3113,7 @@ function formRoasterSelect(value) {
   allRoasters().forEach(function (ro) {
     opts += '<option value="' + esc(ro.id) + '"' + (ro.id === value ? ' selected' : '') + '>' + esc(ro.name) + '</option>';
   });
-  return '<select class="inp" id="f-roaster-sel">' + opts + '</select>';
+  return '<select class="inp" id="f-roaster-sel" data-search>' + opts + '</select>';
 }
 
 // Coffees for the chosen roaster, or all of them when none is chosen (which
@@ -2974,7 +3135,7 @@ function coffeeSelectHTML(roaster, value) {
     opts += '<option value="' + esc(c.id) + '"' + (c.id === value ? ' selected' : '') + '>' + esc(c.name) + '</option>';
   });
   return '<div class="with-add">' +
-    '<select class="inp" id="f-coffee-sel" data-role="coffee">' + opts + '</select>' +
+    '<select class="inp" id="f-coffee-sel" data-role="coffee" data-search>' + opts + '</select>' +
     '<button type="button" class="addbtn" data-action="quick-add" data-type="coffee" ' +
       'title="Add coffee">' + ICON.plus + '</button>' +
   '</div>';
@@ -3192,7 +3353,7 @@ function buildRecipeForm(m) {
     var picked = findIn('coffee', d.coffeeId);
     m.roaster = picked ? (picked.roasterId || '') : '';
     var rs = el.querySelector('#f-roaster-sel');
-    if (rs) rs.value = m.roaster;
+    if (rs) { rs.value = m.roaster; syncCombo(rs); }
   });
 
   el.querySelector('#f-roaster-sel').addEventListener('change', function (ev) {
@@ -3202,8 +3363,10 @@ function buildRecipeForm(m) {
     if (m.roaster && (!c || c.roasterId !== m.roaster)) d.coffeeId = '';
     var field = el.querySelector('#coffeeField');
     field.innerHTML = '<label for="f-coffee-sel">' + esc(t('Coffee')) + '</label>' + coffeeSelectHTML(m.roaster, d.coffeeId);
+    enhanceSelects(field);
   });
 
+  enhanceSelects(el);
   return el;
 }
 
