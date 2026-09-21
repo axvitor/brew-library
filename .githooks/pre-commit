@@ -1,0 +1,46 @@
+#!/bin/sh
+# Stamps the asset URLs in index.html with a hash of the assets themselves.
+#
+# GitHub Pages serves this repo as-is, with max-age=600 and nothing that
+# renames files on deploy. Without a stamp that changes when the code does,
+# a browser revalidates index.html but keeps serving the previous app.js and
+# styles.css from cache — new markup driven by old code. A hand-bumped date
+# stamp was tried first and drifted: app.js stayed on one value through two
+# changes, styles.css on another through four.
+#
+# The stamp is a hash of the STAGED contents of all three assets, so it moves
+# exactly when what is being committed moves, and never otherwise. It only
+# needs git and sed.
+#
+# Enable once per clone:   git config core.hooksPath .githooks
+
+set -e
+
+ASSETS="app.js styles.css firebase-init.js"
+
+# Nothing to stamp in a commit that predates or removes index.html.
+git cat-file -e :index.html 2>/dev/null || exit 0
+
+stamp=$(
+  for f in $ASSETS; do git show ":$f" 2>/dev/null || true; done \
+    | git hash-object --stdin | cut -c1-10
+)
+
+rewrite() {
+  sed -E "s/((app\.js|styles\.css|firebase-init\.js)\?v=)[0-9A-Za-z-]+/\1$stamp/g"
+}
+
+# The staged copy is what gets committed. Rewrite it in place in the index,
+# so any unstaged edits to index.html stay unstaged rather than being swept
+# into this commit.
+staged=$(git show :index.html | rewrite | git hash-object -w --stdin)
+mode=$(git ls-files -s index.html | cut -d' ' -f1)
+git update-index --cacheinfo "$mode,$staged,index.html"
+
+# Mirror it into the working tree, so the file on disk matches what was
+# committed and the next diff is not just the stamp flipping back.
+if [ -f index.html ]; then
+  tmp=$(mktemp)
+  rewrite < index.html > "$tmp" && cat "$tmp" > index.html
+  rm -f "$tmp"
+fi
