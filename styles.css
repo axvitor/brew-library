@@ -718,6 +718,8 @@ svg.ico-fill{fill:currentColor;stroke:none}
 .combo-opt.on{font-weight:var(--weight-semibold);background:var(--surface-sunken)}
 .combo-opt-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .combo-opt-meta{font:var(--weight-medium) 12px/1 var(--font-mono);color:var(--text-faint)}
+/* Secondary words rather than a count — a coffee's roaster in the recipe form. */
+.combo-opt-meta.is-text{font:var(--weight-regular) 13px/1.2 var(--font-text);color:var(--text-muted);max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Nothing filed under it yet — still listed and selectable, but the count
    says so rather than the entry quietly going missing. */
 .combo-opt.is-empty .combo-opt-label{color:var(--text-muted)}
@@ -752,6 +754,8 @@ svg.ico-fill{fill:currentColor;stroke:none}
 /* Long lists — fifty-eight coffees — scroll inside the popover rather
    than stretching the form's own scroll area. */
 .combo-form .combo-list{max-height:min(44vh,320px)}
+/* Opened upward when the form can't scroll far enough to clear the footer. */
+.combo-form.drop-up .combo-list{top:auto;bottom:calc(100% + 4px)}
 
 @media(max-width:640px){
   /* Not sticky on a phone: the bar is tall enough that pinning it costs

@@ -886,7 +886,6 @@ var TRANSLATIONS = {
     'Select a method…': 'Selecione um método…',
     'Select a grinder…': 'Selecione um moedor…',
     'Select a style…': 'Selecione um estilo…',
-    'No coffees for this roaster yet': 'Nenhum café desta torrefação ainda',
     'e.g. 75 clicks': 'ex.: 75 cliques',
     'What you do at this point': 'O que você faz neste momento',
     'What to do at this point': 'O que fazer neste momento',
@@ -2935,7 +2934,7 @@ function blankRecipe() {
    The recipe form's pickers outgrew a native <select>: fifty-eight coffees
    is a list you search, not one you scroll. Each select stays in the DOM,
    hidden, as the single source of truth — readRecipeForm reads it, and the
-   coffee/roaster sync and the steps preview hang off its change events. The
+   steps preview hangs off its change events. The
    field on top only ever writes into it and fires change, so none of that
    logic has to know it exists.
 
@@ -2988,7 +2987,14 @@ function enhanceSelect(sel) {
     var none = [].filter.call(sel.options, function (o) { return !o.value; })[0];
     return none ? none.text : '';
   }
-  function current() { return sel.selectedIndex >= 0 && sel.value ? sel.options[sel.selectedIndex].text : ''; }
+  // The chosen value carries its secondary text too: two coffees can share a
+  // name ("Gabriel Lamounier" from Sabino and from Williams & Sons), and the
+  // field has to say which one it holds, not just the list.
+  function current() {
+    if (!(sel.selectedIndex >= 0 && sel.value)) return '';
+    var o = sel.options[sel.selectedIndex], meta = o.getAttribute('data-meta');
+    return o.text + (meta ? ' · ' + meta : '');
+  }
 
   function showValue() {
     input.value = current();
@@ -3001,14 +3007,19 @@ function enhanceSelect(sel) {
     // While the box still shows the chosen value, list everything — you
     // opened it to change your mind, not to be shown your own answer.
     if (input.value === current()) q = '';
-    shown = options().filter(function (o) { return !q || fold(o.text).indexOf(q) !== -1; });
+    // An option's secondary text (a coffee's roaster) is searchable too.
+    shown = options().filter(function (o) {
+      return !q || fold(o.text + ' ' + (o.getAttribute('data-meta') || '')).indexOf(q) !== -1;
+    });
     if (active >= shown.length) active = shown.length - 1;
     list.innerHTML = shown.length
       ? shown.map(function (o, i) {
           var on = o.value === sel.value;
           return '<div class="combo-opt' + (on ? ' on' : '') + (i === active ? ' is-active' : '') + '" ' +
             'role="option" id="' + listId + '-' + i + '" aria-selected="' + on + '" data-i="' + i + '">' +
-            '<span class="combo-opt-label">' + esc(o.text) + '</span>' + (on ? ICON.check : '') + '</div>';
+            '<span class="combo-opt-label">' + esc(o.text) + '</span>' +
+            (o.getAttribute('data-meta') ? '<span class="combo-opt-meta is-text">' + esc(o.getAttribute('data-meta')) + '</span>' : '') +
+            (on ? ICON.check : '') + '</div>';
         }).join('')
       : '<div class="combo-empty">' + esc(options().length
           ? t('Nothing matches') + ' “' + input.value.trim() + '”'
@@ -3027,15 +3038,48 @@ function enhanceSelect(sel) {
   }
 
   function open() {
-    if (list.hidden) {
+    var opening = list.hidden;
+    if (opening) {
       active = -1;
       list.hidden = false;
       field.classList.add('open');
       input.setAttribute('aria-expanded', 'true');
     }
     paint();
+    if (opening) fit();
+  }
+  /* The list lives inside the sheet's scrolling body, so a field near the
+     bottom of the visible area — Brewing method or Grinder when the sheet
+     first opens — had its list clipped exactly where the Cancel / Save
+     footer begins. Scroll the form just enough for the list to clear it;
+     if the form can't scroll that far, open the list upward instead. */
+  function fit() {
+    var scroller = wrap.closest('.sheet-body');
+    wrap.classList.remove('drop-up');
+    list.style.maxHeight = '';
+    if (!scroller) return;
+    var sb = scroller.getBoundingClientRect();
+    var fr = field.getBoundingClientRect();
+    // A clear gap, not flush: a list sitting on the footer's edge reads as
+    // running underneath it.
+    var over = list.getBoundingClientRect().bottom - sb.bottom + 16;
+    if (over <= 0) return;
+    var room = scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
+    // Never scroll the field itself out of view to make room.
+    var canScroll = Math.min(room, fr.top - sb.top - 8);
+    if (canScroll >= over) { scroller.scrollTop += over; return; }
+    var below = sb.bottom - fr.bottom - 12, above = fr.top - sb.top - 12;
+    if (above > below) {
+      wrap.classList.add('drop-up');
+      list.style.maxHeight = Math.max(120, above) + 'px';
+    } else {
+      if (canScroll > 0) { scroller.scrollTop += canScroll; below += canScroll; }
+      list.style.maxHeight = Math.max(120, below) + 'px';
+    }
   }
   function close() {
+    wrap.classList.remove('drop-up');
+    list.style.maxHeight = '';
     list.hidden = true;
     field.classList.remove('open');
     input.setAttribute('aria-expanded', 'false');
@@ -3200,36 +3244,21 @@ function entitySelect(type, value, id, placeholder) {
   '</div>';
 }
 
-/* The recipe form opens on the roaster, which narrows the coffee list below
-   it. Roaster isn't stored on the recipe — it lives on the Coffee entity, and
-   duplicating it here would give the same fact two homes. It's a filter that
-   makes picking a coffee quick once the library is large, and it's derived
-   back off the coffee when an existing recipe is reopened. */
-function formRoasterSelect(value) {
-  var opts = '<option value="">' + esc(t('All roasters')) + '</option>';
-  allRoasters().forEach(function (ro) {
-    opts += '<option value="' + esc(ro.id) + '"' + (ro.id === value ? ' selected' : '') + '>' + esc(ro.name) + '</option>';
-  });
-  return '<select class="inp" id="f-roaster-sel" data-search>' + opts + '</select>';
-}
-
-// Coffees for the chosen roaster, or all of them when none is chosen (which
-// is also how coffees with no roaster recorded stay reachable).
-function coffeesForRoaster(roasterId) {
+/* The recipe form has no roaster field: the roaster belongs to the Coffee,
+   so asking for it here only gave the same fact a second place to disagree.
+   Each coffee carries its roaster as secondary text in the picker instead —
+   that keeps same-named coffees from different roasters apart, and typing a
+   roaster's name still narrows the list to its coffees. */
+function coffeeSelectHTML(value) {
   var list = coll('coffee').slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
-  if (!roasterId) return list;
-  return list.filter(function (c) { return c.roasterId === roasterId; });
-}
-
-function coffeeSelectHTML(roaster, value) {
-  var list = coffeesForRoaster(roaster);
   // Deliberately unselected to start: the coffee is the one field worth a
   // conscious choice every time, and quietly defaulting to whichever coffee
   // sorts first is how a recipe ends up filed under the wrong bag.
-  var opts = '<option value="">' +
-    t(list.length ? 'Select a coffee…' : 'No coffees for this roaster yet') + '</option>';
+  var opts = '<option value="">' + t('Select a coffee…') + '</option>';
   list.forEach(function (c) {
-    opts += '<option value="' + esc(c.id) + '"' + (c.id === value ? ' selected' : '') + '>' + esc(c.name) + '</option>';
+    var roaster = roasterNameOf(c);
+    opts += '<option value="' + esc(c.id) + '"' + (roaster ? ' data-meta="' + esc(roaster) + '"' : '') +
+      (c.id === value ? ' selected' : '') + '>' + esc(c.name) + '</option>';
   });
   return '<div class="with-add">' +
     '<select class="inp" id="f-coffee-sel" data-role="coffee" data-search>' + opts + '</select>' +
@@ -3349,24 +3378,14 @@ function openRecipeForm(existing) {
     capture: function () { readRecipeForm(m); },
     render: function () { return buildRecipeForm(m); }
   };
-  // Reopening an existing recipe derives the roaster back off its coffee, so
-  // the narrowed list matches what's already selected instead of resetting.
-  var c = findIn('coffee', m.draft.coffeeId);
-  m.roaster = c ? (c.roasterId || '') : '';
   openModal(m);
 }
 
 function buildRecipeForm(m) {
   var d = m.draft;
   var body =
-    // Coffee leads; roaster sits under it and stays in step both ways —
-    // picking a coffee fills the roaster in, and picking a roaster narrows
-    // the coffee list for when the library is long.
-    '<div class="row row-2">' +
-      '<div class="field" id="coffeeField"><label for="f-coffee-sel">' + esc(t('Coffee')) + '</label>' +
-        coffeeSelectHTML(m.roaster, d.coffeeId) + '</div>' +
-      '<div class="field"><label for="f-roaster-sel">' + esc(t('Roaster')) + '</label>' + formRoasterSelect(m.roaster) + '</div>' +
-    '</div>' +
+    '<div class="field" id="coffeeField"><label for="f-coffee-sel">' + esc(t('Coffee')) + '</label>' +
+      coffeeSelectHTML(d.coffeeId) + '</div>' +
     '<div class="field"><label for="f-method-sel">' + esc(t('Brewing method')) + '</label>' + entitySelect('method', d.methodId, 'f-method-sel', t('Select a method…')) + '</div>' +
     '<div class="row row-2">' +
       '<div class="field"><label for="f-grinder-sel">' + esc(t('Grinder')) + '</label>' + entitySelect('grinder', d.grinderId, 'f-grinder-sel', t('Select a grinder…')) + '</div>' +
@@ -3438,31 +3457,6 @@ function buildRecipeForm(m) {
   el.querySelector('#f-style-sel').addEventListener('change', onStyleOrMethodChange);
   el.querySelector('#f-method-sel').addEventListener('change', onStyleOrMethodChange);
 
-  // Changing the roaster repaints just the coffee select beneath it, and drops
-  // a coffee that no longer belongs to the chosen roaster rather than leaving
-  // a selection that contradicts the field above it.
-  // Choosing a coffee fills in its roaster, so the field below never
-  // contradicts the one above it. Only the roaster select is repainted —
-  // collapsing the coffee list out from under a fresh choice is jarring.
-  el.addEventListener('change', function (ev) {
-    if (!ev.target || ev.target.id !== 'f-coffee-sel') return;
-    readRecipeForm(m);
-    var picked = findIn('coffee', d.coffeeId);
-    m.roaster = picked ? (picked.roasterId || '') : '';
-    var rs = el.querySelector('#f-roaster-sel');
-    if (rs) { rs.value = m.roaster; syncCombo(rs); }
-  });
-
-  el.querySelector('#f-roaster-sel').addEventListener('change', function (ev) {
-    readRecipeForm(m);
-    m.roaster = ev.target.value;
-    var c = findIn('coffee', d.coffeeId);
-    if (m.roaster && (!c || c.roasterId !== m.roaster)) d.coffeeId = '';
-    var field = el.querySelector('#coffeeField');
-    field.innerHTML = '<label for="f-coffee-sel">' + esc(t('Coffee')) + '</label>' + coffeeSelectHTML(m.roaster, d.coffeeId);
-    enhanceSelects(field);
-  });
-
   enhanceSelects(el);
   return el;
 }
@@ -3471,8 +3465,6 @@ function readRecipeForm(m) {
   var el = m.el;
   if (!el) return;
   var d = m.draft, q = function (s) { return el.querySelector(s); };
-  var roasterSel = q('#f-roaster-sel');
-  if (roasterSel) m.roaster = roasterSel.value;
   d.coffeeId = q('#f-coffee-sel').value;
   d.methodId = q('#f-method-sel').value;
   d.grinderId = q('#f-grinder-sel').value;
@@ -4612,7 +4604,14 @@ function paintScan(m, state) {
   block.replaceWith(fresh.firstChild);
 }
 
+/* The input is attached to the page, not just created, and stays there until
+   the picker answers. A detached input can be garbage-collected on iOS while
+   the camera or photo library is open — taking a photo is slow enough for it
+   to happen — and its change listener goes with it, so the chosen photo was
+   silently dropped and the scan had to be started again. */
+var pendingPick = null;
 function pickImage() {
+  if (pendingPick) pendingPick.remove();
   return new Promise(function (resolve) {
     var inp = document.createElement('input');
     inp.type = 'file';
@@ -4620,9 +4619,19 @@ function pickImage() {
     // No `capture` attribute on purpose: leaving it off lets the phone
     // offer both the camera and an existing photo, which matters for a bag
     // already drunk and thrown away.
+    inp.hidden = true;
+    inp.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(inp);
+    pendingPick = inp;
+    function done(file) {
+      inp.remove();
+      if (pendingPick === inp) pendingPick = null;
+      resolve(file);
+    }
     inp.addEventListener('change', function () {
-      resolve(inp.files && inp.files[0] ? inp.files[0] : null);
+      done(inp.files && inp.files[0] ? inp.files[0] : null);
     });
+    inp.addEventListener('cancel', function () { done(null); });
     inp.click();
   });
 }
@@ -5419,18 +5428,7 @@ document.addEventListener('click', function (ev) {
       openEntityForm(type, null, function (newId) {
         var parent = stack[stack.length - 1];
         if (parent && parent.draft) parent.draft[ENTITIES[type].ref] = newId;
-        // Follow the new coffee's roaster rather than stranding it outside
-        // the filter — saving a coffee only to watch it vanish is worse than
-        // quietly moving the filter to where the user just went.
-        if (type === 'coffee' && parent) {
-          var nc = findIn('coffee', newId);
-          parent.roaster = nc ? (nc.roasterId || '') : '';
-        }
-        // A roaster added from the recipe form becomes the active filter, so
-        // the coffee select below it is already scoped to what you just made.
-      }, type === 'coffee' && top && top.roaster
-        ? { roasterName: (findIn('roaster', top.roaster) || {}).name || '' }
-        : null);
+      }, null);
       return;
 
     case 'lib-tab': libraryTab = type; paintLibraryTab(); return;
