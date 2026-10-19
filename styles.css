@@ -2619,6 +2619,8 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 @media(max-width:860px){
   [data-theme="light"] .nav-item{color:#2A2723}
   [data-theme="light"] .nav-item.on{color:var(--text-accent)}
+  /* The orange add button keeps its white mark. */
+  [data-theme="light"] .nav-add{color:#FFFFFF}
 }
 /* The selection lens and the clear glass buttons: a raised white pill. */
 [data-theme="light"] .nav-lens,
