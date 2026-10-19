@@ -1280,39 +1280,53 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
    Back to top, the page's own bottom padding — measures it rather than
    guessing, which is how a 16px gap opened up under the brew bar. */
 /* ---- liquid glass ----
-   The phone capsule is glass in the iOS sense: the page behind it is
+   Floating controls are glass in the iOS sense: the page behind is
    blurred and saturated (every engine), and on Chromium it is also bent
    at the rim, the way a thick lens bends what is under its edge. That
    bend is an SVG displacement filter driven by a map drawn to the
-   capsule's exact size: each pixel says how far, and which way, to look
-   for the backdrop, strongest at the rim and nothing in the middle. The
-   red, green and blue channels are bent by slightly different amounts,
+   element's exact size and corner radius: each pixel says how far, and
+   which way, to look for the backdrop — strongest at the rim, nothing in
+   the middle. Red, green and blue are bent by slightly different amounts,
    which leaves the faint colour fringe real glass has. Safari and Firefox
    cannot run an SVG filter as a backdrop filter, so they get the blur,
-   the tint and the specular rim without the bend — still glass. */
-var GLASS_BEND = !!navigator.userAgentData && !!(window.CSS && CSS.supports &&
-  CSS.supports('backdrop-filter', 'url(#navGlass)'));
-var glassSize = '';
+   the tint and the specular rim without the bend — still glass.
 
-function glassMap(w, h) {
+   Anything marked data-glass gets the bend; its value is the blur in px. */
+var GLASS_BEND = !!navigator.userAgentData && !!(window.CSS && CSS.supports &&
+  CSS.supports('backdrop-filter', 'url(#g)'));
+
+function glassQuiet() {
+  return window.matchMedia('(prefers-reduced-transparency: reduce)').matches;
+}
+
+function glassMap(w, h, r) {
   var c = document.createElement('canvas');
   c.width = w; c.height = h;
   var ctx = c.getContext('2d');
   var img = ctx.createImageData(w, h);
-  var r = h / 2, rim = Math.min(r, 20);
+  var hw = w / 2, hh = h / 2;
+  // Signed distance to a rounded rectangle: negative inside.
+  function sdf(px, py) {
+    var qx = Math.abs(px - hw) - (hw - r), qy = Math.abs(py - hh) - (hh - r);
+    var ox = Math.max(qx, 0), oy = Math.max(qy, 0);
+    return Math.sqrt(ox * ox + oy * oy) + Math.min(Math.max(qx, qy), 0) - r;
+  }
+  var rim = Math.min(20, hw, hh);
   for (var y = 0; y < h; y++) {
     for (var x = 0; x < w; x++) {
-      // Nearest point on the capsule's spine, then distance to the rim.
-      var px = x + 0.5, py = y + 0.5;
-      var cx = Math.min(Math.max(px, r), w - r);
-      var dx = px - cx, dy = py - r;
-      var d = Math.sqrt(dx * dx + dy * dy) || 1;
-      var depth = r - d;                         // 0 at the rim, r at the spine
+      var px = x + 0.5, py = y + 0.5, i = (y * w + x) * 4;
+      var depth = -sdf(px, py);
       var k = depth >= rim ? 0 : Math.pow(1 - Math.max(depth, 0) / rim, 2);
-      var i = (y * w + x) * 4;
+      var nx = 0, ny = 0;
+      if (k) {
+        nx = sdf(px + 1, py) - sdf(px - 1, py);
+        ny = sdf(px, py + 1) - sdf(px, py - 1);
+        var n = Math.sqrt(nx * nx + ny * ny) || 1;
+        nx /= n; ny /= n;
+      }
       // Look inward from the rim: the edge shows what is further in.
-      img.data[i] = 128 - 127 * k * dx / d;
-      img.data[i + 1] = 128 - 127 * k * dy / d;
+      img.data[i] = 128 - 127 * k * nx;
+      img.data[i + 1] = 128 - 127 * k * ny;
       img.data[i + 2] = 128;
       img.data[i + 3] = 255;
     }
@@ -1321,13 +1335,9 @@ function glassMap(w, h) {
   return c.toDataURL();
 }
 
-function glassNav() {
-  var nav = document.getElementById('appNav');
-  if (!GLASS_BEND || !nav || nav.hidden) return;
-  var w = Math.round(nav.offsetWidth), h = Math.round(nav.offsetHeight);
-  var key = w + 'x' + h;
-  if (!w || !h || key === glassSize) return;
-  glassSize = key;
+function glassFilter(w, h, r) {
+  var id = 'glass-' + w + 'x' + h + 'r' + r;
+  if (document.getElementById(id)) return id;
   var host = document.getElementById('glassDefs');
   if (!host) {
     host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1336,48 +1346,93 @@ function glassNav() {
     host.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
     document.body.appendChild(host);
   }
-  var map = glassMap(w, h), s = 26;
+  // One filter per size, shared by every element of that size; a window
+  // resized through many widths should not keep them all.
+  if (host.childNodes.length > 40) host.innerHTML = '';
+  var s = Math.round(Math.min(26, Math.min(w, h) * 0.45));
   function pass(scale, row, name) {
     return '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + scale + '" xChannelSelector="R" yChannelSelector="G" result="d' + name + '"/>' +
       '<feColorMatrix in="d' + name + '" type="matrix" values="' + row + '" result="' + name + '"/>';
   }
-  host.innerHTML =
-    '<filter id="navGlass" x="0" y="0" width="' + w + '" height="' + h + '" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">' +
-      '<feImage href="' + map + '" x="0" y="0" width="' + w + '" height="' + h + '" preserveAspectRatio="none" result="map"/>' +
+  host.insertAdjacentHTML('beforeend',
+    '<filter id="' + id + '" x="0" y="0" width="' + w + '" height="' + h + '" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">' +
+      '<feImage href="' + glassMap(w, h, r) + '" x="0" y="0" width="' + w + '" height="' + h + '" preserveAspectRatio="none" result="map"/>' +
       pass(s, '1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0', 'r') +
       pass(s + 4, '0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0', 'g') +
       pass(s + 8, '0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0', 'b') +
       '<feBlend in="r" in2="g" mode="screen" result="rg"/>' +
       '<feBlend in="rg" in2="b" mode="screen"/>' +
-    '</filter>';
+    '</filter>');
+  return id;
+}
+
+function glassBend(el, blur) {
+  if (!el) return;
+  if (!GLASS_BEND || glassQuiet()) { el.style.backdropFilter = ''; return; }
+  var w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
+  if (!w || !h) return;
+  var r = Math.round(Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, w / 2, h / 2));
+  el.style.backdropFilter = 'url(#' + glassFilter(w, h, r) + ') blur(' + blur + 'px) saturate(190%) brightness(1.08)';
   document.documentElement.classList.add('glass-bend');
+}
+
+function glassAll(root) {
+  var els = (root || document).querySelectorAll('[data-glass]');
+  for (var i = 0; i < els.length; i++) glassBend(els[i], Number(els[i].getAttribute('data-glass')) || 5);
 }
 
 /* The selected tab sits under a lens that slides between tabs, stretching
    as it travels and settling with a little give — the same move the iOS
-   tab bar makes. */
-var lensX = null;
+   tab bar makes. `from` is where the lens was ({x, y, w, h}), or null to
+   place it without moving. */
+function slideLens(lens, from, to) {
+  var end = 'translate(' + to.x + 'px,' + to.y + 'px)';
+  lens.style.width = to.w + 'px';
+  lens.style.height = to.h + 'px';
+  lens.style.transform = end;
+  lens.classList.add('is-placed');
+  lens._pos = to;
+  if (!from || (from.x === to.x && from.w === to.w) || !lens.animate ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var mx = (from.x + to.x) / 2, mw = (from.w + to.w) / 2, nudge = to.x > from.x ? 3 : -3;
+  lens.animate([
+    { transform: 'translate(' + from.x + 'px,' + from.y + 'px)', width: from.w + 'px' },
+    { transform: 'translate(' + mx + 'px,' + to.y + 'px) scale(1.18,.88)', width: mw + 'px', offset: 0.45 },
+    { transform: 'translate(' + (to.x + nudge) + 'px,' + to.y + 'px) scale(.97,1.03)', width: to.w + 'px', offset: 0.8 },
+    { transform: end, width: to.w + 'px' }
+  ], { duration: 480, easing: 'cubic-bezier(.3,.7,.25,1)' });
+}
+
+function lensPos(box) {
+  var lens = box && box.querySelector('.tab-lens');
+  return (lens && lens._pos) || null;
+}
+
+// Puts (or slides) a tab group's lens onto its .on tab. The lens is made
+// here when the group's markup has none, so repainting a group's buttons
+// needs no lens markup of its own.
+function tabsLens(box, from) {
+  if (!box) return;
+  var lens = box.querySelector('.tab-lens');
+  if (!lens) {
+    lens = document.createElement('span');
+    lens.className = 'tab-lens';
+    lens.setAttribute('aria-hidden', 'true');
+    box.insertBefore(lens, box.firstChild);
+  }
+  var on = box.querySelector('.on');
+  if (!on) { lens.classList.remove('is-placed'); return; }
+  slideLens(lens, from, { x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight });
+}
+
 function placeLens(animate) {
   var nav = document.getElementById('appNav');
   var lens = nav && nav.querySelector('.nav-lens');
   if (!lens) return;
   var on = nav.querySelector('[data-nav].on');
-  if (!on || nav.hidden || getComputedStyle(lens).display === 'none') { lensX = null; return; }
-  var x = on.offsetLeft;
-  var still = !animate || lensX === null || lensX === x ||
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches || !lens.animate;
-  if (!still) {
-    var mid = (lensX + x) / 2;
-    lens.animate([
-      { transform: 'translateX(' + lensX + 'px)' },
-      { transform: 'translateX(' + mid + 'px) scale(1.35,.86)', offset: 0.45 },
-      { transform: 'translateX(' + (x + (x > lensX ? 3 : -3)) + 'px) scale(.96,1.04)', offset: 0.8 },
-      { transform: 'translateX(' + x + 'px)' }
-    ], { duration: 480, easing: 'cubic-bezier(.3,.7,.25,1)' });
-  }
-  lens.style.transform = 'translateX(' + x + 'px)';
-  lens.classList.add('is-placed');
-  lensX = x;
+  if (!on || nav.hidden || getComputedStyle(lens).display === 'none') { lens._pos = null; return; }
+  slideLens(lens, animate ? lens._pos : null,
+    { x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight });
 }
 
 function measureNav() {
@@ -1394,7 +1449,9 @@ function measureNav() {
   var reserve = (shown && !side) ? Math.max(0, Math.round(window.innerHeight - nav.getBoundingClientRect().top)) : 0;
   document.documentElement.style.setProperty('--nav-h', reserve + 'px');
   document.documentElement.style.setProperty('--nav-w', (side ? nav.offsetWidth : 0) + 'px');
-  if (shown && !side) { glassNav(); placeLens(false); }
+  if (shown && !side) { glassBend(nav, 5); placeLens(false); }
+  else if (nav) nav.style.backdropFilter = '';
+  glassAll();
 }
 
 function updateNav() {
@@ -1723,8 +1780,8 @@ function kindTabsHTML() {
     return '<button type="button" role="tab" aria-selected="' + on + '" class="ktab' + (on ? ' on' : '') +
       '" data-action="pick-kind" data-kind="' + esc(value) + '">' + esc(label) + '</button>';
   }
-  return '<div class="ktabs" role="tablist" aria-label="' + esc(t('Method type')) + '">' +
-    tab('', t('All')) + kinds.map(function (k) { return tab(k, t(k)); }).join('') + '</div>';
+  return '<div class="ktabs-glass glass" data-glass="5"><div class="ktabs" role="tablist" aria-label="' + esc(t('Method type')) + '">' +
+    tab('', t('All')) + kinds.map(function (k) { return tab(k, t(k)); }).join('') + '</div></div>';
 }
 
 /* The pour schedule as a staircase of water against time, drawn from the
@@ -1883,6 +1940,8 @@ function renderHome(entering) {
   }
 
   view.innerHTML = html + '</div>';
+  tabsLens(view.querySelector('.ktabs'));
+  glassAll(view);
 }
 
 
@@ -2157,6 +2216,7 @@ function renderAccount() {
     '</div>' +
   '</div>';
   window.scrollTo(0, 0);
+  tabsLens(view.querySelector('.segs'));
 }
 
 /* ---- recipe (F4) ----
@@ -2310,7 +2370,7 @@ function renderDetail(id, keepScroll) {
   '</div>' +
     // A sibling of .detail, not a child: .detail animates on entry, and an
     // element with a transform is a containing block for fixed descendants.
-    '<div class="detail-bar rd-bar">' +
+    '<div class="detail-bar rd-bar glass" data-glass="6">' +
       (timerPlan(r)
         ? '<button class="rd-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
             '<span>' + esc(t('Start brewing')) + '</span>' +
@@ -2324,6 +2384,7 @@ function renderDetail(id, keepScroll) {
   view.innerHTML = html;
   markSeen(r.id);
   if (!keepScroll) window.scrollTo(0, 0);
+  glassAll(view);
 }
 
 /* ---------------------------------------------------------
@@ -2538,9 +2599,9 @@ function buildTimerEl(r, plan) {
     '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true" aria-label="' + esc(titleOf(r)) + '">' +
       '<div class="sheet-head">' +
         '<div class="tm-head">' +
-          '<button class="tm-circ" data-action="close-modal" aria-label="' + esc(t('Close')) + '">' + ICON.close + '</button>' +
+          '<button class="tm-circ glass" data-glass="4" data-action="close-modal" aria-label="' + esc(t('Close')) + '">' + ICON.close + '</button>' +
           '<span class="tm-title"><h2>' + esc(titleOf(r)) + '</h2><span class="timer-eyebrow"></span></span>' +
-          '<button class="tm-circ timer-mute" data-action="timer-mute"></button>' +
+          '<button class="tm-circ glass timer-mute" data-glass="4" data-action="timer-mute"></button>' +
         '</div>' +
       '</div>' +
       '<div class="sheet-body timer-body">' +
@@ -2550,14 +2611,14 @@ function buildTimerEl(r, plan) {
             '<span class="timer-total">' + esc(t('of')) + ' ' + esc(mmss(plan.total)) + '</span>' +
           '</div>' +
           (plan.water
-            ? '<div class="tm-gauge">' +
+            ? '<div class="tm-gauge glass" data-glass="8">' +
                 '<div class="tm-gauge-top"><span class="k">' + esc(t('Water in the cone')) + '</span>' +
                   '<span class="timer-poured">0<small> / ' + plan.water + ' g</small></span></div>' +
                 '<div class="tm-bar" aria-hidden="true"><span class="tm-fill"></span>' + ticks + '<span class="tm-target"></span></div>' +
                 '<div class="tm-scale" aria-hidden="true"><span class="lo">0</span><span class="tg"></span><span class="hi">' + plan.water + '</span></div>' +
               '</div>'
             : '') +
-          '<div class="timer-now">' +
+          '<div class="timer-now glass" data-glass="8">' +
             '<span class="timer-now-kicker"></span>' +
             '<span class="timer-now-label"></span>' +
             '<span class="timer-now-sub"></span>' +
@@ -2570,16 +2631,16 @@ function buildTimerEl(r, plan) {
         '</div>' +
       '</div>' +
       '<div class="sheet-foot timer-foot">' +
-        '<button class="timer-side" data-action="timer-reset" aria-label="' + esc(t('Restart')) + '" title="' + esc(t('Restart')) + '">' + ICON.replay + '</button>' +
+        '<button class="timer-side glass" data-glass="4" data-action="timer-reset" aria-label="' + esc(t('Restart')) + '" title="' + esc(t('Restart')) + '">' + ICON.replay + '</button>' +
         '<div class="tm-play">' +
           '<svg class="tm-ring" viewBox="0 0 100 100" aria-hidden="true">' +
             '<circle class="ttrack" cx="50" cy="50" r="' + TM_R + '"></circle>' +
             '<circle class="tprog" cx="50" cy="50" r="' + TM_R + '" transform="rotate(-90 50 50)" ' +
               'stroke-dasharray="0 ' + TM_C.toFixed(2) + '"></circle>' +
           '</svg>' +
-          '<button class="timer-toggle" data-action="timer-toggle"></button>' +
+          '<button class="timer-toggle glass" data-glass="3" data-action="timer-toggle"></button>' +
         '</div>' +
-        '<button class="timer-side" data-action="timer-skip" aria-label="' + esc(t('Skip to next step')) + '" title="' + esc(t('Skip to next step')) + '">' + ICON.skip + '</button>' +
+        '<button class="timer-side glass" data-glass="4" data-action="timer-skip" aria-label="' + esc(t('Skip to next step')) + '" title="' + esc(t('Skip to next step')) + '">' + ICON.skip + '</button>' +
       '</div>' +
     '</div>';
   wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
@@ -2623,6 +2684,7 @@ function openTimer(id) {
   // the sheet happens to finish animating in.
   timerPaint();
   timerControls();
+  glassAll(timer.el);
 }
 
 function timerPaint() {
@@ -5123,6 +5185,7 @@ function renderLibrary() {
     '<div class="list" id="libList">' + libraryListHTML(libraryTab) + '</div>' +
   '</div>';
   window.scrollTo(0, 0);
+  tabsLens(document.getElementById('libTabs'));
 }
 
 /* Swaps the tab strip and the list in place. A full re-render rebuilt the
@@ -5432,8 +5495,12 @@ document.addEventListener('click', function (ev) {
 
     case 'pick-kind':
       ev.preventDefault();
+      var kindFrom = lensPos(document.querySelector('.ktabs'));
+      var kindScroll = (document.querySelector('.ktabs') || {}).scrollLeft || 0;
       filters.kind = btn.getAttribute('data-kind') || '';
       renderHome();
+      var kt = document.querySelector('.ktabs');
+      if (kt) { kt.scrollLeft = kindScroll; tabsLens(kt, kindFrom); }
       return;
 
     case 'clear-filters':
@@ -5636,7 +5703,11 @@ document.addEventListener('click', function (ev) {
       }, null);
       return;
 
-    case 'lib-tab': libraryTab = type; paintLibraryTab(); return;
+    case 'lib-tab':
+      var libFrom = lensPos(document.getElementById('libTabs'));
+      libraryTab = type; paintLibraryTab();
+      tabsLens(document.getElementById('libTabs'), libFrom);
+      return;
     case 'lib-add': openEntityForm(type, null, null); return;
     case 'lib-edit': openEntityForm(type, findIn(type, id), null); return;
     case 'lib-del': deleteEntity(type, id); return;
