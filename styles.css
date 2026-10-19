@@ -2504,3 +2504,163 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 }
 .addbtn{width:48px;height:48px;border-radius:var(--radius-full);border-style:none}
 .page-title-row .iconbtn:hover,.addbtn:hover{background:rgba(255,255,255,.14);color:var(--text-accent);border-style:none}
+
+/* ==========================================================
+   Light theme — the F4 layout on warm white
+   ----------------------------------------------------------
+   Chosen in Account › Appearance (data-theme on <html>). The tokens
+   carry most of it; the rules after them redo the glass, whose dark
+   recipe is written in white-on-dark light and shadow. Orange stays the
+   fill for the brew and add actions; as text it darkens to #B23F0F so it
+   holds 4.5:1 on white. */
+:root[data-theme="light"]{
+  color-scheme:light;
+
+  --pine-900:#F4F2EE;
+  --pine-800:#FFFFFF;
+  --pine-700:#EFECE6;
+  --pine-600:#E4E0D9;
+  --pine-500:#BDB7AE;
+  --pine-300:#6B675F;
+  --pine-100:#3F3B36;
+  --sage-500:#857F77;
+  --sage-300:#6B675F;
+  --sage-100:#EFECE6;
+  --roast-300:#B23F0F;
+  --roast-100:#FBE6DA;
+  --caramel-500:#857F77;
+  --caramel-300:#D9D4CC;
+  --caramel-100:#EFECE6;
+
+  --green-600:#2F7D4F;
+  --amber-600:#9A6510;
+  --red-600:#B42318;
+  --blue-600:#2F6A8C;
+
+  --bg-app:#F4F2EE;
+  --surface-card:#FFFFFF;
+  --surface-sunken:#EFECE6;
+  --surface-inverse:#FFFFFF;
+  --surface-inverse-deep:#F4F2EE;
+  --surface-accent:rgba(200,74,22,.10);
+  --surface-warm:#EFECE6;
+  --surface-scrim:rgba(26,24,22,.35);
+
+  --text-title:#1A1816;
+  --text-body:#3F3B36;
+  --text-muted:#6B675F;
+  --text-faint:#857F77;
+  --text-on-inverse:#1A1816;
+  --text-on-inverse-muted:#6B675F;
+  --text-accent:#B23F0F;
+  --text-link:#B23F0F;
+  --text-link-hover:#8F300A;
+
+  --border-hairline:#E4E0D9;
+  --border-default:#D9D4CC;
+  --border-strong:#BDB7AE;
+  --border-inverse:#E4E0D9;
+  --border-focus:#C84A16;
+
+  --action-primary:#1A1816;
+  --action-primary-hover:#000000;
+  --action-primary-press:#3F3B36;
+  --action-primary-text:#FFFFFF;
+  --action-secondary-border:#D9D4CC;
+  --action-disabled:#EFECE6;
+  --action-disabled-text:#A39F99;
+
+  --accent-star:#C84A16;
+  --accent-star-empty:#D9D4CC;
+  --accent-favorite:#C84A16;
+
+  --state-success:#2F7D4F;
+  --state-error:#B42318;
+  --state-error-surface:rgba(180,35,24,.08);
+
+  --shadow-card:0 1px 2px rgba(26,24,22,.06);
+  --shadow-raised:0 18px 36px -16px rgba(26,24,22,.28);
+  --shadow-sheet:0 -14px 40px rgba(26,24,22,.18);
+  --shadow-press:inset 0 1px 2px rgba(26,24,22,.12);
+  --shadow-focus:0 0 0 2px #F4F2EE,0 0 0 4px #C84A16;
+}
+[data-theme="light"] .btn-google{background:#1A1816;color:#FFFFFF;border-color:#1A1816}
+[data-theme="light"] .btn-google:hover{background:#000000;border-color:#000000}
+[data-theme="light"] .carousel-dots .dot{background:#CFCAC2}
+[data-theme="light"] .slide{box-shadow:0 14px 30px -22px rgba(26,24,22,.3)}
+[data-theme="light"] .slide-chip{background:#EFECE6;color:#5E5A53}
+[data-theme="light"] .slide-chip.is-continue{background:#FBE6DA;color:#A63A0D}
+[data-theme="light"] .hspec{background:#FFFFFF;box-shadow:inset 0 0 0 1px rgba(26,24,22,.08)}
+[data-theme="light"] .rd-dose{box-shadow:0 14px 30px -22px rgba(26,24,22,.3)}
+[data-theme="light"] .rd-step-btn{background:#F7F5F1}
+[data-theme="light"] .rd-step-btn:hover{background:#EFECE6}
+
+/* Frosted white glass: a milky tint, a white top edge, a hairline of
+   ink round the rim and a soft grey drop shadow. */
+[data-theme="light"] .appnav,
+[data-theme="light"] .glass,
+[data-theme="light"] .back-to-top{
+  --glass-tint:rgba(234,231,225,.66);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(26,24,22,.04),
+    inset 0 0 0 1px rgba(26,24,22,.07),
+    0 18px 36px -14px rgba(26,24,22,.30);
+}
+[data-theme="light"].glass-bend .appnav,
+[data-theme="light"].glass-bend .glass{--glass-tint:rgba(234,231,225,.58)}
+[data-theme="light"] .back-to-top{background:var(--glass-tint);color:#1A1816}
+[data-theme="light"] .appnav::before,
+[data-theme="light"] .glass::before{
+  background:linear-gradient(135deg,
+    rgba(255,255,255,.95) 0%, rgba(255,255,255,.4) 30%,
+    rgba(255,255,255,.1) 60%, rgba(255,255,255,.7) 100%);
+}
+@media(max-width:860px){
+  [data-theme="light"] .nav-item{color:#2A2723}
+  [data-theme="light"] .nav-item.on{color:var(--text-accent)}
+}
+/* The selection lens and the clear glass buttons: a raised white pill. */
+[data-theme="light"] .nav-lens,
+[data-theme="light"] .tab-lens,
+[data-theme="light"] .rd-bar .rd-edit,
+[data-theme="light"] .page .sheet-foot .btn-ghost,
+[data-theme="light"] .page .sheet-foot .btn:not(.btn-primary):not(.btn-danger),
+[data-theme="light"] .page-title-row .iconbtn,
+[data-theme="light"] .addbtn{
+  background:linear-gradient(180deg,#FFFFFF,#F5F2EE);
+  color:var(--text-title);
+  box-shadow:inset 0 1px 0 #FFFFFF,0 0 0 1px rgba(26,24,22,.08),0 6px 14px -5px rgba(26,24,22,.28);
+}
+[data-theme="light"] .tab-lens,[data-theme="light"] .nav-lens{color:inherit}
+[data-theme="light"] .rd-bar .rd-edit:hover,
+[data-theme="light"] .page .sheet-foot .btn-ghost:hover,
+[data-theme="light"] .page-title-row .iconbtn:hover,
+[data-theme="light"] .addbtn:hover{background:#FFFFFF;color:var(--text-accent)}
+[data-theme="light"] .tabs,
+[data-theme="light"] .segs{
+  background:rgba(26,24,22,.04);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 0 1px rgba(26,24,22,.06);
+}
+/* Timer: white glass controls and gauge, a pale orange pour card. */
+[data-theme="light"] .tm-gauge .tm-bar{background:rgba(26,24,22,.07)}
+[data-theme="light"] .tm-gauge .tm-tick{background:rgba(255,255,255,.95)}
+[data-theme="light"] .tm-fill{background:#E07A3E}
+[data-theme="light"] .tm-ring .ttrack{stroke:#E4E0D9}
+[data-theme="light"] .tm-ring .tprog{stroke:#C84A16}
+[data-theme="light"] .timer-now.glass,
+[data-theme="light"].glass-bend .timer-now.glass{
+  --glass-tint:rgba(250,226,210,.75);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 0 0 1px rgba(200,74,22,.18);
+}
+[data-theme="light"] .sheet-timer.is-done .timer-now.glass{--glass-tint:rgba(255,255,255,.7)}
+[data-theme="light"] .timer-toggle.glass,
+[data-theme="light"].glass-bend .timer-toggle.glass{
+  --glass-tint:rgba(200,74,22,.92);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 10px 24px -10px rgba(200,74,22,.8);
+}
+@media (prefers-reduced-transparency:reduce){
+  [data-theme="light"] .appnav,
+  [data-theme="light"] .glass,
+  [data-theme="light"] .back-to-top{background:#FFFFFF}
+}

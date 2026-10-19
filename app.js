@@ -734,6 +734,9 @@ var TRANSLATIONS = {
     'Sign out': 'Sair',
     'Reset library…': 'Redefinir biblioteca…',
     'Language': 'Idioma',
+    'Appearance': 'Aparência',
+    'Dark': 'Escuro',
+    'Light': 'Claro',
     'Device language': 'Idioma do dispositivo',
     'Account menu': 'Menu da conta',
     'Back to top': 'Voltar ao topo',
@@ -1280,6 +1283,35 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
    desktop. Anything that has to sit above it — the pinned brew action,
    Back to top, the page's own bottom padding — measures it rather than
    guessing, which is how a 16px gap opened up under the brew bar. */
+/* ---- appearance ----
+   Dark is F4 as designed; light is the same layout on warm white, with
+   frosted white glass. "Device" follows the phone's own setting. The
+   choice is per device (localStorage), like the language. index.html
+   applies it before the stylesheet paints, so a light phone never
+   flashes dark on load; this keeps it current afterwards. */
+var themeChoice = (function () {
+  try { return localStorage.getItem('brewTheme') || 'dark'; } catch (e) { return 'dark'; }
+})();
+var themeQuery = window.matchMedia('(prefers-color-scheme: light)');
+
+function applyTheme() {
+  var mode = themeChoice === 'auto' ? (themeQuery.matches ? 'light' : 'dark') : themeChoice;
+  document.documentElement.setAttribute('data-theme', mode);
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', mode === 'light' ? '#F4F2EE' : '#111010');
+  var cs = document.querySelector('meta[name="color-scheme"]');
+  if (cs) cs.setAttribute('content', mode);
+}
+
+function setTheme(choice) {
+  themeChoice = choice;
+  try { localStorage.setItem('brewTheme', choice); } catch (e) { /* private mode */ }
+  applyTheme();
+}
+
+applyTheme();
+if (themeQuery.addEventListener) themeQuery.addEventListener('change', function () { if (themeChoice === 'auto') applyTheme(); });
+
 /* ---- liquid glass ----
    Floating controls are glass in the iOS sense: the page behind is
    blurred and saturated (every engine), and on Chromium it is also bent
@@ -2171,6 +2203,10 @@ function renderAccount() {
     return '<button class="seg' + (langChoice === code ? ' on' : '') + '" ' +
       'data-action="set-lang" data-lang="' + code + '">' + esc(label) + '</button>';
   }
+  function themeBtn(code, label) {
+    return '<button class="seg' + (themeChoice === code ? ' on' : '') + '" ' +
+      'data-action="set-theme" data-theme-choice="' + code + '">' + esc(label) + '</button>';
+  }
   function row(action, icon, label, meta, danger) {
     return '<button class="acc-row' + (danger ? ' danger' : '') + '" data-action="' + action + '">' +
       icon + '<span class="grow">' + esc(label) + '</span>' +
@@ -2197,6 +2233,13 @@ function renderAccount() {
     '</div>' +
 
     '<div class="acc-group">' +
+      '<div class="section-title">' + esc(t('Appearance')) + '</div>' +
+      '<div class="segs">' +
+        themeBtn('auto', t('Device')) + themeBtn('dark', t('Dark')) + themeBtn('light', t('Light')) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="acc-group">' +
       '<div class="section-title">' + esc(t('Backup')) + '</div>' +
       row('export', ICON.download, t('Export data'), '.json') +
       row('import', ICON.upload, t('Import data…')) +
@@ -2209,7 +2252,7 @@ function renderAccount() {
     '</div>' +
   '</div>';
   window.scrollTo(0, 0);
-  tabsLens(view.querySelector('.segs'));
+  Array.prototype.forEach.call(view.querySelectorAll('.segs'), function (box) { tabsLens(box); });
 }
 
 /* ---- recipe (F4) ----
@@ -5353,6 +5396,17 @@ document.addEventListener('click', function (ev) {
         return;
       }
       openRecipeForm(null);
+      return;
+
+    case 'set-theme':
+      ev.preventDefault();
+      var themeBox = btn.closest('.segs');
+      var themeFrom = lensPos(themeBox);
+      setTheme(btn.getAttribute('data-theme-choice') || 'dark');
+      Array.prototype.forEach.call(themeBox.querySelectorAll('.seg'), function (b) {
+        b.classList.toggle('on', b === btn);
+      });
+      tabsLens(themeBox, themeFrom);
       return;
 
     case 'set-lang':
