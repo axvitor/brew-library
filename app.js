@@ -654,6 +654,22 @@ var TRANSLATIONS = {
     'Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.': 'Dê uma nota a um preparo e o café entra no ranking. Dois ou três já bastam para ver quais pacotes valem repetir.',
     'Start with the one you just opened': 'Comece pela que você acabou de abrir',
     'The rest': 'Os demais',
+    'Brewing for': 'Preparando para',
+    'Ratio locked': 'Proporção travada',
+    'Less coffee': 'Menos café',
+    'More coffee': 'Mais café',
+    'g coffee': 'g de café',
+    'g water': 'g de água',
+    'Scaled for this brew only — the recipe keeps': 'Ajustado só para este preparo — a receita continua com',
+    'Change the dose and every pour below rescales.': 'Mude a dose e todos os despejos se ajustam.',
+    'Reset': 'Desfazer',
+    'Roasted by': 'Torrado por',
+    'Start brewing': 'Começar a preparar',
+    'Time': 'Tempo',
+    'Back': 'Voltar',
+    'Tasting notes': 'Notas de prova',
+    'No steps recorded —': 'Nenhum passo registrado —',
+    'add them': 'adicione',
     'Method type': 'Tipo de método',
     'Pour over': 'Coado',
     'Pressure': 'Pressão',
@@ -1090,6 +1106,7 @@ var ICON = {
   signout: '<svg viewBox="0 0 24 24" class="ico"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h9"/></svg>',
   trash: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14"/></svg>',
   close: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" class="ico"><path d="M15 18l-6-6 6-6"/></svg>',
   search: '<svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
@@ -1373,6 +1390,7 @@ function render() {
 
   var hash = location.hash || '#/';
   var m = hash.match(/^#\/r\/(.+)$/);
+  if (!m) doseView = { id: null, dose: null };
   if (m) renderDetail(decodeURIComponent(m[1]));
   else if (hash === '#/account') renderAccount();
   else if (hash === '#/library') renderLibrary();
@@ -2027,131 +2045,171 @@ function renderAccount() {
   window.scrollTo(0, 0);
 }
 
-function renderDetail(id) {
+/* ---- recipe (F4) ----
+   Dose stepper. Scales this brew without touching the saved recipe: the
+   ratio stays locked, water follows the dose, and the pours rescale —
+   formula styles recompute from the new numbers, hand-written steps have
+   their grams scaled by the same factor. The timer reads the same scaled
+   copy, so what you set here is what you brew. Forgotten as soon as you
+   leave the recipe. */
+var doseView = { id: null, dose: null };
+
+function scalable(r) {
+  var d = Number(r.dose), w = Number(r.water);
+  return d > 0 && w > 0;
+}
+
+function viewRecipe(r) {
+  if (!r || doseView.id !== r.id || doseView.dose == null || !scalable(r)) return r;
+  var k = doseView.dose / Number(r.dose);
+  var out = Object.assign({}, r);
+  out.dose = doseView.dose;
+  out.water = Math.round(Number(r.water) * k);
+  if (r.steps && r.steps.length) {
+    out.steps = r.steps.map(function (st) {
+      var w = Number(st.water);
+      return Object.assign({}, st, w ? { water: Math.round(w * k) } : {});
+    });
+  }
+  return out;
+}
+
+function stepsF4HTML(steps) {
+  var run = 0;
+  return steps.map(function (st, i) {
+    var w = Number(st.water) || 0;
+    run += w;
+    return '<li class="rd-step">' +
+      '<span class="rd-dot' + (i === 0 ? ' is-first' : '') + '" aria-hidden="true"></span>' +
+      '<span class="rd-t">' + esc(st.t || '') + '</span>' +
+      '<span class="rd-l">' + esc(t(st.label || '')) + '</span>' +
+      (w ? '<span class="rd-w">+' + w + ' · ' + run + ' g</span>' : '<span class="rd-w"></span>') +
+    '</li>';
+  }).join('');
+}
+
+function renderDetail(id, keepScroll) {
   view.classList.remove('view-enter');
-  var r = recipeById(id);
-  if (!r) {
-    view.innerHTML = '<div class="detail"><a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
+  var saved = recipeById(id);
+  if (!saved) {
+    view.innerHTML = '<div class="detail rd"><div class="rd-top"><a class="rd-btn" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a></div>' +
       '<div class="empty">' + ICON.bean + '<h3>' + esc(t('Recipe not found')) + '</h3><p>' + esc(t('It may have been deleted.')) + '</p></div></div>';
     return;
   }
+  if (doseView.id !== id) doseView = { id: id, dose: null };
+  var r = viewRecipe(saved);
+  var scaledNow = doseView.dose != null && doseView.dose !== Number(saved.dose);
 
   var c = findIn('coffee', r.coffeeId);
   var st = findIn('style', r.styleId);
   var gr = findIn('grinder', r.grinderId);
   var me = findIn('method', r.methodId);
-
   var styleDriven = hasFormula(r.styleId);
   var steps = effectiveSteps(r);
-  var stepsHTML = timelineHTML(steps);
+  var roaster = roasterOf(r);
 
   var specs = '';
-  function spec(k, v) { if (v) specs += '<div class="spec"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>'; }
-  spec(t('Coffee'), c ? c.name : '—');
+  function spec(k, v) { if (v) specs += '<div class="rd-spec"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>'; }
   if (c) {
     var ro = c.roasterId ? findIn('roaster', c.roasterId) : null;
-    spec(t('Roaster'), roasterNameOf(c));
     if (ro && ro.location) spec(t('Roastery'), ro.location);
     spec(t('Origin'), c.origin); spec(t('Altitude'), c.altitude);
     spec(t('Process'), c.process); spec(t('Roast'), c.roast); spec(t('Varietal'), c.varietal);
   }
-  spec(t('Grinder'), gr ? gr.name : '—');
-  spec(t('Grind size'), r.grindSize);
-  spec(t('Method'), me ? me.name : '—');
-  spec(t('Recipe style'), st ? st.name : '—');
-  if (st && st.author) spec('Devised by', st.author);
+  if (st && st.author) spec(t('Devised by'), st.author);
 
-  var roaster = roasterOf(r);
-  var html = '<div class="detail">' +
-    // The masthead is an inverse block that runs to the screen edges: the
-    // recipe's identity, set apart from the numbers you read off it below.
-    '<header class="detail-head">' +
-      '<svg class="detail-mark" viewBox="0 0 24 24" aria-hidden="true">' +
-        '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
-        '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
-      '<div class="detail-head-inner">' +
-        '<div class="detail-nav">' +
-          '<a class="navbtn" href="#/" aria-label="' + esc(t('Library')) + '">' + ICON.back + '</a>' +
-          '<span class="detail-nav-gap"></span>' +
-          '<button class="navbtn fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' +
-            esc(r.id) + '" aria-label="' + esc(t('Toggle favourite')) + '">' + iconStar(r.fav) + '</button>' +
-          '<div class="menu-holder detail-more">' +
-            '<button class="navbtn" data-action="toggle-detail-menu" aria-haspopup="true" ' +
-              'aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
-            '<div class="menu" id="detailMenu" hidden>' +
-              '<button data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('Edit')) + '</button>' +
-              '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
-              '<div class="menu-sep"></div>' +
-              '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
-            '</div>' +
-          '</div>' +
+  // The dose card: a stepper when the recipe has both weights to scale,
+  // otherwise just the numbers it does have.
+  var doseCard;
+  if (scalable(saved)) {
+    doseCard = '<section class="rd-dose">' +
+      '<div class="rd-dose-top"><span>' + esc(t('Brewing for')) + '</span>' +
+        '<span class="rd-lock">' + esc(t('Ratio locked')) + ' · ' + ratio(r.dose, r.water) + '</span></div>' +
+      '<div class="rd-dose-row">' +
+        '<button type="button" class="rd-step-btn" data-action="dose-step" data-d="-1" aria-label="' + esc(t('Less coffee')) + '"' +
+          (Number(r.dose) <= 1 ? ' disabled' : '') + '>' + ICON.minus + '</button>' +
+        '<div class="rd-dose-nums">' +
+          '<span><b>' + num(r.dose) + '</b><i>' + esc(t('g coffee')) + '</i></span>' +
+          '<span class="rd-arrow" aria-hidden="true">→</span>' +
+          '<span><b>' + num(r.water) + '</b><i>' + esc(t('g water')) + '</i></span>' +
         '</div>' +
-        '<div class="detail-title">' +
-          '<span class="kicker">' + esc(nameOf('method', r.methodId)) + ' · ' + esc(nameOf('style', r.styleId)) + '</span>' +
-          '<h1>' + esc(titleOf(r)) + '</h1>' +
-          '<div class="detail-meta">' +
-            (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
-            (roaster ? '<span>' + esc(roaster) + '</span><span class="dot"></span>' : '') +
-            '<span>' + ratio(r.dose, r.water) + ' ' + esc(t('ratio')) + '</span>' +
-            (c && c.origin ? '<span class="dot"></span><span>' + esc(c.origin) + '</span>' : '') +
-          '</div>' +
+        '<button type="button" class="rd-step-btn" data-action="dose-step" data-d="1" aria-label="' + esc(t('More coffee')) + '">' + ICON.plus + '</button>' +
+      '</div>' +
+      '<p class="rd-dose-note">' + (scaledNow
+        ? esc(t('Scaled for this brew only — the recipe keeps')) + ' ' + num(saved.dose, ' g') + '. ' +
+          '<button type="button" class="rd-reset" data-action="dose-reset">' + esc(t('Reset')) + '</button>'
+        : esc(t('Change the dose and every pour below rescales.'))) + '</p>' +
+    '</section>';
+  } else {
+    doseCard = '<section class="rd-dose is-static"><div class="rd-dose-nums">' +
+      '<span><b>' + num(r.dose) + '</b><i>' + esc(t('g coffee')) + '</i></span>' +
+      (r.water !== '' && r.water != null ? '<span><b>' + num(r.water) + '</b><i>' + esc(t('g water')) + '</i></span>' : '') +
+    '</div></section>';
+  }
+
+  var tiles = '';
+  if (r.temp !== '' && r.temp != null) tiles += '<div class="rd-tile"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.temp) + ' °C</span></div>';
+  if (r.brewTime) tiles += '<div class="rd-tile"><span class="k">' + esc(t('Time')) + '</span><span class="v">' + esc(String(r.brewTime).replace('~', '')) + '</span></div>';
+  if (gr || r.grindSize) tiles += '<div class="rd-tile"><span class="k">' + esc(gr ? gr.name : t('Grind')) + '</span><span class="v is-text">' + esc(r.grindSize || '—') + '</span></div>';
+
+  var html = '<div class="detail rd">' +
+    '<div class="rd-top">' +
+      '<a class="rd-btn" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a>' +
+      '<span class="rd-gap"></span>' +
+      '<button class="rd-btn fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="' + esc(t('Toggle favourite')) + '">' + iconStar(r.fav) + '</button>' +
+      '<div class="menu-holder detail-more">' +
+        '<button class="rd-btn" data-action="toggle-detail-menu" aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
+        '<div class="menu" id="detailMenu" hidden>' +
+          '<button data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('Edit')) + '</button>' +
+          '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
+          '<div class="menu-sep"></div>' +
+          '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
         '</div>' +
       '</div>' +
-    '</header>' +
-    '<div class="detail-sheet">' +
-    '<div class="bigstats">' +
-      bigstat(t('Dose'), num(r.dose), 'g') +
-      bigstat(t('Water'), num(r.water), 'g') +
-      bigstat(t('Ratio'), ratio(r.dose, r.water)) +
-      bigstat(t('Temperature'), num(r.temp), '°C') +
-      bigstat(t('Brew time'), r.brewTime ? esc(r.brewTime) : '') +
-      bigstat(t('Grind'), r.grindSize ? esc(r.grindSize) : '', '', 'font-size:19px') +
     '</div>' +
 
-    '<div class="detail-body">' +
-      '<aside class="detail-ref">' +
-        '<div class="section-title">' + esc(t('Details')) + '</div>' +
-        '<dl class="specs">' + specs + '</dl>' +
-        (c && c.notes ? '<div class="coffee-note">' + esc(c.notes) + '</div>' : '') +
-        (st && st.notes ? '<div class="block"><div class="section-title">' + esc(t('About this style')) + '</div>' +
-          '<div class="coffee-note" style="margin-top:0">' + esc(t(st.notes)) + '</div></div>' : '') +
-      '</aside>' +
-      '<div class="detail-brew">' +
-        // A recipe with no schedule is not "pouring steps" — for espresso the
-        // heading would announce a section whose own text says it has none.
-        '<div class="section-title">' + esc(t(steps.length ? 'Pouring steps' : 'How to brew it')) + '</div>' +
-        (steps.length
-          ? '<ol class="timeline">' + stepsHTML + '</ol>' +
-            (styleDriven ? '<p class="hint" style="margin-top:12px">' + esc(stepsCaption(r)) + '</p>' : '')
-          : styleDriven
-            ? '<p style="color:var(--text-muted);font:var(--type-body-sm)">' + esc(noStepsMessage(r)) + '</p>'
-            : '<p style="color:var(--text-muted);font:var(--type-body-sm)">No steps recorded — ' +
-              '<a href="#" data-action="edit" data-id="' + esc(r.id) + '" style="color:var(--text-link)">add them</a>.</p>') +
-        (r.notes ? '<div class="block"><div class="section-title">' + esc(t('Personal notes')) + '</div><div class="notes">' + esc(r.notes) + '</div></div>' : '') +
-      '</div>' +
+    '<div class="rd-chips">' +
+      (me ? '<span class="rd-chip">' + esc(me.name) + '</span>' : '') +
+      (st ? '<span class="rd-chip">' + esc(st.name) + '</span>' : '') +
     '</div>' +
+    '<h1 class="rd-name">' + esc(titleOf(r)) + '</h1>' +
+    '<div class="rd-sub">' +
+      (roaster ? '<span>' + esc(t('Roasted by')) + ' ' + esc(roaster) + '</span>' : '') +
+      (r.rating ? '<span class="rd-score">' + stars(r.rating) + '</span>' : '') +
     '</div>' +
+
+    doseCard +
+    (tiles ? '<div class="rd-tiles">' + tiles + '</div>' : '') +
+
+    '<h2 class="rd-h2">' + esc(t(steps.length ? 'Pouring steps' : 'How to brew it')) + '</h2>' +
+    (steps.length
+      ? '<ol class="rd-steps">' + stepsF4HTML(steps) + '</ol>' +
+        (styleDriven ? '<p class="rd-hint">' + esc(stepsCaption(r)) + '</p>' : '')
+      : styleDriven
+        ? '<p class="rd-hint">' + esc(noStepsMessage(r)) + '</p>'
+        : '<p class="rd-hint">' + esc(t('No steps recorded —')) + ' <a href="#" data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('add them')) + '</a>.</p>') +
+
+    (st && st.notes ? '<div class="rd-note"><span class="k">' + esc(t('About this style')) + '</span><p>' + esc(t(st.notes)) + '</p></div>' : '') +
+    (r.notes ? '<div class="rd-note"><span class="k">' + esc(t('Personal notes')) + '</span><p>' + esc(r.notes) + '</p></div>' : '') +
+    (c && c.notes ? '<div class="rd-note"><span class="k">' + esc(t('Tasting notes')) + '</span><p>' + esc(c.notes) + '</p></div>' : '') +
+    (specs ? '<h2 class="rd-h2">' + esc(t('Details')) + '</h2><dl class="rd-specs">' + specs + '</dl>' : '') +
   '</div>' +
-    // Pinned on a phone, inline under the sheet on a desktop. Brewing is
-    // what this page is for, so the brew action is the one filled control
-    // and wears the same roast the timer's own start button does.
-    //
-    // Deliberately a sibling of .detail, not a child: .detail animates on
-    // entry, and an element with a transform is a containing block for
-    // fixed descendants — nested here the bar pins to the page rather
-    // than the viewport and lands somewhere below the fold.
-    '<div class="detail-bar">' +
+    // A sibling of .detail, not a child: .detail animates on entry, and an
+    // element with a transform is a containing block for fixed descendants.
+    '<div class="detail-bar rd-bar">' +
       (timerPlan(r)
-        ? '<button class="btn btn-accent action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
-          ICON.play + '<span>' + esc(t('Start brew timer')) + '</span></button>'
+        ? '<button class="rd-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
+            '<span>' + esc(t('Start brewing')) + '</span>' +
+            '<span class="rd-brew-end">' + (timerPlan(r).total ? '<span class="rd-brew-time">' + esc(mmss(timerPlan(r).total)) + '</span>' : '') +
+              '<span class="rd-brew-disc">' + ICON.play + '</span></span>' +
+          '</button>'
         : '<span class="detail-bar-note">' + esc(t('Add a brew time or pouring steps to time this one.')) + '</span>') +
-      '<button class="btn btn-ghost btn-icon action-edit" data-action="edit" data-id="' + esc(r.id) + '" ' +
-        'aria-label="' + esc(t('Edit')) + '">' + ICON.edit + '</button>' +
+      '<button class="rd-btn rd-edit" data-action="edit" data-id="' + esc(r.id) + '" aria-label="' + esc(t('Edit')) + '">' + ICON.edit + '</button>' +
     '</div>';
 
   view.innerHTML = html;
   markSeen(r.id);
-  window.scrollTo(0, 0);
+  if (!keepScroll) window.scrollTo(0, 0);
 }
 
 /* ---------------------------------------------------------
@@ -2432,7 +2490,7 @@ function buildTimerEl(r, plan) {
 }
 
 function openTimer(id) {
-  var r = recipeById(id);
+  var r = viewRecipe(recipeById(id));
   if (!r) return;
   var plan = timerPlan(r);
   if (!plan) { toast(t('Add a brew time or pouring steps first.')); return; }
@@ -5237,6 +5295,23 @@ document.addEventListener('click', function (ev) {
           toast(t('Recipe deleted.'));
         }
       });
+      return;
+
+    case 'dose-step':
+      ev.preventDefault();
+      var dr = recipeById(doseView.id);
+      if (dr && scalable(dr)) {
+        var cur = doseView.dose != null ? doseView.dose : Number(dr.dose);
+        var next = Math.max(1, Math.round(cur + Number(btn.getAttribute('data-d'))));
+        doseView.dose = next === Number(dr.dose) ? null : next;
+        renderDetail(dr.id, true);
+      }
+      return;
+
+    case 'dose-reset':
+      ev.preventDefault();
+      doseView.dose = null;
+      if (doseView.id) renderDetail(doseView.id, true);
       return;
 
     case 'pick-kind':

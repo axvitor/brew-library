@@ -2187,3 +2187,124 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .hrow-side{flex:none;font:var(--weight-thin) 22px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
 .hrow-chev{flex:none;color:var(--text-muted);display:flex}
 .hrow-chev .ico{width:16px;height:16px}
+
+/* ---------- recipe (F4) ----------
+   One column, read top to bottom the way you brew: what it is, how much,
+   the three numbers you set before pouring, then the pours. */
+.rd{max-width:640px;margin:0 auto;padding-top:8px}
+.rd-top{display:flex;align-items:center;gap:8px}
+.rd-gap{flex:1}
+.rd-btn{
+  width:44px;height:44px;flex:none;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.rd-btn:hover{background:var(--surface-sunken);color:var(--text-title)}
+.rd-btn:active{transform:scale(var(--press-scale))}
+.rd-btn .ico,.rd-btn svg{width:18px;height:18px}
+.rd-btn.fav.on{color:var(--accent-favorite)}
+
+.rd-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:20px}
+.rd-chips:empty{display:none}
+.rd-chip{
+  padding:5px 11px;border-radius:var(--radius-full);
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-body);
+}
+.rd-name{margin:12px 0 0;font:var(--weight-regular) clamp(32px,6vw,44px)/1.05 var(--font-display);letter-spacing:-0.035em;color:var(--text-title)}
+.rd-sub{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:6px;font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-muted)}
+.rd-sub:empty{display:none}
+.rd-score .stars{color:var(--accent-favorite)}
+
+.rd-dose{
+  display:flex;flex-direction:column;gap:14px;margin-top:22px;padding:18px 20px;
+  border-radius:26px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+}
+.rd-dose-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted)}
+.rd-lock{padding:4px 10px;border-radius:var(--radius-full);background:var(--surface-sunken);font-size:12px;color:var(--text-body);white-space:nowrap}
+.rd-dose-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rd-step-btn{
+  width:48px;height:48px;flex:none;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-sunken);border:var(--border-w-hairline) solid var(--border-default);color:var(--text-title);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.rd-step-btn:hover{background:var(--pine-600)}
+.rd-step-btn:active{transform:scale(.92)}
+.rd-step-btn:disabled{opacity:.4;pointer-events:none}
+.rd-step-btn .ico{width:18px;height:18px;stroke-width:1.8}
+.rd-dose-nums{display:flex;align-items:baseline;justify-content:center;gap:14px;min-width:0}
+.rd-dose-nums > span:not(.rd-arrow){display:flex;flex-direction:column;align-items:center}
+.rd-dose-nums b{font:var(--weight-thin) 52px/1 var(--font-text);letter-spacing:-0.05em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.rd-dose-nums i{font:normal var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-muted);margin-top:4px}
+.rd-arrow{font:var(--weight-thin) 22px/1 var(--font-text);color:var(--text-faint)}
+.rd-dose.is-static .rd-dose-nums{justify-content:flex-start;gap:30px}
+.rd-dose-note{margin:0;text-align:center;font:var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-muted)}
+.rd-reset{display:inline;padding:0;min-height:0;font:inherit;color:var(--text-accent);text-decoration:underline;text-underline-offset:3px}
+
+.rd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:10px}
+.rd-tile{
+  display:flex;flex-direction:column;gap:2px;padding:14px;min-width:0;
+  border-radius:20px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+}
+.rd-tile .k{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-tile .v{font:var(--weight-thin) 24px/1.1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.rd-tile .v.is-text{font:var(--weight-regular) 15px/1.25 var(--font-text);letter-spacing:0;padding-top:4px}
+
+.rd-h2{margin:30px 0 0;font:var(--weight-medium) 18px/1.3 var(--font-text);letter-spacing:-0.015em;color:var(--text-title)}
+.rd-steps{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column}
+.rd-step{
+  position:relative;display:grid;grid-template-columns:20px 44px minmax(0,1fr) auto;column-gap:10px;
+  align-items:baseline;padding-bottom:18px;
+}
+.rd-step:last-child{padding-bottom:0}
+.rd-step:not(:last-child)::before{content:"";position:absolute;left:4.5px;top:14px;bottom:0;width:1px;background:var(--border-default)}
+.rd-dot{width:10px;height:10px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--text-accent);align-self:center}
+.rd-dot.is-first{background:var(--text-accent)}
+.rd-t{font:var(--weight-regular) 13px/1.4 var(--font-text);color:var(--text-muted);font-variant-numeric:tabular-nums}
+.rd-l{font:var(--weight-regular) 16px/1.4 var(--font-text);color:var(--text-title)}
+.rd-w{font:var(--weight-regular) 13px/1.4 var(--font-text);color:var(--text-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rd-hint{margin:14px 0 0;font:var(--weight-regular) 13px/1.5 var(--font-text);color:var(--text-muted)}
+.rd-hint a{color:var(--text-accent)}
+
+.rd-note{margin-top:12px;padding:16px 18px;border-radius:20px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline)}
+.rd-h2 + .rd-note,.rd-steps + .rd-note,.rd-hint + .rd-note{margin-top:24px}
+.rd-note .k{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted)}
+.rd-note p{margin:6px 0 0;font:var(--weight-regular) 15px/1.55 var(--font-text);color:var(--text-body);white-space:pre-wrap}
+.rd-specs{margin:10px 0 0;display:flex;flex-direction:column}
+.rd-spec{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:var(--border-w-hairline) solid var(--border-hairline)}
+.rd-spec dt{font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-muted)}
+.rd-spec dd{margin:0;font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-title);text-align:right}
+
+/* The brew bar: one orange pill with the length of the brew and a play
+   disc, the edit circle beside it. */
+.detail-bar.rd-bar{max-width:640px;margin:30px auto 0;gap:10px}
+.rd-brew{
+  flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  min-height:58px;padding:0 8px 0 24px;border-radius:var(--radius-full);
+  background:var(--accent-timer);color:#FFFFFF;font:var(--weight-medium) 17px/1 var(--font-text);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.rd-brew:hover{background:var(--roast-700)}
+.rd-brew:active{transform:scale(.98)}
+.rd-brew-end{display:flex;align-items:center;gap:10px}
+.rd-brew-time{font-weight:var(--weight-light);opacity:.85;font-variant-numeric:tabular-nums}
+.rd-brew-disc{width:42px;height:42px;border-radius:var(--radius-full);background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.rd-brew-disc .ico{width:14px;height:14px}
+.rd-edit{width:58px;height:58px}
+@media(max-width:860px){
+  /* The capsule nav steps aside on a recipe, so the bar sits on the
+     bottom edge itself. */
+  .detail-bar.rd-bar{
+    bottom:0;max-width:none;margin:0;
+    padding:14px var(--gutter-screen) max(14px, env(safe-area-inset-bottom));
+    background:var(--bg-app);border-top:var(--border-w-hairline) solid var(--border-hairline);
+  }
+  .rd{padding-bottom:110px}
+}
+@media(min-width:861px){
+  /* On a wide screen the bar floats at the foot of the window rather than
+     waiting at the end of the page. */
+  .detail-bar.rd-bar{position:sticky;bottom:20px;z-index:5}
+}
