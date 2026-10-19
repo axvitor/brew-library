@@ -1279,6 +1279,107 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
    desktop. Anything that has to sit above it — the pinned brew action,
    Back to top, the page's own bottom padding — measures it rather than
    guessing, which is how a 16px gap opened up under the brew bar. */
+/* ---- liquid glass ----
+   The phone capsule is glass in the iOS sense: the page behind it is
+   blurred and saturated (every engine), and on Chromium it is also bent
+   at the rim, the way a thick lens bends what is under its edge. That
+   bend is an SVG displacement filter driven by a map drawn to the
+   capsule's exact size: each pixel says how far, and which way, to look
+   for the backdrop, strongest at the rim and nothing in the middle. The
+   red, green and blue channels are bent by slightly different amounts,
+   which leaves the faint colour fringe real glass has. Safari and Firefox
+   cannot run an SVG filter as a backdrop filter, so they get the blur,
+   the tint and the specular rim without the bend — still glass. */
+var GLASS_BEND = !!navigator.userAgentData && !!(window.CSS && CSS.supports &&
+  CSS.supports('backdrop-filter', 'url(#navGlass)'));
+var glassSize = '';
+
+function glassMap(w, h) {
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var ctx = c.getContext('2d');
+  var img = ctx.createImageData(w, h);
+  var r = h / 2, rim = Math.min(r, 20);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      // Nearest point on the capsule's spine, then distance to the rim.
+      var px = x + 0.5, py = y + 0.5;
+      var cx = Math.min(Math.max(px, r), w - r);
+      var dx = px - cx, dy = py - r;
+      var d = Math.sqrt(dx * dx + dy * dy) || 1;
+      var depth = r - d;                         // 0 at the rim, r at the spine
+      var k = depth >= rim ? 0 : Math.pow(1 - Math.max(depth, 0) / rim, 2);
+      var i = (y * w + x) * 4;
+      // Look inward from the rim: the edge shows what is further in.
+      img.data[i] = 128 - 127 * k * dx / d;
+      img.data[i + 1] = 128 - 127 * k * dy / d;
+      img.data[i + 2] = 128;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return c.toDataURL();
+}
+
+function glassNav() {
+  var nav = document.getElementById('appNav');
+  if (!GLASS_BEND || !nav || nav.hidden) return;
+  var w = Math.round(nav.offsetWidth), h = Math.round(nav.offsetHeight);
+  var key = w + 'x' + h;
+  if (!w || !h || key === glassSize) return;
+  glassSize = key;
+  var host = document.getElementById('glassDefs');
+  if (!host) {
+    host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    host.id = 'glassDefs';
+    host.setAttribute('aria-hidden', 'true');
+    host.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+    document.body.appendChild(host);
+  }
+  var map = glassMap(w, h), s = 26;
+  function pass(scale, row, name) {
+    return '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + scale + '" xChannelSelector="R" yChannelSelector="G" result="d' + name + '"/>' +
+      '<feColorMatrix in="d' + name + '" type="matrix" values="' + row + '" result="' + name + '"/>';
+  }
+  host.innerHTML =
+    '<filter id="navGlass" x="0" y="0" width="' + w + '" height="' + h + '" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">' +
+      '<feImage href="' + map + '" x="0" y="0" width="' + w + '" height="' + h + '" preserveAspectRatio="none" result="map"/>' +
+      pass(s, '1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0', 'r') +
+      pass(s + 4, '0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0', 'g') +
+      pass(s + 8, '0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0', 'b') +
+      '<feBlend in="r" in2="g" mode="screen" result="rg"/>' +
+      '<feBlend in="rg" in2="b" mode="screen"/>' +
+    '</filter>';
+  document.documentElement.classList.add('glass-bend');
+}
+
+/* The selected tab sits under a lens that slides between tabs, stretching
+   as it travels and settling with a little give — the same move the iOS
+   tab bar makes. */
+var lensX = null;
+function placeLens(animate) {
+  var nav = document.getElementById('appNav');
+  var lens = nav && nav.querySelector('.nav-lens');
+  if (!lens) return;
+  var on = nav.querySelector('[data-nav].on');
+  if (!on || nav.hidden || getComputedStyle(lens).display === 'none') { lensX = null; return; }
+  var x = on.offsetLeft;
+  var still = !animate || lensX === null || lensX === x ||
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches || !lens.animate;
+  if (!still) {
+    var mid = (lensX + x) / 2;
+    lens.animate([
+      { transform: 'translateX(' + lensX + 'px)' },
+      { transform: 'translateX(' + mid + 'px) scale(1.35,.86)', offset: 0.45 },
+      { transform: 'translateX(' + (x + (x > lensX ? 3 : -3)) + 'px) scale(.96,1.04)', offset: 0.8 },
+      { transform: 'translateX(' + x + 'px)' }
+    ], { duration: 480, easing: 'cubic-bezier(.3,.7,.25,1)' });
+  }
+  lens.style.transform = 'translateX(' + x + 'px)';
+  lens.classList.add('is-placed');
+  lensX = x;
+}
+
 function measureNav() {
   var nav = document.getElementById('appNav');
   var shown = nav && !nav.hidden && getComputedStyle(nav).display !== 'none';
@@ -1293,6 +1394,7 @@ function measureNav() {
   var reserve = (shown && !side) ? Math.max(0, Math.round(window.innerHeight - nav.getBoundingClientRect().top)) : 0;
   document.documentElement.style.setProperty('--nav-h', reserve + 'px');
   document.documentElement.style.setProperty('--nav-w', (side ? nav.offsetWidth : 0) + 'px');
+  if (shown && !side) { glassNav(); placeLens(false); }
 }
 
 function updateNav() {
@@ -1322,6 +1424,7 @@ function updateNav() {
     if (on) items[i].setAttribute('aria-current', 'page');
     else items[i].removeAttribute('aria-current');
   }
+  placeLens(true);
 }
 
 function renderGate(title, message, footHTML) {

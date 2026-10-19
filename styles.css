@@ -1967,6 +1967,93 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 }
 @media(max-width:860px){ body.on-recipe .appnav{display:none} }
 
+/* ---------- liquid glass capsule ----------
+   Layers, back to front: the backdrop, blurred and saturated (bent at the
+   rim on Chromium — see glassNav in app.js); a thin dark tint so icons
+   hold contrast over anything; a specular rim, bright where light would
+   catch the top-left and bottom-right edges; a soft sheen across the top.
+   The selected tab is a smaller lens of the same glass that slides. */
+.nav-lens{display:none}
+@media(max-width:860px){
+  .appnav{
+    --glass-tint:rgba(30,28,26,.38);
+    background:var(--glass-tint);background-image:none;
+    border:0;isolation:isolate;overflow:hidden;
+    -webkit-backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+    backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.20),
+      inset 0 -1px 0 rgba(255,255,255,.05),
+      0 18px 40px -14px rgba(0,0,0,.75),
+      0 2px 6px rgba(0,0,0,.25);
+  }
+  .glass-bend .appnav{
+    --glass-tint:rgba(30,28,26,.30);
+    backdrop-filter:url(#navGlass) blur(5px) saturate(190%) brightness(1.08);
+  }
+  /* Specular rim: a gradient border cut out of a full-size box. */
+  .appnav::before{
+    content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+    border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg,
+      rgba(255,255,255,.55) 0%, rgba(255,255,255,.12) 22%,
+      rgba(255,255,255,.03) 50%, rgba(255,255,255,.10) 78%, rgba(255,255,255,.38) 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  }
+  /* Sheen: light pooled along the top of the glass. */
+  .appnav::after{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
+    background:
+      radial-gradient(120% 70% at 30% -20%, rgba(255,255,255,.16), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.06), transparent 50%);
+  }
+
+  .nav-items{position:relative}
+  .nav-item{z-index:1;color:rgba(255,255,255,.88);transition:color var(--dur-base) var(--ease-standard)}
+  .nav-item .ico{transition:transform var(--dur-fast) var(--ease-standard)}
+  .nav-item:active .ico{transform:scale(.86)}
+  /* The lens carries the selection now, so the tab itself stays clear
+     and only its icon takes the accent, the way iOS tints a chosen tab. */
+  .nav-item.on{background:transparent;color:var(--text-accent)}
+  .nav-lens{
+    display:block;position:absolute;left:0;top:0;width:52px;height:52px;z-index:0;
+    border-radius:var(--radius-full);pointer-events:none;opacity:0;
+    background:
+      radial-gradient(90% 60% at 50% 0%, rgba(255,255,255,.22), transparent 70%),
+      rgba(255,255,255,.10);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.38),
+      inset 0 -1px 0 rgba(255,255,255,.08),
+      inset 0 0 0 .5px rgba(255,255,255,.16),
+      0 4px 14px -6px rgba(0,0,0,.5);
+    transition:opacity var(--dur-base) var(--ease-standard);
+  }
+  .nav-lens.is-placed{opacity:1}
+
+  /* Add recipe: the same glass, filled with orange. */
+  .nav-add{
+    background:
+      radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.30), transparent 65%),
+      rgba(200,74,22,.88);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.40),
+      inset 0 -1px 0 rgba(0,0,0,.18),
+      0 6px 16px -6px rgba(200,74,22,.7);
+  }
+  .nav-add:active{background:rgba(163,58,14,.92)}
+}
+/* Settings that ask for less see-through UI get a solid capsule. */
+@media(max-width:860px) and (prefers-reduced-transparency:reduce){
+  .appnav,.glass-bend .appnav{
+    background:#252321;-webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  @media(max-width:860px){ .appnav{background:rgba(37,35,33,.94)} }
+}
+
 /* ---------- home ---------- */
 .home{max-width:760px;margin:0 auto;padding:26px 0 24px;display:flex;flex-direction:column}
 .home-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -2230,3 +2317,18 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .sheet-head .iconbtn .ico,.page-title-row .iconbtn .ico{width:17px;height:17px}
 .gate-point .ico{color:var(--text-accent)}
 .gate-steam{color:var(--text-accent);opacity:.7}
+
+/* Back to top floats over the page beside the capsule, so it is the same
+   glass (blur and rim only — too small for a bend to read). */
+.back-to-top{
+  background:rgba(30,28,26,.38);color:#FFFFFF;border:0;
+  -webkit-backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+  backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.24),
+    inset 0 0 0 .5px rgba(255,255,255,.14),
+    0 10px 24px -10px rgba(0,0,0,.7);
+}
+@media (prefers-reduced-transparency:reduce){
+  .back-to-top{background:#252321;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
