@@ -654,6 +654,19 @@ var TRANSLATIONS = {
     'Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.': 'Dê uma nota a um preparo e o café entra no ranking. Dois ou três já bastam para ver quais pacotes valem repetir.',
     'Start with the one you just opened': 'Comece pela que você acabou de abrir',
     'The rest': 'Os demais',
+    'Method type': 'Tipo de método',
+    'Pour over': 'Coado',
+    'Pressure': 'Pressão',
+    'Immersion': 'Imersão',
+    'Drip filter': 'Cafeteira',
+    'Stovetop': 'Fogão',
+    'Continue': 'Continuar',
+    'Recent': 'Recente',
+    'grams': 'gramas',
+    'water': 'água',
+    'shot': 'extração',
+    'Search': 'Buscar',
+    'Search recipes': 'Buscar receitas',
     'Show options': 'Mostrar opções',
     'Tap to search': 'Toque para buscar',
     'Search ': 'Buscar ',
@@ -1139,7 +1152,7 @@ var COMBO_ICON = {
    6. Filters
    --------------------------------------------------------- */
 
-var filters = { q: '', coffee: '', roaster: '', grinder: '', method: '', style: '', fav: false, sort: 'new' };
+var filters = { q: '', coffee: '', roaster: '', grinder: '', method: '', style: '', fav: false, sort: 'new', kind: '' };
 /* Which set the comboboxes read and write. Home points it at the live
    filters; the filters page points it at its own draft, so nothing the
    page touches reaches the list until Apply. */
@@ -1199,6 +1212,7 @@ function visibleRecipes(f) {
     if (f.roaster && roasterIdOf(r) !== f.roaster) return false;
     if (f.grinder && r.grinderId !== f.grinder) return false;
     if (f.method && r.methodId !== f.method) return false;
+    if (f.kind && kindOf(r) !== f.kind) return false;
     if (f.style && r.styleId !== f.style) return false;
     if (f.fav && !r.fav) return false;
     if (q) {
@@ -1484,87 +1498,11 @@ function greetingKey() {
   return 'Evening';
 }
 
-function greetingHTML() {
-  var name = (currentUser && currentUser.displayName || '').split(' ')[0];
-  var photo = currentUser && currentUser.photoURL;
-  var letter = (name || (currentUser && currentUser.email) || '?').trim().charAt(0).toUpperCase();
-  return '<div class="greet">' +
-    '<a class="greet-av" href="#/account" aria-label="' + esc(t('Account')) + '">' +
-      (photo ? '<img src="' + esc(photo) + '" alt="" />' : '<span>' + esc(letter) + '</span>') +
-    '</a>' +
-    '<div class="greet-txt">' +
-      '<span class="greet-day">' + esc(new Date().toLocaleDateString(locale(),
-        { weekday: 'long', day: 'numeric', month: 'long' })) + '</span>' +
-      '<span class="greet-name">' + esc(t(greetingKey())) + (name ? ', ' + esc(name) : '') + '</span>' +
-    '</div>' +
-  '</div>';
-}
 
 /* The methods you actually brew with, most-used first — a shortcut past
    the full combo below.
 
-   Every method with recipes filed under it gets a chip. There is no cap:
-   the row scrolls, so a limit only decides which of your own methods you
-   are not allowed to see, and at five it was cutting off V60. Methods
-   nothing is filed under are still left out, since tapping one would only
-   ever empty the list; the combo lists those with a zero beside them. */
-function methodChipsHTML() {
-  var counts = coll('method').map(function (me) {
-    return { id: me.id, name: me.name, n: state.recipes.filter(function (r) { return r.methodId === me.id; }).length };
-  }).filter(function (m) { return m.n > 0; })
-    .sort(function (a, b) { return b.n - a.n; });
-  if (counts.length < 2) return '';
 
-  var html = '<div class="chips">' +
-    '<button class="chip' + (filters.method ? '' : ' on') + '" data-action="pick-method" data-id="">' +
-      esc(t('All')) + '</button>';
-  counts.forEach(function (m) {
-    html += '<button class="chip' + (filters.method === m.id ? ' on' : '') + '" ' +
-      'data-action="pick-method" data-id="' + esc(m.id) + '">' + esc(m.name) + '</button>';
-  });
-  return html + '</div>';
-}
-
-/* Hands back the last thing you brewed, with the two numbers you need to
-   weigh it out and a control that goes straight to the ring. Suppressed
-   while filtering — you came here looking for something else. */
-function resumeHTML() {
-  if (filtersActive()) return '';
-  var seen = lastSeen();
-  if (!seen) return '';
-  var r = seen.recipe;
-  var roaster = roasterOf(r);
-  return '<div class="sechead"><span class="section-title">' +
-      esc(t('Pick up where you left off')) + '</span></div>' +
-    '<section class="resume">' +
-    '<a class="resume-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' +
-      esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
-    '<svg class="resume-mark" viewBox="0 0 24 24" aria-hidden="true">' +
-      '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
-      '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
-    '<div class="resume-body">' +
-      '<div class="resume-top">' +
-        '<span class="resume-kicker">' + esc(nameOf('method', r.methodId)) + ' · ' +
-          esc(nameOf('style', r.styleId)) + '</span>' +
-        '<span class="resume-name">' + esc(titleOf(r)) + '</span>' +
-        '<span class="resume-meta">' + (roaster ? esc(roaster) + ' · ' : '') +
-          esc(t('opened')) + ' ' + esc(agoLabel(seen.at)) + '</span>' +
-      '</div>' +
-      '<div class="resume-row">' +
-        '<div class="resume-stats">' +
-          '<div class="rs"><span class="k">' + esc(t('Dose')) + '</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
-          '<div class="rs"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
-          '<div class="rs"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
-        '</div>' +
-        (timerPlan(r)
-          ? '<button class="resume-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
-            ICON.play + '<span>' + esc(t('Brew')) + '</span></button>'
-          : '<a class="resume-brew resume-open" href="#/r/' + encodeURIComponent(r.id) + '">' +
-            '<span>' + esc(t('Open')) + '</span>' + ICON.chevRight + '</a>') +
-      '</div>' +
-    '</div>' +
-  '</section>';
-}
 
 /* Repaints whichever surface owns the comboboxes right now. */
 /* Which view was last painted. Entrance animations are gated on this:
@@ -1588,7 +1526,7 @@ function openFilters() {
       q: filters.q,
       coffee: filters.coffee, roaster: filters.roaster, grinder: filters.grinder,
       method: filters.method, style: filters.style,
-      fav: filters.fav, sort: filters.sort
+      fav: filters.fav, sort: filters.sort, kind: filters.kind
     },
     onClose: function () { filterTarget = filters; openCombo = null; comboQuery = ''; },
     render: function () {
@@ -1629,50 +1567,175 @@ function openFilters() {
   openModal(m);
 }
 
+/* ---- home (F4) ----
+   A header, the method-type tabs, a carousel that opens on the recipe you
+   were last looking at, the search pill, and every recipe as a row. */
+
+function kindOf(r) {
+  var me = findIn('method', r.methodId);
+  return ((me && me.kind) || '').trim();
+}
+
+/* Method types are free text on each method, so the tabs come from the
+   types that actually have recipes, most-used first, rather than from a
+   fixed list that would drift from the library. */
+function kindTabsHTML() {
+  var counts = {};
+  state.recipes.forEach(function (r) {
+    var k = kindOf(r);
+    if (k) counts[k] = (counts[k] || 0) + 1;
+  });
+  var kinds = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+  if (kinds.length < 2) return '';
+  function tab(value, label) {
+    var on = (filters.kind || '') === value;
+    return '<button type="button" role="tab" aria-selected="' + on + '" class="ktab' + (on ? ' on' : '') +
+      '" data-action="pick-kind" data-kind="' + esc(value) + '">' + esc(label) + '</button>';
+  }
+  return '<div class="ktabs" role="tablist" aria-label="' + esc(t('Method type')) + '">' +
+    tab('', t('All')) + kinds.map(function (k) { return tab(k, t(k)); }).join('') + '</div>';
+}
+
+/* The pour schedule as a staircase of water against time, drawn from the
+   recipe's own steps. Null when there is nothing to draw — an espresso has
+   no pours, and a recipe with no water on its steps has no staircase. */
+function pourSpark(r, w, h) {
+  var plan = timerPlan(r);
+  if (!plan || !plan.water || plan.segs.length < 2) return null;
+  var x = function (sec) { return (sec / plan.total * w).toFixed(1); };
+  var y = function (g) { return (h - g / plan.water * h).toFixed(1); };
+  var d = 'M0 ' + h;
+  plan.segs.forEach(function (sg) {
+    d += ' H' + x(sg.start) + ' V' + y(sg.upto);
+  });
+  d += ' H' + w;
+  return { line: d, area: d + ' V' + h + ' H0 Z' };
+}
+
+function monogram(r) {
+  var me = findIn('method', r.methodId);
+  var letters = ((me && me.name) || titleOf(r)).replace(/[^A-Za-zÀ-ÿ0-9]/g, '');
+  return letters.slice(0, 2).toUpperCase() || '·';
+}
+
+function slideHTML(r, kind) {
+  var spark = pourSpark(r, 250, 64);
+  var roaster = roasterOf(r);
+  var style = nameOf('style', r.styleId);
+  var plan = timerPlan(r);
+  var hasWater = r.water !== '' && r.water != null;
+  return '<div class="slide">' +
+    '<a class="slide-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' + esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
+    '<div class="slide-body">' +
+      '<div class="slide-top">' +
+        '<span class="slide-chip' + (kind === 'continue' ? ' is-continue' : '') + '">' +
+          esc(t(kind === 'continue' ? 'Continue' : 'Recent')) + '</span>' +
+        '<span class="slide-method">' + esc(nameOf('method', r.methodId)) + '</span>' +
+      '</div>' +
+      (spark
+        ? '<svg class="slide-spark" viewBox="0 0 250 64" preserveAspectRatio="none" aria-hidden="true">' +
+            '<path class="area" d="' + spark.area + '"/><path class="line" d="' + spark.line + '"/></svg>'
+        : '<div class="slide-spark is-empty" aria-hidden="true"></div>') +
+      '<div class="slide-name">' +
+        '<span class="nm">' + esc(titleOf(r)) + '</span>' +
+        '<span class="mt">' + esc([roaster, style].filter(Boolean).join(' · ')) + '</span>' +
+      '</div>' +
+      '<div class="slide-foot">' +
+        '<div class="slide-nums">' +
+          '<span><b>' + num(r.dose) + '</b><i>' + esc(t('grams')) + '</i></span>' +
+          (hasWater
+            ? '<span><b>' + num(r.water) + '</b><i>' + esc(t('water')) + '</i></span>'
+            : (r.brewTime ? '<span><b>' + esc(String(r.brewTime).replace('~', '')) + '</b><i>' + esc(t('shot')) + '</i></span>' : '')) +
+        '</div>' +
+        (plan
+          ? '<button type="button" class="slide-brew" data-action="timer" data-id="' + esc(r.id) + '" aria-label="' +
+              esc(t('Brew') + ' ' + titleOf(r)) + '">' + ICON.play + '</button>'
+          : '<span class="slide-open" aria-hidden="true">' + ICON.chevRight + '</span>') +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+/* Opens on the recipe you last looked at, then the newest additions. */
+function carouselHTML() {
+  var seen = lastSeen();
+  var first = seen ? seen.recipe : null;
+  var recent = state.recipes.slice()
+    .sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); })
+    .filter(function (r) { return !first || r.id !== first.id; })
+    .slice(0, first ? 4 : 5);
+  var slides = (first ? [slideHTML(first, 'continue')] : [])
+    .concat(recent.map(function (r) { return slideHTML(r, 'recent'); }));
+  if (!slides.length) return '';
+  var dots = '';
+  for (var i = 0; i < slides.length; i++) dots += '<span class="dot' + (i === 0 ? ' on' : '') + '"></span>';
+  return '<div class="carousel" id="homeCarousel">' + slides.join('') + '</div>' +
+    (slides.length > 1 ? '<div class="carousel-dots" aria-hidden="true">' + dots + '</div>' : '');
+}
+
+function homeRowHTML(r) {
+  var roaster = roasterOf(r);
+  var hasWater = r.water !== '' && r.water != null && r.dose !== '' && r.dose != null;
+  var side = hasWater ? ratio(r.dose, r.water).replace('1:', '')
+    : (r.brewTime ? esc(String(r.brewTime).replace('~', '')) : '');
+  return '<a class="hrow" href="#/r/' + encodeURIComponent(r.id) + '">' +
+    '<span class="hrow-mono" aria-hidden="true">' + esc(monogram(r)) + '</span>' +
+    '<span class="hrow-txt">' +
+      '<span class="nm">' + esc(titleOf(r)) + (r.fav ? ' <span class="hrow-fav" aria-label="' + esc(t('Favourite')) + '">' + ICON.star + '</span>' : '') + '</span>' +
+      '<span class="mt">' + esc([nameOf('method', r.methodId), roaster].filter(Boolean).join(' · ')) + '</span>' +
+    '</span>' +
+    (side ? '<span class="hrow-side">' + side + '</span>' : '') +
+    '<span class="hrow-chev" aria-hidden="true">' + ICON.chevRight + '</span>' +
+  '</a>';
+}
+
 function renderHome(entering) {
   // Only the router passes this. Every other caller — a keystroke in the
-  // search field, a chip, applying filters — repaints without replaying
+  // search field, a tab, applying filters — repaints without replaying
   // the page's entrance under the caret.
   view.classList.toggle('view-enter', entering === true);
   var list = visibleRecipes();
   var total = state.recipes.length;
+  // The carousel is for picking up where you were; while you are hunting
+  // for something else it only pushes the results down.
+  var hunting = filtersActive();
 
-  var html = '';
-  html += greetingHTML();
-  html += '<section class="hero">' +
-    '<h1>' + esc(t('What are you')) + '<br>' + esc(t('brewing')) +
-      ' <em>' + esc(t('today?')) + '</em></h1>' +
-    (filtersActive()
-      ? '<p><span class="count">' + list.length + '</span> ' +
-        esc(tPlural(list.length, 'recipe', 'recipes')) + ' ' + esc(t('of')) + ' ' + total +
-        (list.length ? '' : ' · ' + esc(t('nothing matches — try clearing a filter'))) + '</p>'
-      : '<p><span class="count">' + total + '</span> ' + esc(tPlural(total, 'recipe', 'recipes')) +
-        ' · ' + state.coffees.length + ' ' + esc(tPlural(state.coffees.length, 'coffee', 'coffees')) +
-        ' · ' + state.roasters.length + ' ' + esc(tPlural(state.roasters.length, 'roaster', 'roasters')) + '</p>') +
-    '</section>';
+  var name = (currentUser && currentUser.displayName || '').split(' ')[0];
+  var photo = currentUser && currentUser.photoURL;
+  var letter = (name || (currentUser && currentUser.email) || '?').trim().charAt(0).toUpperCase();
 
-  var moreCount = moreFiltersCount();
-  html += '<div class="filters">' +
-    '<div class="search">' + ICON.search +
-      '<input id="q" type="search" placeholder="' + esc(t('Search recipes…')) + '" value="' + esc(filters.q) + '" />' +
-    '</div>' +
-    '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
-      ICON.star + esc(t('Favourites')) + '</button>' +
-    '<button class="pill-toggle' + (moreCount ? ' on' : '') + '" data-action="filters-open">' +
-      ICON.sliders + esc(t('Filters')) +
-      (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
-    '</button>' +
-    (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">' + esc(t('Clear')) + '</button>' : '') +
-  '</div>';
+  var html = '<div class="home">' +
+    '<header class="home-head">' +
+      '<div class="home-title">' +
+        '<span class="home-day">' + esc(new Date().toLocaleDateString(locale(),
+          { weekday: 'long', day: 'numeric', month: 'long' })) + '</span>' +
+        '<h1>' + esc(t('Brew Library')) + '</h1>' +
+      '</div>' +
+      '<a class="home-av" href="#/account" aria-label="' + esc(t('Account')) + '">' +
+        (photo ? '<img src="' + esc(photo) + '" alt="" />' : '<span>' + esc(letter) + '</span>') +
+      '</a>' +
+    '</header>' +
+    kindTabsHTML() +
+    (hunting ? '' : carouselHTML());
 
-  html += methodChipsHTML();
-  html += resumeHTML();
+  var moreCount = moreFiltersCount() + (filters.fav ? 1 : 0);
+  html += '<div class="home-search">' +
+      '<label class="search-pill">' + ICON.search +
+        '<input id="q" type="search" placeholder="' + esc(t('Search') + ' ' + total + ' ' + tPlural(total, 'recipe', 'recipes')) +
+          '" value="' + esc(filters.q) + '" aria-label="' + esc(t('Search recipes')) + '" />' +
+      '</label>' +
+      '<button type="button" class="search-filter' + (moreCount ? ' on' : '') + '" data-action="filters-open" aria-label="' +
+        esc(t('Filters')) + (moreCount ? ' (' + moreCount + ')' : '') + '">' + ICON.sliders +
+        (moreCount ? '<span class="search-badge">' + moreCount + '</span>' : '') +
+      '</button>' +
+    '</div>';
 
-  if (list.length) {
-    html += '<div class="sechead"><span class="section-title">' +
-      esc(t(filtersActive() ? 'Matching recipes' : 'All recipes')) + '</span>' +
-      '<span class="sechead-count">' + list.length + '</span></div>';
-  }
+  html += '<div class="home-sec">' +
+      '<span class="home-sec-t">' + esc(t(hunting || filters.kind ? 'Matching recipes' : 'All recipes')) + '</span>' +
+      (hunting || filters.kind
+        ? '<button type="button" class="home-sec-a" data-action="clear-filters">' + esc(t('Clear')) + ' · ' + list.length + '/' + total + '</button>'
+        : '<span class="home-sec-n">' + total + '</span>') +
+    '</div>';
 
   if (!list.length) {
     html += '<div class="empty">' + ICON.bean +
@@ -1685,70 +1748,13 @@ function renderHome(entering) {
         : '<button class="btn btn-primary" data-action="new-recipe">' + ICON.plus + esc(t('Add recipe')) + '</button>') +
       '</div>';
   } else {
-    html += '<div class="grid">' + list.map(cardHTML).join('') + '</div>';
+    html += '<div class="hrows">' + list.map(homeRowHTML).join('') + '</div>';
   }
 
-  view.innerHTML = html;
+  view.innerHTML = html + '</div>';
 }
 
-function cardHTML(r) {
-  var bits = [];
-  var grinder = findIn('grinder', r.grinderId);
-  if (grinder) bits.push('<span class="tag">' + esc(grinder.name) + (r.grindSize ? ' · ' + esc(r.grindSize) : '') + '</span>');
-  else if (r.grindSize) bits.push('<span class="tag">' + esc(r.grindSize) + '</span>');
-  if (r.temp) bits.push('<span class="tag">' + esc(String(r.temp)) + '°C</span>');
-  if (r.brewTime) bits.push('<span class="tag">' + esc(r.brewTime) + '</span>');
 
-  var roaster = roasterOf(r);
-
-  // The play/favourite buttons used to live inside this card's <a> — invalid
-  // HTML (interactive content nested in interactive content), and browsers
-  // resolve the ambiguity inconsistently: on real touch input the first tap
-  // can land on the outer link instead of the button, so it took two taps
-  // to actually fire. Fixed with the "stretched link" pattern instead: the
-  // <a> is an invisible full-card hit target with no descendants, painted
-  // *behind* the visible content; the content passes clicks through to it
-  // (pointer-events:none) except for the two real buttons, which sit on
-  // top and get their own taps directly, as true siblings of the link
-  // rather than children of it.
-  return '<div class="card">' +
-    '<a class="card-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="Open ' + esc(titleOf(r)) + '"></a>' +
-    '<div class="card-content">' +
-    '<div class="card-head">' +
-      '<div class="card-head-info">' +
-        // v3 leads the card with the method as a printed tag, then the
-        // name in the display serif, then the roaster.
-        '<div class="tags card-kind">' +
-          '<span class="tag tag-accent">' + esc(nameOf('method', r.methodId)) + '</span>' +
-          '<span class="tag">' + esc(nameOf('style', r.styleId)) + '</span>' +
-        '</div>' +
-        '<div class="card-title">' + esc(titleOf(r)) + '</div>' +
-        (roaster ? '<div class="card-sub"><span>' + esc(roaster) + '</span></div>' : '') +
-        (r.rating ? '<div class="card-rating" aria-label="' +
-          esc(t('Cup score') + ': ' + r.rating + '/5') + '">' + stars(r.rating) + '</div>' : '') +
-      '</div>' +
-      '<div class="card-tools">' +
-        // Only offered when there's actually something to count — a recipe
-        // with neither a brew time nor a schedule has no ring to draw.
-        (timerPlan(r)
-          ? '<button class="cardbtn" data-action="timer" data-id="' + esc(r.id) + '" ' +
-            'title="Start brew timer" aria-label="Start brew timer">' + ICON.play + '</button>'
-          : '') +
-        '<button class="fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' +
-          iconStar(r.fav) + '</button>' +
-      '</div>' +
-    '</div>' +
-    (bits.length ? '<div class="tags">' + bits.join('') + '</div>' : '') +
-    '<div class="card-foot">' +
-      '<div class="stats">' +
-        '<div class="stat"><span class="k">' + esc(t('Dose')) + '</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
-        '<div class="stat"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
-        '<div class="stat"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
-      '</div>' +
-    '</div>' +
-    '</div>' +
-    '</div>';
-}
 
 /* ---- detail ---- */
 
@@ -5233,15 +5239,15 @@ document.addEventListener('click', function (ev) {
       });
       return;
 
-    case 'pick-method':
+    case 'pick-kind':
       ev.preventDefault();
-      filters.method = id || '';
+      filters.kind = btn.getAttribute('data-kind') || '';
       renderHome();
       return;
 
     case 'clear-filters':
       filters.q = ''; filters.coffee = ''; filters.roaster = ''; filters.grinder = '';
-      filters.method = ''; filters.style = ''; filters.fav = false;
+      filters.method = ''; filters.style = ''; filters.fav = false; filters.kind = '';
       openCombo = null; comboQuery = '';
       render();
       return;
@@ -5673,6 +5679,17 @@ document.documentElement.setAttribute('lang', LANG);
 translateMarkup();
 trackVisualViewport();
 boot();
+
+// The carousel's dots follow whichever slide is nearest the left edge.
+document.addEventListener('scroll', function (ev) {
+  var c = ev.target;
+  if (!c || c.id !== 'homeCarousel') return;
+  var slide = c.querySelector('.slide');
+  if (!slide) return;
+  var i = Math.round(c.scrollLeft / (slide.offsetWidth + 12));
+  var dots = document.querySelectorAll('.carousel-dots .dot');
+  for (var k = 0; k < dots.length; k++) dots[k].classList.toggle('on', k === i);
+}, true);
 
 // The bar changes height on rotation and disappears entirely when the
 // layout crosses into the sidebar breakpoint.
