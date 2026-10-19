@@ -1240,7 +1240,7 @@ function visibleRecipes(f) {
     if (f.roaster && roasterIdOf(r) !== f.roaster) return false;
     if (f.grinder && r.grinderId !== f.grinder) return false;
     if (f.method && r.methodId !== f.method) return false;
-    if (f.kind && kindOf(r) !== f.kind) return false;
+    if (f.kind && brewerOf(r) !== f.kind) return false;
     if (f.style && r.styleId !== f.style) return false;
     if (f.fav && !r.fav) return false;
     if (q) {
@@ -1760,29 +1760,30 @@ function openFilters() {
    A header, the method-type tabs, a carousel that opens on the recipe you
    were last looking at, the search pill, and every recipe as a row. */
 
-function kindOf(r) {
+/* One tab per brewer — V60, Origami, Espresso… — most used first, so the
+   tabs follow the library rather than a fixed list. Methods that only
+   differ by a detail after a dash or in brackets ("Espresso — DEX
+   basket", "Espresso — 3Bomber (18g basket)") share their brewer's tab. */
+function brewerOf(r) {
   var me = findIn('method', r.methodId);
-  return ((me && me.kind) || '').trim();
+  return me ? me.name.split(/\s+[—–-]\s+|\s*\(/)[0].trim() : '';
 }
 
-/* Method types are free text on each method, so the tabs come from the
-   types that actually have recipes, most-used first, rather than from a
-   fixed list that would drift from the library. */
 function kindTabsHTML() {
   var counts = {};
   state.recipes.forEach(function (r) {
-    var k = kindOf(r);
-    if (k) counts[k] = (counts[k] || 0) + 1;
+    var b = brewerOf(r);
+    if (b) counts[b] = (counts[b] || 0) + 1;
   });
-  var kinds = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
-  if (kinds.length < 2) return '';
+  var names = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+  if (names.length < 2) return '';
   function tab(value, label) {
     var on = (filters.kind || '') === value;
     return '<button type="button" role="tab" aria-selected="' + on + '" class="ktab' + (on ? ' on' : '') +
       '" data-action="pick-kind" data-kind="' + esc(value) + '">' + esc(label) + '</button>';
   }
-  return '<div class="ktabs-glass glass" data-glass="5"><div class="ktabs" role="tablist" aria-label="' + esc(t('Method type')) + '">' +
-    tab('', t('All')) + kinds.map(function (k) { return tab(k, t(k)); }).join('') + '</div></div>';
+  return '<div class="ktabs-glass glass" data-glass="5"><div class="ktabs" role="tablist" aria-label="' + esc(t('Method')) + '">' +
+    tab('', t('All')) + names.map(function (n) { return tab(n, n); }).join('') + '</div></div>';
 }
 
 function monogram(r) {
@@ -1797,7 +1798,7 @@ function slideHTML(r, kind) {
   var style = nameOf('style', r.styleId);
   var plan = timerPlan(r);
   var hasWater = r.water !== '' && r.water != null;
-  return '<div class="slide glass" data-glass="10">' +
+  return '<div class="slide">' +
     '<a class="slide-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' + esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
     '<div class="slide-body">' +
       '<div class="slide-top">' +
@@ -2998,6 +2999,7 @@ function renderModals() {
     var heading = el.querySelector('.page-head h2');
     if (crumbs) crumbs.innerHTML = crumbTrail(trail, i);
     if (heading) trail.push({ label: heading.textContent, depth: i });
+    glassAll(el);
 
   });
 
@@ -3086,7 +3088,7 @@ function sheet(opts) {
         '</div>' +
       '</div>' +
       '<div class="sheet-body">' + opts.body + '</div>' +
-      '<div class="sheet-foot">' + opts.foot + '</div>' +
+      '<div class="sheet-foot glass" data-glass="6">' + opts.foot + '</div>' +
     '</div>';
   return wrap;
 }
