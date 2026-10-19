@@ -1240,14 +1240,17 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
    guessing, which is how a 16px gap opened up under the brew bar. */
 function measureNav() {
   var nav = document.getElementById('appNav');
-  var shown = nav && !nav.hidden;
+  var shown = nav && !nav.hidden && getComputedStyle(nav).display !== 'none';
   var side = shown && getComputedStyle(nav).position === 'fixed' &&
     window.matchMedia('(min-width:861px)').matches;
   // Height when it is a bottom bar, width when it is a sidebar, zero for
   // both when it is not on screen at all — the sign-in screen has no nav,
   // and reserving the sidebar's width there left the page inset by 232px
   // with the hero unable to reach the left edge.
-  document.documentElement.style.setProperty('--nav-h', (shown && !side ? nav.offsetHeight : 0) + 'px');
+  // The capsule floats clear of the bottom edge, so what has to be kept
+  // free is everything from its top down — not just its own height.
+  var reserve = (shown && !side) ? Math.max(0, Math.round(window.innerHeight - nav.getBoundingClientRect().top)) : 0;
+  document.documentElement.style.setProperty('--nav-h', reserve + 'px');
   document.documentElement.style.setProperty('--nav-w', (side ? nav.offsetWidth : 0) + 'px');
 }
 
@@ -1255,12 +1258,17 @@ function updateNav() {
   var nav = document.getElementById('appNav');
   if (!nav) return;
 
+  var hash = location.hash || '#/';
+
   // The nav is the app's whole chrome now, so it only exists once there is
   // an app to navigate — the sign-in gate owns the screen on its own.
   nav.hidden = authPhase !== 'ready' || !currentUser;
+  // On a phone a recipe tucks the capsule away (CSS, keyed off this class):
+  // that page pins its own Start brewing bar where the capsule would sit,
+  // and has a back button for the way out. The desktop sidebar stays.
+  document.body.classList.toggle('on-recipe', hash.indexOf('#/r/') === 0);
   measureNav();
 
-  var hash = location.hash || '#/';
   var here = hash === '#/account' ? 'account'
     : hash === '#/library' ? 'library'
     : hash === '#/ranking' ? 'ranking'

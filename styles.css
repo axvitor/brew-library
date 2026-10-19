@@ -199,62 +199,121 @@
   --transition-control:background-color var(--dur-fast) var(--ease-standard),border-color var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard),box-shadow var(--dur-fast) var(--ease-standard),transform var(--dur-instant) var(--ease-tap);
 }
 
-/* ---- Dark mode -----------------------------------------------
-   AUTHORED HERE, NOT PART OF v3. v3 defines one paper palette and
-   stops. Rather than invent a second language, this rebinds only
-   the semantic aliases onto v3's existing pine and ink ramps: the
-   canvas becomes the deepest pine, cards sit one step up, and the
-   roast accent carries over untouched because it already reads
-   well on dark green. Primary actions flip to sage-on-pine, since
-   a pine button on a pine canvas would disappear. */
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg-app:var(--pine-900);
-    --surface-card:var(--pine-800);
-    --surface-sunken:#1F2A23;
-    --surface-inverse:var(--pine-800);
-    --surface-inverse-deep:#141C17;
-    --surface-accent:rgba(186,195,179,.12);
-    --surface-warm:rgba(201,168,124,.14);
-    --surface-scrim:rgba(8,12,10,.66);
+/* ---- F4 "Evening" ------------------------------------------
+   This branch reskins the app in the F4 direction: one dark,
+   espresso-coloured palette that does not follow the OS theme, Albert
+   Sans for everything, thin oversized numerals, generous radii, and a
+   single burnt orange rationed to the brew and add actions. The old
+   light/dark pair is gone rather than overridden — keeping a light
+   palette nobody can reach would only be dead weight.
 
-    --text-title:var(--paper-100);
-    --text-body:var(--paper-200);
-    --text-muted:var(--pine-300);
-    --text-faint:#7D8F82;
-    --text-link:var(--sage-300);
-    --text-link-hover:var(--roast-300);
-    --text-accent:var(--roast-300);
+   The Cupform ramp NAMES are kept so every rule written against them
+   keeps working; their values are remapped onto the F4 palette. */
+:root{
+  color-scheme: dark;
 
-    --border-hairline:rgba(246,241,232,.10);
-    --border-default:rgba(246,241,232,.16);
-    --border-strong:rgba(246,241,232,.30);
-    --border-focus:var(--sage-300);
+  /* Dark neutrals take over the old pine ramp: pine was the inverse
+     and primary surface, which is exactly the role these now play. */
+  --pine-900:#0B0A0A;
+  --pine-800:#1C1B19;
+  --pine-700:#252321;
+  --pine-600:#34312E;
+  --pine-500:#4A4743;
+  --pine-300:#A39F99;
+  --pine-100:#D9D6D0;
 
-    --action-primary:var(--sage-300);
-    --action-primary-hover:var(--pine-100);
-    --action-primary-press:var(--sage-500);
-    --action-primary-text:var(--pine-900);
-    --action-secondary-border:rgba(246,241,232,.22);
-    --action-disabled:rgba(246,241,232,.08);
-    --action-disabled-text:#6F8074;
+  --sage-500:#7E7A74;
+  --sage-300:#A39F99;
+  --sage-100:#252321;
 
-    --accent-star:var(--roast-500);
-    --accent-star-empty:rgba(246,241,232,.20);
+  /* Roast becomes the burnt orange. 600 carries white text at ~4.9:1;
+     300 is the peach used for accent text and lines on the dark ground. */
+  --roast-700:#A33A0E;
+  --roast-600:#C84A16;
+  --roast-500:#DA6328;
+  --roast-300:#F5A66B;
+  --roast-100:#3A2418;
 
-    --state-error:#D9705C;
-    --state-error-surface:rgba(217,112,92,.16);
+  --caramel-500:#7E7A74;
+  --caramel-300:#4A4743;
+  --caramel-100:#252321;
 
-    /* Black noise vanishes on a dark ground — invert the tooth. */
-    --texture-paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' fill='%23fff' opacity='.03'/%3E%3C/svg%3E");
-    --rule-dotted:repeating-linear-gradient(to right,var(--border-default) 0 2px,transparent 2px 6px);
+  --green-600:#7FC59A;
+  --amber-600:#E0A84A;
+  --red-600:#F08A7A;
+  --blue-600:#8FB3C9;
 
-    --shadow-card:0 1px 2px rgba(0,0,0,.34),0 2px 8px rgba(0,0,0,.28);
-    --shadow-raised:0 2px 4px rgba(0,0,0,.38),0 8px 20px rgba(0,0,0,.36);
-    --shadow-sheet:0 -2px 6px rgba(0,0,0,.34),0 -16px 40px rgba(0,0,0,.46);
-    --shadow-focus:0 0 0 2px var(--pine-900),0 0 0 4px var(--sage-300);
-  }
+  --bg-app:#111010;
+  --surface-card:#1C1B19;
+  --surface-sunken:#252321;
+  --surface-inverse:#1C1B19;
+  --surface-inverse-deep:#0B0A0A;
+  --surface-accent:rgba(200,74,22,.16);
+  --surface-warm:#252321;
+  --surface-scrim:rgba(0,0,0,.66);
+
+  --text-title:#EDEBE7;
+  --text-body:#D9D6D0;
+  --text-muted:#A39F99;
+  --text-faint:#8A867F;
+  --text-on-inverse:#EDEBE7;
+  --text-on-inverse-muted:#A39F99;
+  --text-accent:#F5A66B;
+  --text-link:#F5A66B;
+  --text-link-hover:#FFC08F;
+
+  --border-hairline:#2E2C29;
+  --border-default:#34312E;
+  --border-strong:#4A4743;
+  --border-inverse:#2E2C29;
+  --border-focus:#F5A66B;
+
+  /* The neutral primary is the light pill — F4's selected tab and
+     every "commit" button that is not the brew action. */
+  --action-primary:#EDEBE7;
+  --action-primary-hover:#FFFFFF;
+  --action-primary-press:#D9D6D0;
+  --action-primary-text:#111010;
+  --action-secondary-border:#34312E;
+  --action-disabled:#252321;
+  --action-disabled-text:#6E6A65;
+
+  --nav-add-bg:#C84A16;
+  --accent-star:#F5A66B;
+  --accent-star-empty:#4A4743;
+  --accent-favorite:#F5A66B;
+  --accent-timer:#C84A16;
+
+  --state-success:#7FC59A;
+  --state-error:#F08A7A;
+  --state-error-surface:rgba(240,138,122,.14);
+
+  --font-display:"Albert Sans","Helvetica Neue",system-ui,sans-serif;
+  --font-text:"Albert Sans","Helvetica Neue",system-ui,sans-serif;
+  --font-mono:"Albert Sans","Helvetica Neue",system-ui,sans-serif;
+  --weight-light:300;
+  --weight-thin:200;
+  --tracking-display:-0.03em;
+  --tracking-mono:0;
+
+  --radius-xs:6px;
+  --radius-sm:10px;
+  --radius-md:16px;
+  --radius-lg:24px;
+  --radius-sheet:28px;
+  --control-h-md:48px;
+  --control-h-lg:56px;
+
+  /* No paper tooth on a dark ground: F4 is flat. */
+  --texture-paper:none;
+
+  --shadow-card:0 1px 2px rgba(0,0,0,.4);
+  --shadow-raised:0 18px 36px -14px rgba(0,0,0,.7);
+  --shadow-sheet:0 -14px 40px rgba(0,0,0,.6);
+  --shadow-press:inset 0 1px 2px rgba(0,0,0,.5);
+  --shadow-focus:0 0 0 2px #111010,0 0 0 4px #F5A66B;
 }
+
 
 /* ---------- reset / base (v3 tokens/base.css) ---------- */
 *,*::before,*::after{box-sizing:border-box}
@@ -301,7 +360,6 @@ svg.ico-fill{fill:currentColor;stroke:none}
   text-transform:lowercase;
 }
 .brand-text em{font-style:normal;color:var(--text-muted);margin-left:.3em}
-@media (prefers-color-scheme: dark){ .brand-mark{stroke:var(--sage-300)} }
 
 /* ---------- app nav ----------
    One element, two shapes. Under 861px it is a bottom tab bar with the
@@ -1908,3 +1966,94 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   *{animation-duration:.01ms !important;transition-duration:.01ms !important}
   .card:hover{transform:none}
 }
+
+/* ============================================================
+   F4 "Evening" skin
+   Everything below restyles shared components for the F4 direction.
+   It sits last so it wins on order alone, and is kept in one place so
+   the whole direction can be read — or reverted — as a unit.
+   ============================================================ */
+
+/* Labels: F4 has no tracked uppercase eyebrows. Small, sentence case,
+   muted — the hierarchy comes from size and weight, not shouting. */
+.section-title,.lbl,.field > label,.detail-head .kicker,.steps-head span,
+.bigstat .k,.stat .k,.form-sep-label,.greet-day,.resume-kicker,.rs .k,
+.timer-eyebrow,.timer-total,.timer-readout .rk,.rank-rate-k,.menu-label{
+  font:var(--weight-medium) 13px/1.3 var(--font-text);
+  letter-spacing:0;text-transform:none;color:var(--text-muted);
+}
+
+/* Display type: Albert Sans set large and light, tracked in. */
+.hero h1,.detail-head h1,.library-head h1,.ranking-head h1,.gate-sheet h1{
+  font-weight:var(--weight-regular);letter-spacing:-0.035em;
+}
+.page-head h2,.dialog h2,.sheet-head h2{font-weight:var(--weight-regular);letter-spacing:-0.02em}
+
+/* Measurements: thin and oversized, never bold. */
+.bigstat .v{font-weight:var(--weight-thin);font-size:30px;letter-spacing:-0.04em}
+.bigstat .v small{font-weight:var(--weight-regular);letter-spacing:0}
+.rs .v,.stat .v,.rank-top .rank-v{font-weight:var(--weight-light);letter-spacing:-0.02em}
+.hero .count,.sechead-count{font-weight:var(--weight-medium)}
+
+/* Buttons are pills. Weight drops to medium: on a dark ground semibold
+   white text glows. */
+.btn{border-radius:var(--radius-full);font-weight:var(--weight-medium);letter-spacing:0}
+.btn-ghost{background:var(--surface-card);border-color:var(--border-default);color:var(--text-title)}
+.btn-ghost:hover{background:var(--surface-sunken);border-color:var(--border-strong)}
+.btn-quiet:hover{background:var(--surface-sunken)}
+.btn-accent,.btn-accent:hover{color:#FFFFFF}
+/* Google's own button reads as the light pill on the dark sheet. */
+.btn-google{background:#EDEBE7;color:#111010;border-color:#EDEBE7}
+.btn-google:hover{background:#FFFFFF;border-color:#FFFFFF}
+
+/* Fields: dark wells with a hairline, rounder. Search is a full pill. */
+.inp,.combo-field,.sel select,.search input{
+  background:var(--surface-card);border-color:var(--border-default);color:var(--text-title);
+}
+.search input{border-radius:var(--radius-full)}
+.combo-list,.menu{background:var(--surface-card);border-color:var(--border-default)}
+.combo-opt:hover,.combo-opt.on,.menu button:hover{background:var(--surface-sunken)}
+.tabs{background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-full)}
+.tabs button{border-radius:var(--radius-full)}
+.segs{border-radius:var(--radius-full);background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline)}
+.seg{border-radius:var(--radius-full)}
+
+.brand-mark{stroke:var(--text-accent)}
+
+/* ---------- nav ----------
+   Phone: a floating capsule, icons only, the current place a light disc
+   and Add recipe the orange one. Labels stay in the markup for screen
+   readers and are hidden visually — five icons this familiar read faster
+   than five words at 10px. Desktop keeps the sidebar, re-toned. */
+.nav-item{position:relative}
+@media(max-width:860px){
+  .appnav{
+    left:50%;right:auto;bottom:max(18px, env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    padding:6px;border:var(--border-w-hairline) solid #34312E;border-radius:var(--radius-full);
+    background:#252321;box-shadow:var(--shadow-raised);
+  }
+  .nav-items{gap:4px}
+  .nav-item{
+    flex:none;width:52px;height:52px;min-height:0;gap:0;
+    border-radius:var(--radius-full);justify-content:center;align-items:center;
+    color:#EDEBE7;
+  }
+  .nav-item > span:not(.nav-add-mark){
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;
+  }
+  .nav-item.on{background:#EDEBE7;color:#111010}
+  .nav-add{background:var(--nav-add-bg);color:#FFFFFF}
+  .nav-add:active{background:var(--roast-700)}
+  .nav-add .nav-add-mark{
+    width:auto;height:auto;margin:0;background:none;box-shadow:none;border-radius:0;color:inherit;
+  }
+  body{padding-bottom:calc(var(--nav-h, 96px) + 18px)}
+}
+@media(min-width:861px){
+  .appnav{background:var(--bg-app)}
+  .nav-item.on{background:var(--surface-sunken);color:var(--text-title);font-weight:var(--weight-semibold)}
+  .nav-add{color:#FFFFFF}
+}
+@media(max-width:860px){ body.on-recipe .appnav{display:none} }
