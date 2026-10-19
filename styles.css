@@ -1563,215 +1563,124 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .iconbtn:active{transform:scale(var(--press-scale))}
 .iconbtn.danger:hover{color:var(--state-error);background:var(--state-error-surface)}
 
-/* ---------- brew timer ----------
-   Follows the app's own light/dark setting like every other surface,
-   rather than being forced onto the inverse pine surface unconditionally
-   the way v3's own BrewTimer always does — with the rest of the app in
-   light mode, a permanently-dark timer read as inconsistent rather than
-   deliberate. Structure and typography still follow v3's BrewTimer
-   (eyebrow step counter, mono readouts, the instruction in the display
-   serif, capsule accent control, a next-step footer); the ring keeps
-   this app's own semantics of one closed circle for the whole brew, with
-   a segment per pour. Progress moves linearly and never eases — easing
-   would misreport elapsed time. The roast accent (progress arc, start
-   button) is the one constant between light and dark — v3 rations roast
-   specifically for "the live timer" regardless of surface. */
-/* Real sizing (width/height/border/shadow) lives on .overlay-full
-   .sheet-timer below — the timer only ever renders inside that
-   fullscreen wrapper, so this rule carries just the color/texture that
-   both light and dark share. */
-.sheet-timer{
-  background:var(--surface-card);background-image:var(--texture-paper);
-  border-color:var(--border-hairline);color:var(--text-body);
+/* ---------- brew timer (F4) ----------
+   One column you can read from a metre away: the clock set huge and thin,
+   a gauge of water in the cone against this pour's target, the pour
+   itself in an orange card, what comes next, and the controls with the
+   whole brew drawn as a ring around the pause button. Progress moves
+   linearly and never eases — easing would misreport elapsed time. */
+.sheet-timer{background:var(--bg-app);color:var(--text-body)}
+.sheet-timer .sheet-head{border:0;padding:max(16px,env(safe-area-inset-top)) 20px 0;display:block}
+.tm-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tm-title{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center}
+.tm-title h2{margin:0;max-width:100%;font:var(--weight-medium) 14px/1.3 var(--font-text);letter-spacing:0;color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timer-eyebrow{font:var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-muted)}
+.tm-circ{
+  width:44px;height:44px;flex:none;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
 }
-.sheet-timer .sheet-head{border-bottom-color:var(--border-hairline);padding-bottom:12px;flex-direction:column;align-items:stretch;gap:6px}
-.sheet-timer .sheet-head h2{color:var(--text-title)}
-.timer-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.timer-head-actions{display:flex;align-items:center;gap:8px;flex:none}
-.sheet-timer .timer-mute.is-muted{color:var(--text-faint)}
-.timer-eyebrow{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
-.timer-clock{font:var(--weight-medium) 14px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted)}
-.sheet-timer .iconbtn{color:var(--text-muted)}
-.sheet-timer .iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
+.tm-circ:hover{background:var(--surface-sunken)}
+.tm-circ:active{transform:scale(var(--press-scale))}
+.tm-circ .ico{width:17px;height:17px}
+.timer-mute.is-muted{color:var(--text-faint)}
 
-.timer-body{display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px var(--pad-sheet) 0;overflow:hidden;min-height:0}
-/* Unwrapped below the desktop breakpoint — their children flow straight
-   into .timer-body's own single flex column, so mobile's ring → readouts
-   → instruction → steps → next-strip order is completely unaffected by
-   this grouping existing in the markup. See min-width:861px below. */
-.timer-hero,.timer-list{display:contents}
+.timer-body{display:flex;flex-direction:column;gap:0;padding:0 20px;overflow-y:auto;min-height:0;flex:1}
+.timer-hero{display:flex;flex-direction:column}
+.timer-list{display:none}
 
-/* Smaller than the fullscreen takeover's first pass — the ring was
-   winning too much of the guaranteed height at the step list's expense;
-   this leaves noticeably more of the screen for the steps themselves,
-   which are what you actually read mid-pour. Still bounded by vh so a
-   short phone in landscape can't force the list off-screen. Desktop's
-   own hero-column size is set separately at the min-width:861px
-   breakpoint below and is untouched by this. */
-.timer-ring{position:relative;width:min(200px,52vw,24vh);aspect-ratio:1;flex:none}
-.timer-ring svg{width:100%;height:100%;display:block;overflow:visible}
-.timer-ring circle{fill:none}
-.ttrack{stroke:var(--border-hairline);stroke-width:14}
-/* The plan, drawn once: one arc per pour, brightening as it passes. */
-.tseg{stroke:var(--pine-700);stroke-opacity:.14;stroke-width:14;transition:stroke-opacity var(--dur-slow) var(--ease-standard)}
-.tseg.is-past{stroke-opacity:.26}
-.tseg.is-now{stroke-opacity:.40}
-.tprog{stroke:var(--roast-500);stroke-width:14;stroke-linecap:round}
-.timer-ring .thead circle{fill:var(--roast-500);stroke:var(--surface-card);stroke-width:3}
-.sheet-timer.is-done .tprog{stroke:var(--pine-700)}
-.sheet-timer.is-done .timer-ring .thead circle{fill:var(--pine-700)}
-.sheet-timer.is-done .timer-elapsed{color:var(--pine-700)}
+.tm-clock{display:flex;flex-direction:column;align-items:center;padding-top:clamp(12px,4vh,30px)}
+.timer-elapsed{
+  font:var(--weight-thin) clamp(84px,30vw,132px)/1 var(--font-text);letter-spacing:-0.06em;
+  color:var(--text-title);font-variant-numeric:tabular-nums;
+}
+.timer-total{font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-muted);margin-top:4px}
+.sheet-timer.is-done .timer-elapsed{color:var(--text-accent)}
 
-.timer-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;pointer-events:none}
-.timer-elapsed{font:var(--weight-bold) 44px/1 var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--text-title)}
-.timer-total{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+.tm-gauge{
+  margin-top:clamp(14px,3vh,26px);padding:18px 20px;border-radius:26px;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  display:flex;flex-direction:column;gap:12px;
+}
+.tm-gauge-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.tm-gauge-top .k{font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted)}
+.timer-poured{font:var(--weight-thin) 26px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.timer-poured small{font:var(--weight-regular) 13px/1 var(--font-text);letter-spacing:0;color:var(--text-muted)}
+.tm-bar{position:relative;height:12px;border-radius:6px;background:var(--surface-sunken);overflow:hidden}
+.tm-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:var(--text-accent)}
+.tm-tick{position:absolute;top:0;bottom:0;width:1px;background:var(--bg-app)}
+.tm-target{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--text-title);transition:left var(--dur-base) var(--ease-out)}
+.tm-scale{position:relative;height:14px;font:var(--weight-regular) 11px/14px var(--font-text);color:var(--text-muted);font-variant-numeric:tabular-nums}
+.tm-scale span{position:absolute;top:0;white-space:nowrap}
+.tm-scale .lo{left:0}
+.tm-scale .hi{right:0}
+.tm-scale .hi.is-target{color:var(--text-title);font-weight:var(--weight-medium)}
+.tm-scale .tg{transform:translateX(-50%);color:var(--text-title);font-weight:var(--weight-medium);transition:left var(--dur-base) var(--ease-out)}
 
-/* v3's two secondary readouts: time left in this step, water poured. */
-.timer-readouts{display:flex;align-items:flex-start;justify-content:center;gap:28px;width:100%}
-.timer-readout{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
-.timer-readout .rv{font:var(--weight-bold) 20px/1.05 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-title)}
-.timer-readout .rv small{font:var(--weight-medium) 12px/1 var(--font-text);color:var(--text-muted);margin-left:2px}
-.timer-readout .rk{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
-
-/* The instruction itself — the display serif, the largest text here, and
-   the only thing on this screen you read while pouring. A card rather
-   than a rule-and-a-line: mid-brew it has to be findable at a glance
-   from a metre away, and roast marks it as the live one. */
 .timer-now{
-  flex:none;width:100%;display:flex;flex-direction:column;gap:6px;
-  padding:14px 16px;border-radius:var(--radius-lg);
-  background:rgba(194,104,59,.16);
-  border:var(--border-w-hairline) solid rgba(224,167,131,.28);
+  margin-top:10px;padding:18px 20px;border-radius:26px;display:flex;flex-direction:column;gap:6px;
+  background:rgba(200,74,22,.18);border:var(--border-w-hairline) solid rgba(245,166,107,.28);
 }
-.timer-now-kicker{
-  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
-  text-transform:uppercase;color:var(--roast-300);
+.timer-now-kicker{font:var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-accent);font-variant-numeric:tabular-nums}
+.timer-now-label{font:var(--weight-regular) clamp(20px,5.6vw,26px)/1.2 var(--font-text);letter-spacing:-0.025em;color:var(--text-title);text-wrap:pretty}
+.timer-now-sub{font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-body)}
+.timer-now-sub:empty{display:none}
+.sheet-timer.is-done .timer-now{background:var(--surface-card);border-color:var(--border-hairline)}
+
+.timer-next{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin:16px 4px 0;font:var(--weight-regular) 14px/1.4 var(--font-text)}
+.timer-next .nt{flex:none;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.timer-next .nx{min-width:0;color:var(--text-title);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.sheet-timer.pulse .timer-now{animation:nowIn var(--dur-base) var(--ease-out)}
+@keyframes nowIn{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.sheet-timer .timer-foot{
+  display:flex;justify-content:center;align-items:center;gap:26px;border:0;background:transparent;
+  padding:16px 20px max(26px,env(safe-area-inset-bottom));
 }
-.timer-now-label{font:var(--weight-regular) 21px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--paper-000);text-wrap:pretty}
-/* Finished: the ring has gone pine, and so does this. */
-.sheet-timer.is-done .timer-now{background:rgba(186,195,179,.12);border-color:rgba(186,195,179,.24)}
-.sheet-timer.is-done .timer-now-kicker{color:var(--sage-300)}
+.timer-side{
+  width:56px;height:56px;flex:none;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.timer-side:hover{background:var(--surface-sunken)}
+.timer-side:active{transform:scale(var(--press-scale))}
+.timer-side .ico{width:19px;height:19px}
+.tm-play{position:relative;width:100px;height:100px;flex:none;display:flex;align-items:center;justify-content:center}
+.tm-play svg.tm-ring{position:absolute;inset:0;width:100%;height:100%}
+.tm-ring circle{fill:none;stroke-width:3}
+.tm-ring .ttrack{stroke:var(--surface-sunken)}
+.tm-ring .tprog{stroke:var(--text-accent);stroke-linecap:round}
+.timer-toggle{
+  position:relative;width:80px;height:80px;border-radius:var(--radius-full);border:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--accent-timer);color:#FFFFFF;
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.timer-toggle:hover{background:var(--roast-700)}
+.timer-toggle:active{transform:scale(.95)}
+.timer-toggle .ico{width:24px;height:24px}
 
-.sheet-timer.pulse .timer-ring{animation:ringPulse var(--dur-slow) var(--ease-out)}
-.sheet-timer.pulse .timer-now-label{animation:nowIn var(--dur-base) var(--ease-out)}
-@keyframes ringPulse{0%{transform:scale(1)}38%{transform:scale(1.03)}100%{transform:scale(1)}}
-@keyframes nowIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-
-.timer-steps{align-self:stretch;margin:0 calc(var(--pad-sheet) * -1);flex:1 1 auto;min-height:0;display:flex;flex-direction:column;list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:var(--border-w-hairline) solid var(--border-hairline);padding:8px 0 0}
-.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:8px var(--pad-sheet);font:var(--type-body-sm);font-size:14px;color:var(--text-body);transition:background-color var(--dur-base) var(--ease-standard),color var(--dur-base) var(--ease-standard)}
-.timer-step .ts-t,.timer-step .ts-w{font:var(--weight-medium) 11px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted);white-space:nowrap}
-.timer-step.is-past{color:var(--text-faint)}
-.timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--border-default)}
-.timer-step.is-now{background:var(--surface-accent);color:var(--text-title)}
-.timer-step.is-now .ts-t{color:var(--text-link)}
-
-/* "Next · …" strip, v3's BrewTimer footer. */
-.timer-next{display:flex;align-items:center;gap:9px;padding:10px var(--pad-sheet);background:var(--surface-sunken);border-top:var(--border-w-hairline) solid var(--border-hairline);flex:none}
-.timer-next .ico{width:15px;height:15px;color:var(--pine-600)}
-.timer-next .nx{flex:1;min-width:0;font:var(--weight-medium) 14px/1.3 var(--font-text);color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.timer-next .nt{font:var(--weight-medium) 12px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted)}
-
-.timer-foot{justify-content:center;gap:10px;background:var(--surface-sunken);border-top-color:var(--border-hairline)}
-/* The start control is one of only two true capsules in the system. */
-.timer-foot .timer-toggle{flex:1;max-width:220px;justify-content:center;border-radius:var(--radius-full);background:var(--roast-600);border-color:var(--roast-600);color:var(--paper-000);min-height:var(--control-h-lg)}
-.timer-foot .timer-toggle:hover{background:var(--roast-500);border-color:var(--roast-500)}
-.timer-foot .timer-toggle:active{background:var(--roast-700)}
-.timer-foot .timer-side{width:var(--control-h-lg);min-height:var(--control-h-lg);padding:0;flex:none;background:transparent;border-color:var(--border-default);color:var(--text-muted)}
-.timer-foot .timer-side:hover{background:var(--surface-card);border-color:var(--border-strong)}
-
-/* Desktop: a fullscreen timer has real width to spend, and a single
-   column just stretched wide leaves the ring centered in a lot of bare
-   paper either side of it. Split into two: the ring/readouts/instruction
-   as a hero column that stays put, the step list as its own scrolling
-   column beside it — the same shape as a media player's now-playing
-   screen (art fixed, tracklist scrolls). 861px matches the breakpoint
-   the recipe detail page already stacks its own two-column layout at,
-   for one consistent rhythm across the app rather than a bespoke number
-   here. */
+/* Desktop: the same column, plus the whole schedule beside it. */
 @media(min-width:861px){
-  .timer-body{
-    display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);
-    align-items:start;gap:44px;padding-top:8px;
+  .timer-body{display:grid;grid-template-columns:minmax(0,440px) minmax(0,360px);justify-content:center;gap:48px;align-items:start}
+  .timer-list{display:block;padding-top:clamp(12px,4vh,30px)}
+  .timer-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .timer-step{
+    display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:baseline;
+    padding:11px 14px;border-radius:16px;font:var(--weight-regular) 15px/1.4 var(--font-text);color:var(--text-body);
+    transition:background-color var(--dur-base) var(--ease-standard),color var(--dur-base) var(--ease-standard);
   }
-  .timer-hero{display:flex;flex-direction:column;align-items:center;gap:18px}
-  /* align-items:start above (not stretch) so this sizes to its own
-     content instead of being forced to match the hero column's height —
-     stretching it was leaving a five-step recipe's "Next" strip stranded
-     far below the visible rows, with a dead gap between them where the
-     list had nothing left to show but kept the space anyway. A short
-     list now just sits at its natural height, "Next" directly under it;
-     a long one caps at max-height and scrolls within its own box instead
-     of pushing everything below it down the page. */
-  .timer-list{display:flex;flex-direction:column;gap:0}
-  .timer-steps{margin:0;flex:none;max-height:min(52vh,460px);min-height:0;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:6px}
-  .timer-ring{width:min(320px,90%)}
+  .timer-step .ts-t,.timer-step .ts-w{font-size:13px;color:var(--text-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .timer-step.is-past{color:var(--text-faint)}
+  .timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--border-strong)}
+  .timer-step.is-now{background:var(--surface-card);color:var(--text-title)}
+  .timer-step.is-now .ts-t,.timer-step.is-now .ts-w{color:var(--text-accent)}
 }
 
-/* The timer is always the inverse-pine surface, whatever the OS theme is
-   set to. This is v3's own BrewTimer spec — the app previously followed
-   the system here, which meant the one screen you stand over in a dim
-   kitchen could come up bright paper. Everything else in the app still
-   follows the system. */
-/* Rebinding the tokens rather than restating every rule: the timer's own
-   styles above are written against the semantic aliases, so pinning the
-   dark values on the container makes all of them resolve dark. Overriding
-   rule by rule does not work here — .overlay.overlay-full carries two
-   classes and outranks anything written as .overlay-full. */
-.overlay.overlay-full,.overlay-full .sheet-timer{
-  --surface-card:var(--pine-800);
-  --surface-sunken:#1F2A23;
-  --surface-inverse:var(--pine-800);
-  --surface-inverse-deep:#141C17;
-  --surface-accent:rgba(186,195,179,.12);
-  --text-title:var(--paper-100);
-  --text-body:var(--paper-200);
-  --text-muted:var(--pine-300);
-  --text-faint:#7D8F82;
-  --text-link:var(--sage-300);
-  --border-hairline:rgba(246,241,232,.10);
-  --border-default:rgba(246,241,232,.16);
-  --action-primary:var(--sage-300);
-  --action-primary-text:var(--pine-900);
-  --accent-star-empty:rgba(246,241,232,.20);
-  /* Black noise vanishes on a dark ground — invert the tooth. */
-  --texture-paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' fill='%23fff' opacity='.03'/%3E%3C/svg%3E");
-}
-.overlay.overlay-full{background-color:var(--surface-inverse);background-image:var(--texture-paper)}
-.overlay-full .sheet-timer{background:var(--surface-inverse);border-color:var(--pine-900);color:var(--text-on-inverse)}
-.sheet-timer .sheet-head{border-bottom-color:var(--border-inverse)}
-.sheet-timer .sheet-head h2{color:var(--paper-000)}
-.timer-eyebrow,.timer-clock{color:var(--text-on-inverse-muted)}
-.sheet-timer .iconbtn{color:var(--paper-200)}
-.sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
-
-.ttrack{stroke:rgba(246,241,232,.10)}
-.tseg{stroke:var(--paper-000)}
-.timer-ring .thead circle{stroke:var(--pine-700)}
-.sheet-timer.is-done .tprog{stroke:var(--sage-300)}
-.sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
-.sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
-
-.timer-elapsed{color:var(--paper-000)}
-.timer-total{color:var(--text-on-inverse-muted)}
-.timer-readout .rv{color:var(--paper-000)}
-.timer-readout .rv small,.timer-readout .rk{color:var(--text-on-inverse-muted)}
-
-.timer-steps{border-top-color:var(--border-inverse)}
-.timer-step{color:var(--paper-200)}
-.timer-step .ts-t,.timer-step .ts-w{color:var(--text-on-inverse-muted)}
-.timer-step.is-past{color:var(--text-on-inverse-muted)}
-.timer-step.is-past .ts-l{text-decoration-color:var(--border-inverse)}
-.timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
-.timer-step.is-now .ts-t{color:var(--roast-300)}
-
-.timer-next{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
-.timer-next .ico{color:var(--sage-300)}
-.timer-next .nx{color:var(--paper-200)}
-.timer-next .nt{color:var(--text-on-inverse-muted)}
-
-.timer-foot{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
-.timer-foot .timer-side{border-color:var(--border-inverse);color:var(--paper-200)}
-.timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
+.overlay.overlay-full{background:var(--bg-app)}
 
 /* play button on library cards */
 .card-tools{display:flex;align-items:center;gap:6px;flex:none}

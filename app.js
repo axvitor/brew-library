@@ -907,6 +907,16 @@ var TRANSLATIONS = {
     'Last step': 'Última etapa',
     'Left in this step': 'Restante nesta etapa',
     'Water poured': 'Água despejada',
+    'Water in the cone': 'Água no filtro',
+    'left': 'restantes',
+    'target': 'meta',
+    'Add': 'Adicione',
+    'up to': 'até',
+    'Close': 'Fechar',
+    'Restart': 'Recomeçar',
+    'Skip to next step': 'Pular para a próxima etapa',
+    'Mute step cues': 'Silenciar avisos',
+    'Unmute step cues': 'Ativar avisos',
     'Start brewing': 'Iniciar preparo',
     'Resume': 'Retomar',
     'Pause': 'Pausar',
@@ -2222,8 +2232,6 @@ function renderDetail(id, keepScroll) {
    shows how far through the brew you are.
    --------------------------------------------------------- */
 
-var RING_R = 86;
-var RING_C = 2 * Math.PI * RING_R;
 
 // Times here are free-form ("3:15", "~0:28", "3:10–3:15"), so take the first
 // m:ss found — for a range that's the lower bound, which is the one worth
@@ -2394,17 +2402,11 @@ function timerRunCues() {
   }
 }
 
-function buildTimerEl(r, plan) {
-  var segHTML = plan.segs.map(function (s, i) {
-    var len = (s.end - s.start) / plan.total * RING_C;
-    // Hairline gap between arcs so the steps read as separate slices —
-    // dropped on slivers too short to survive it.
-    var gap = len > 14 ? 5 : 0;
-    return '<circle class="tseg" data-i="' + i + '" cx="100" cy="100" r="' + RING_R + '" ' +
-      'stroke-dasharray="' + Math.max(len - gap, 1).toFixed(2) + ' ' + RING_C.toFixed(2) + '" ' +
-      'stroke-dashoffset="' + (-(s.start / plan.total * RING_C)).toFixed(2) + '"></circle>';
-  }).join('');
+// The whole brew as one thin ring around the pause button.
+var TM_R = 47, TM_C = 2 * Math.PI * TM_R;
+var TM_PAUSE = '<svg viewBox="0 0 24 24" class="ico ico-fill"><rect x="6.5" y="5" width="3.5" height="14" rx="1"/><rect x="14" y="5" width="3.5" height="14" rx="1"/></svg>';
 
+function buildTimerEl(r, plan) {
   var rowsHTML = plan.segs.map(function (s, i) {
     return '<li class="timer-step" data-i="' + i + '">' +
       '<span class="ts-t">' + esc(mmss(s.start)) + '</span>' +
@@ -2413,76 +2415,67 @@ function buildTimerEl(r, plan) {
     '</li>';
   }).join('');
 
+  // Hairlines where each pour should top out, so the gauge reads as the
+  // schedule as well as the running total.
+  var ticks = '';
+  if (plan.water) {
+    plan.segs.forEach(function (s) {
+      if (s.water && s.upto < plan.water) {
+        ticks += '<span class="tm-tick" style="left:' + (s.upto / plan.water * 100).toFixed(2) + '%"></span>';
+      }
+    });
+  }
+
   var wrap = document.createElement('div');
   // Fullscreen, not a floating dialog — brewing wants undivided attention,
   // not a card sharing space with the library behind it. See .overlay-full.
   wrap.className = 'overlay overlay-full';
   wrap.innerHTML =
-    '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true">' +
+    '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true" aria-label="' + esc(titleOf(r)) + '">' +
       '<div class="sheet-head">' +
-        '<div class="timer-head-row">' +
-          '<h2>' + esc(titleOf(r)) + '</h2>' +
-          '<span class="timer-head-actions">' +
-            '<button class="iconbtn timer-mute" data-action="timer-mute"></button>' +
-            '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
-          '</span>' +
-        '</div>' +
-        '<div class="timer-head-row">' +
-          '<span class="timer-eyebrow"></span>' +
-          '<span class="timer-clock">00:00 / ' + esc(mmss2(plan.total)) + '</span>' +
+        '<div class="tm-head">' +
+          '<button class="tm-circ" data-action="close-modal" aria-label="' + esc(t('Close')) + '">' + ICON.close + '</button>' +
+          '<span class="tm-title"><h2>' + esc(titleOf(r)) + '</h2><span class="timer-eyebrow"></span></span>' +
+          '<button class="tm-circ timer-mute" data-action="timer-mute"></button>' +
         '</div>' +
       '</div>' +
       '<div class="sheet-body timer-body">' +
-        // .timer-hero and .timer-list are display:contents below the
-        // desktop breakpoint, so mobile's single vertical flow (ring,
-        // readouts, instruction, steps, next-strip) is byte-for-byte
-        // unchanged — they only become real grid columns at the width
-        // that has room for two. See the min-width:861px block.
         '<div class="timer-hero">' +
-          '<div class="timer-ring">' +
-            '<svg viewBox="0 0 200 200" aria-hidden="true">' +
-              '<g transform="rotate(-90 100 100)">' +
-                '<circle class="ttrack" cx="100" cy="100" r="' + RING_R + '"></circle>' +
-                segHTML +
-                '<circle class="tprog" cx="100" cy="100" r="' + RING_R + '" ' +
-                  'stroke-dasharray="0 ' + RING_C.toFixed(2) + '"></circle>' +
-              '</g>' +
-              '<g class="thead"><circle cx="100" cy="' + (100 - RING_R) + '" r="5.5"></circle></g>' +
-            '</svg>' +
-            '<div class="timer-face">' +
-              '<div class="timer-elapsed" role="timer" aria-live="off">00:00</div>' +
-              '<div class="timer-total">' + esc(t('of')) + ' ' + esc(mmss2(plan.total)) + '</div>' +
-            '</div>' +
+          '<div class="tm-clock">' +
+            '<span class="timer-elapsed" role="timer" aria-live="off">0:00</span>' +
+            '<span class="timer-total">' + esc(t('of')) + ' ' + esc(mmss(plan.total)) + '</span>' +
           '</div>' +
-          '<div class="timer-readouts">' +
-            '<div class="timer-readout">' +
-              '<span class="rv timer-left">00:00</span>' +
-              '<span class="rk">' + esc(t('Left in this step')) + '</span>' +
-            '</div>' +
-            (plan.water
-              ? '<div class="timer-readout">' +
-                  '<span class="rv timer-poured">0<small>/ ' + plan.water + ' g</small></span>' +
-                  '<span class="rk">' + esc(t('Water poured')) + '</span>' +
-                '</div>'
-              : '') +
-          '</div>' +
+          (plan.water
+            ? '<div class="tm-gauge">' +
+                '<div class="tm-gauge-top"><span class="k">' + esc(t('Water in the cone')) + '</span>' +
+                  '<span class="timer-poured">0<small> / ' + plan.water + ' g</small></span></div>' +
+                '<div class="tm-bar" aria-hidden="true"><span class="tm-fill"></span>' + ticks + '<span class="tm-target"></span></div>' +
+                '<div class="tm-scale" aria-hidden="true"><span class="lo">0</span><span class="tg"></span><span class="hi">' + plan.water + '</span></div>' +
+              '</div>'
+            : '') +
           '<div class="timer-now">' +
             '<span class="timer-now-kicker"></span>' +
             '<span class="timer-now-label"></span>' +
+            '<span class="timer-now-sub"></span>' +
           '</div>' +
-        '<p class="sr-only timer-announce" role="status" aria-live="polite"></p>' +
+          '<div class="timer-next"><span class="nt"></span><span class="nx"></span></div>' +
+          '<p class="sr-only timer-announce" role="status" aria-live="polite"></p>' +
         '</div>' +
         '<div class="timer-list">' +
           '<ol class="timer-steps">' + rowsHTML + '</ol>' +
-          '<div class="timer-next">' + ICON.arrowDown +
-            '<span class="nx"></span><span class="nt"></span>' +
-          '</div>' +
         '</div>' +
       '</div>' +
       '<div class="sheet-foot timer-foot">' +
-        '<button class="btn btn-ghost timer-side" data-action="timer-reset" aria-label="Restart" title="Restart">' + ICON.replay + '</button>' +
-        '<button class="btn timer-toggle" data-action="timer-toggle">' + ICON.play + '<span>' + esc(t('Start brewing')) + '</span></button>' +
-        '<button class="btn btn-ghost timer-side" data-action="timer-skip" aria-label="Skip to next step" title="Skip to next step">' + ICON.skip + '</button>' +
+        '<button class="timer-side" data-action="timer-reset" aria-label="' + esc(t('Restart')) + '" title="' + esc(t('Restart')) + '">' + ICON.replay + '</button>' +
+        '<div class="tm-play">' +
+          '<svg class="tm-ring" viewBox="0 0 100 100" aria-hidden="true">' +
+            '<circle class="ttrack" cx="50" cy="50" r="' + TM_R + '"></circle>' +
+            '<circle class="tprog" cx="50" cy="50" r="' + TM_R + '" transform="rotate(-90 50 50)" ' +
+              'stroke-dasharray="0 ' + TM_C.toFixed(2) + '"></circle>' +
+          '</svg>' +
+          '<button class="timer-toggle" data-action="timer-toggle"></button>' +
+        '</div>' +
+        '<button class="timer-side" data-action="timer-skip" aria-label="' + esc(t('Skip to next step')) + '" title="' + esc(t('Skip to next step')) + '">' + ICON.skip + '</button>' +
       '</div>' +
     '</div>';
   wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
@@ -2533,27 +2526,32 @@ function timerPaint() {
   var plan = timer.plan, el = timer.el;
   var e = Math.min(Math.max(timer.elapsed, 0), plan.total);
   var frac = e / plan.total;
+  var done = e >= plan.total;
 
   el.querySelector('.tprog').setAttribute('stroke-dasharray',
-    (frac * RING_C).toFixed(2) + ' ' + RING_C.toFixed(2));
-  el.querySelector('.thead').setAttribute('transform',
-    'rotate(' + (frac * 360).toFixed(3) + ' 100 100)');
-  el.querySelector('.timer-elapsed').textContent = mmss2(e);
-  el.querySelector('.timer-clock').textContent = mmss2(e) + ' / ' + mmss2(plan.total);
+    (frac * TM_C).toFixed(2) + ' ' + TM_C.toFixed(2));
+  el.querySelector('.timer-elapsed').textContent = mmss(Math.floor(e));
 
   var i = 0, k;
   for (k = 0; k < plan.segs.length; k++) if (e >= plan.segs[k].start) i = k;
 
-  // Per-step readouts refresh every frame; the heavier class work below
-  // only runs when the step actually changes.
+  // Per-step readouts refresh every frame; the heavier work below only
+  // runs when the step actually changes.
   var seg = plan.segs[i];
   var segLen = seg.end - seg.start;
-  el.querySelector('.timer-left').textContent = mmss2(Math.max(0, seg.end - e));
+  var left = mmss(Math.max(0, Math.ceil(seg.end - e)));
+  var kick = el.querySelector('.timer-now-kicker');
+  if (!done) {
+    // Steps that add no water are not pours — a drawdown or a steep says
+    // so rather than announcing a pour of nothing.
+    kick.textContent = (seg.water ? t('Pouring now') : t('Now')) + ' · ' + left + ' ' + t('left');
+  }
   var poured = el.querySelector('.timer-poured');
   if (poured) {
     var pct = segLen > 0 ? Math.min(1, Math.max(0, (e - seg.start) / segLen)) : 1;
     var g = seg.from + (seg.upto - seg.from) * pct;
-    poured.innerHTML = Math.round(g) + '<small>/ ' + plan.water + ' g</small>';
+    poured.innerHTML = Math.round(g) + '<small> / ' + plan.water + ' g</small>';
+    el.querySelector('.tm-fill').style.width = (g / plan.water * 100).toFixed(2) + '%';
   }
 
   if (i === timer.seg) return;
@@ -2562,34 +2560,56 @@ function timerPaint() {
   el.querySelector('.timer-eyebrow').textContent =
     t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length;
   var nxt = plan.segs[i + 1];
-  el.querySelector('.timer-next .nx').textContent = nxt ? t('Next') + ' · ' + t(nxt.label) : t('Last step');
-  el.querySelector('.timer-next .nt').textContent = nxt ? mmss2(nxt.start) : '';
+  el.querySelector('.timer-next .nt').textContent = nxt ? t('Next') + ' · ' + mmss(nxt.start) : t('Last step');
+  el.querySelector('.timer-next .nx').textContent = nxt ? t(nxt.label) : '';
 
-  var segs = el.querySelectorAll('.tseg');
+  // This pour's target on the gauge: a light marker on the bar and its
+  // number under it, kept clear of the two ends' own labels.
+  if (poured) {
+    var target = el.querySelector('.tm-target');
+    var tg = el.querySelector('.tm-scale .tg');
+    var hi = el.querySelector('.tm-scale .hi');
+    var tp = seg.upto / plan.water * 100;
+    var showMid = seg.water && seg.upto < plan.water;
+    target.hidden = !seg.water;
+    target.style.left = Math.min(tp, 99.5).toFixed(2) + '%';
+    tg.hidden = !showMid;
+    tg.textContent = showMid ? seg.upto + ' ' + t('target') : '';
+    tg.style.left = Math.min(Math.max(tp, 14), 78).toFixed(2) + '%';
+    hi.textContent = plan.water + (seg.water && !showMid ? ' ' + t('target') : '');
+    hi.classList.toggle('is-target', !!(seg.water && !showMid));
+  }
+
   var rows = el.querySelectorAll('.timer-step');
-  for (k = 0; k < segs.length; k++) {
-    segs[k].classList.toggle('is-now', k === i);
-    segs[k].classList.toggle('is-past', k < i);
+  for (k = 0; k < rows.length; k++) {
     rows[k].classList.toggle('is-now', k === i);
     rows[k].classList.toggle('is-past', k < i);
   }
-  el.querySelector('.timer-now-label').textContent = t(plan.segs[i].label);
-  // Steps that add no water are not pours — a drawdown or a steep says so
-  // rather than announcing a pour of nothing.
-  var kick = el.querySelector('.timer-now-kicker');
-  if (kick) {
-    kick.textContent = seg.water
-      ? t('Pouring now') + ' · +' + seg.water + ' g'
-      : t('Now');
-  }
+  el.querySelector('.timer-now-label').textContent = t(seg.label);
+  el.querySelector('.timer-now-sub').textContent = seg.water
+    ? t('Add') + ' ' + seg.water + ' g' + (seg.from ? ' · ' + t('up to') + ' ' + seg.upto + ' g' : '')
+    : '';
   var say = el.querySelector('.timer-announce');
-  if (say) say.textContent = t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length + '. ' + t(plan.segs[i].label);
-  if (rows[i]) rows[i].scrollIntoView({ block: 'nearest' });
+  if (say) say.textContent = t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length + '. ' + t(seg.label);
+  if (rows[i] && rows[i].offsetParent) rows[i].scrollIntoView({ block: 'nearest' });
 
   // Restart the attention pulse from the top on every step change.
   timer.sheet.classList.remove('pulse');
   void timer.sheet.offsetWidth;
   timer.sheet.classList.add('pulse');
+}
+
+// The ring has closed: say so in the pour card and offer to go again.
+function timerFinish() {
+  if (!timer) return;
+  timerRun(false);
+  timer.sheet.classList.add('is-done');
+  timer.el.querySelector('.timer-now-kicker').textContent = t('Done');
+  timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
+  timer.el.querySelector('.timer-now-sub').textContent = '';
+  var say = timer.el.querySelector('.timer-announce');
+  if (say) say.textContent = t('Brew complete.');
+  timerControls();
 }
 
 /* One tick of the brew: advance the clock, fire any cue this moment has
@@ -2599,16 +2619,9 @@ function timerTick() {
   timer.elapsed = timer.from + (performance.now() - timer.at) / 1000;
   if (timer.elapsed >= timer.plan.total) {
     timer.elapsed = timer.plan.total;
-    timerRun(false);
     timerPaint();
-    timer.sheet.classList.add('is-done');
-    timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
-    var doneKick = timer.el.querySelector('.timer-now-kicker');
-    if (doneKick) doneKick.textContent = t('Done');
-    var say = timer.el.querySelector('.timer-announce');
-    if (say) say.textContent = t('Brew complete.');
+    timerFinish();
     timerCue('done');
-    timerControls();
     return;
   }
   timerRunCues();
@@ -2655,18 +2668,20 @@ function timerControls() {
   if (!timer) return;
   var done = timer.elapsed >= timer.plan.total;
   var btn = timer.el.querySelector('.timer-toggle');
-  // v3's label ladder: Start brewing → Pause → Resume → Brew again.
+  // v3's label ladder: Start brewing → Pause → Resume → Brew again. The
+  // button is an icon now, so the ladder is its accessible name.
   var label = done ? t('Brew again')
     : timer.running ? t('Pause')
     : timer.elapsed > 0 ? t('Resume') : t('Start brewing');
-  btn.innerHTML = (done ? ICON.replay : timer.running ? ICON.pause : ICON.play) +
-    '<span>' + label + '</span>';
+  btn.innerHTML = done ? ICON.replay : timer.running ? TM_PAUSE : ICON.play;
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
 
   var mute = timer.el.querySelector('.timer-mute');
   if (mute) {
     mute.innerHTML = timerMuted ? ICON.soundOff : ICON.soundOn;
     mute.setAttribute('aria-pressed', timerMuted ? 'true' : 'false');
-    var ml = timerMuted ? 'Unmute step cues' : 'Mute step cues';
+    var ml = t(timerMuted ? 'Unmute step cues' : 'Mute step cues');
     mute.setAttribute('aria-label', ml);
     mute.setAttribute('title', ml);
     mute.classList.toggle('is-muted', timerMuted);
@@ -5249,10 +5264,7 @@ document.addEventListener('click', function (ev) {
       timer.warned = false;
       timerPaint();
       if (timer.elapsed >= timer.plan.total) {
-        timerRun(false);
-        timer.sheet.classList.add('is-done');
-        timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
-        timerControls();
+        timerFinish();
       }
       return;
 
