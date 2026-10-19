@@ -1116,6 +1116,7 @@ var ICON = {
   signout: '<svg viewBox="0 0 24 24" class="ico"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h9"/></svg>',
   trash: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14"/></svg>',
+  drop: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 3.5c3.5 4.2 6 7.6 6 10.6a6 6 0 0 1-12 0c0-3 2.5-6.4 6-10.6z"/></svg>',
   minus: '<svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14"/></svg>',
   close: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" class="ico"><path d="M15 18l-6-6 6-6"/></svg>',
@@ -1784,22 +1785,6 @@ function kindTabsHTML() {
     tab('', t('All')) + kinds.map(function (k) { return tab(k, t(k)); }).join('') + '</div></div>';
 }
 
-/* The pour schedule as a staircase of water against time, drawn from the
-   recipe's own steps. Null when there is nothing to draw — an espresso has
-   no pours, and a recipe with no water on its steps has no staircase. */
-function pourSpark(r, w, h) {
-  var plan = timerPlan(r);
-  if (!plan || !plan.water || plan.segs.length < 2) return null;
-  var x = function (sec) { return (sec / plan.total * w).toFixed(1); };
-  var y = function (g) { return (h - g / plan.water * h).toFixed(1); };
-  var d = 'M0 ' + h;
-  plan.segs.forEach(function (sg) {
-    d += ' H' + x(sg.start) + ' V' + y(sg.upto);
-  });
-  d += ' H' + w;
-  return { line: d, area: d + ' V' + h + ' H0 Z' };
-}
-
 function monogram(r) {
   var me = findIn('method', r.methodId);
   var letters = ((me && me.name) || titleOf(r)).replace(/[^A-Za-zÀ-ÿ0-9]/g, '');
@@ -1807,12 +1792,12 @@ function monogram(r) {
 }
 
 function slideHTML(r, kind) {
-  var spark = pourSpark(r, 250, 64);
+  var grind = grindText(r);
   var roaster = roasterOf(r);
   var style = nameOf('style', r.styleId);
   var plan = timerPlan(r);
   var hasWater = r.water !== '' && r.water != null;
-  return '<div class="slide">' +
+  return '<div class="slide glass" data-glass="10">' +
     '<a class="slide-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' + esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
     '<div class="slide-body">' +
       '<div class="slide-top">' +
@@ -1820,20 +1805,19 @@ function slideHTML(r, kind) {
           esc(t(kind === 'continue' ? 'Continue' : 'Recent')) + '</span>' +
         '<span class="slide-method">' + esc(nameOf('method', r.methodId)) + '</span>' +
       '</div>' +
-      (spark
-        ? '<svg class="slide-spark" viewBox="0 0 250 64" preserveAspectRatio="none" aria-hidden="true">' +
-            '<path class="area" d="' + spark.area + '"/><path class="line" d="' + spark.line + '"/></svg>'
-        : '<div class="slide-spark is-empty" aria-hidden="true"></div>') +
       '<div class="slide-name">' +
         '<span class="nm">' + esc(titleOf(r)) + '</span>' +
         '<span class="mt">' + esc([roaster, style].filter(Boolean).join(' · ')) + '</span>' +
       '</div>' +
       '<div class="slide-foot">' +
+        '<div class="slide-stats">' +
         '<div class="slide-nums">' +
-          '<span><b>' + num(r.dose) + '</b><i>' + esc(t('grams')) + '</i></span>' +
+          '<span><b>' + num(r.dose) + '</b><i>' + esc(t('g coffee')) + '</i></span>' +
           (hasWater
-            ? '<span><b>' + num(r.water) + '</b><i>' + esc(t('water')) + '</i></span>'
+            ? '<span><b>' + num(r.water) + '</b><i>' + esc(t('g water')) + '</i></span>'
             : (r.brewTime ? '<span><b>' + esc(String(r.brewTime).replace('~', '')) + '</b><i>' + esc(t('shot')) + '</i></span>' : '')) +
+        '</div>' +
+        (grind ? '<div class="slide-grind">' + ICON.grinder + '<span>' + esc(grind) + '</span></div>' : '') +
         '</div>' +
         (plan
           ? '<button type="button" class="slide-brew" data-action="timer" data-id="' + esc(r.id) + '" aria-label="' +
@@ -1861,18 +1845,26 @@ function carouselHTML() {
     (slides.length > 1 ? '<div class="carousel-dots" aria-hidden="true">' + dots + '</div>' : '');
 }
 
+// The grinder and its setting in one line: "KINGrinder · 1 turn + 55 clicks".
+function grindText(r) {
+  var gr = findIn('grinder', r.grinderId);
+  return [gr ? gr.name : '', r.grindSize || ''].filter(Boolean).join(' · ');
+}
+
 function homeRowHTML(r) {
   var roaster = roasterOf(r);
-  var hasWater = r.water !== '' && r.water != null && r.dose !== '' && r.dose != null;
-  var side = hasWater ? ratio(r.dose, r.water).replace('1:', '')
-    : (r.brewTime ? esc(String(r.brewTime).replace('~', '')) : '');
+  var specs = [];
+  if (r.dose !== '' && r.dose != null) specs.push('<span class="hspec"><b>' + num(r.dose) + '</b> g</span>');
+  if (r.water !== '' && r.water != null) specs.push('<span class="hspec">' + ICON.drop + '<b>' + num(r.water) + '</b> g</span>');
+  else if (r.brewTime) specs.push('<span class="hspec"><b>' + esc(String(r.brewTime).replace('~', '')) + '</b></span>');
+  if (r.grindSize) specs.push('<span class="hspec hspec-grind">' + ICON.grinder + esc(r.grindSize) + '</span>');
   return '<a class="hrow" href="#/r/' + encodeURIComponent(r.id) + '">' +
     '<span class="hrow-mono" aria-hidden="true">' + esc(monogram(r)) + '</span>' +
     '<span class="hrow-txt">' +
       '<span class="nm">' + esc(titleOf(r)) + (r.fav ? ' <span class="hrow-fav" aria-label="' + esc(t('Favourite')) + '">' + ICON.star + '</span>' : '') + '</span>' +
       '<span class="mt">' + esc([nameOf('method', r.methodId), roaster].filter(Boolean).join(' · ')) + '</span>' +
+      (specs.length ? '<span class="hspecs">' + specs.join('') + '</span>' : '') +
     '</span>' +
-    (side ? '<span class="hrow-side">' + side + '</span>' : '') +
     '<span class="hrow-chev" aria-hidden="true">' + ICON.chevRight + '</span>' +
   '</a>';
 }

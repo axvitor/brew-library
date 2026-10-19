@@ -2460,3 +2460,36 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 }
 .glass-bend .timer-toggle.glass{--glass-tint:rgba(200,74,22,.80)}
 .timer-toggle.glass:hover{--glass-tint:rgba(163,58,14,.9)}
+
+
+/* ---------- home cards as glass ----------
+   Warm light behind the carousel, so the glass cards have something to
+   hold; the stats are coffee, water and the grind you set. */
+.home{position:relative;isolation:isolate}
+.home::before{
+  content:"";position:absolute;left:0;right:0;top:60px;height:420px;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(40% 45% at 22% 55%, rgba(200,74,22,.30), transparent 70%),
+    radial-gradient(35% 40% at 82% 35%, rgba(245,166,107,.14), transparent 70%);
+}
+.slide.glass{border:0}
+.slide-stats{display:flex;flex-direction:column;gap:10px;min-width:0}
+.slide-grind{display:flex;align-items:center;gap:7px;min-width:0;font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-body)}
+.slide-grind .ico{width:15px;height:15px;flex:none;color:var(--text-accent)}
+.slide-grind span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slide-chip{background:rgba(255,255,255,.08)}
+
+.hspecs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.hspec{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--radius-full);
+  background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+  font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);white-space:nowrap;
+}
+.hspec b{font-weight:var(--weight-medium);color:var(--text-title)}
+.hspec .ico{width:12px;height:12px;color:var(--text-accent)}
+.hspec-grind{color:var(--text-body);max-width:100%;overflow:hidden;text-overflow:ellipsis}
+
+/* Selected tab: the same as the menu — glass lens, orange label. */
+.ktab.on,.tabs button.on,.seg.on{color:var(--text-accent)}
+.slide-body{min-height:0;gap:18px}
+.slide-name{margin-top:6px}
