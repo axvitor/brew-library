@@ -7,6 +7,15 @@
 <meta name="description" content="A personal library of coffee brewing recipes." />
 <meta name="theme-color" content="#111010" />
 <meta name="color-scheme" content="dark" />
+<script>
+  // Applies the saved appearance before the stylesheet paints (app.js keeps it current).
+  (function () {
+    var c = 'dark';
+    try { c = localStorage.getItem('brewTheme') || 'dark'; } catch (e) {}
+    if (c === 'auto') c = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', c);
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <!-- F4 "Evening": one family, Albert Sans, from hairline numerals to labels. -->
@@ -20,7 +29,7 @@
      of the staged app.js, styles.css and firebase-init.js on every commit,
      so it moves exactly when the code does. Enable it once per clone with
      `git config core.hooksPath .githooks`. -->
-<link rel="stylesheet" href="styles.css?v=1957582430" />
+<link rel="stylesheet" href="styles.css?v=fc4d8ef4da" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%98%95%3C/text%3E%3C/svg%3E" />
 </head>
 <body>
@@ -74,7 +83,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-init.js?v=1957582430"></script>
-<script src="app.js?v=1957582430"></script>
+<script src="firebase-init.js?v=fc4d8ef4da"></script>
+<script src="app.js?v=fc4d8ef4da"></script>
 </body>
 </html>
