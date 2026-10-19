@@ -2217,3 +2217,16 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
      waiting at the end of the page. */
   .detail-bar.rd-bar{position:sticky;bottom:20px;z-index:5}
 }
+
+/* ---------- remaining pages (F4) ---------- */
+.account-head{margin-bottom:-8px}
+/* Sheet close and back controls as the same circles the recipe and timer
+   use for theirs. */
+.sheet-head .iconbtn,.page-title-row .iconbtn{
+  width:40px;height:40px;background:var(--surface-card);
+  border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+}
+.sheet-head .iconbtn:hover,.page-title-row .iconbtn:hover{background:var(--surface-sunken)}
+.sheet-head .iconbtn .ico,.page-title-row .iconbtn .ico{width:17px;height:17px}
+.gate-point .ico{color:var(--text-accent)}
+.gate-steam{color:var(--text-accent);opacity:.7}

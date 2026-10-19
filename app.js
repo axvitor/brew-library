@@ -2023,6 +2023,7 @@ function renderAccount() {
   }
 
   view.innerHTML = '<div class="account">' +
+    '<div class="ranking-head account-head"><h1>' + esc(t('Account')) + '</h1></div>' +
     '<div class="acc-card">' +
       (photo
         ? '<img class="acc-av" src="' + esc(photo) + '" alt="" />'
