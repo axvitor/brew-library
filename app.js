@@ -1922,7 +1922,10 @@ function renderHome(entering) {
       '<div class="home-title">' +
         '<span class="home-day">' + esc(new Date().toLocaleDateString(locale(),
           { weekday: 'long', day: 'numeric', month: 'long' })) + '</span>' +
-        '<h1>' + esc(t('Brew Library')) + '</h1>' +
+        '<h1><svg class="brand-mark home-bean" viewBox="0 0 24 24" aria-hidden="true">' +
+          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
+          '<span>' + esc(t('Brew Library')) + '</span></h1>' +
       '</div>' +
       '<a class="home-av" href="#/account" aria-label="' + esc(t('Account')) + '">' +
         (photo ? '<img src="' + esc(photo) + '" alt="" />' : '<span>' + esc(letter) + '</span>') +
