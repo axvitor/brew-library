@@ -199,62 +199,121 @@
   --transition-control:background-color var(--dur-fast) var(--ease-standard),border-color var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard),box-shadow var(--dur-fast) var(--ease-standard),transform var(--dur-instant) var(--ease-tap);
 }
 
-/* ---- Dark mode -----------------------------------------------
-   AUTHORED HERE, NOT PART OF v3. v3 defines one paper palette and
-   stops. Rather than invent a second language, this rebinds only
-   the semantic aliases onto v3's existing pine and ink ramps: the
-   canvas becomes the deepest pine, cards sit one step up, and the
-   roast accent carries over untouched because it already reads
-   well on dark green. Primary actions flip to sage-on-pine, since
-   a pine button on a pine canvas would disappear. */
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg-app:var(--pine-900);
-    --surface-card:var(--pine-800);
-    --surface-sunken:#1F2A23;
-    --surface-inverse:var(--pine-800);
-    --surface-inverse-deep:#141C17;
-    --surface-accent:rgba(186,195,179,.12);
-    --surface-warm:rgba(201,168,124,.14);
-    --surface-scrim:rgba(8,12,10,.66);
+/* ---- F4 "Evening" ------------------------------------------
+   This branch reskins the app in the F4 direction: one dark,
+   espresso-coloured palette that does not follow the OS theme, Albert
+   Sans for everything, thin oversized numerals, generous radii, and a
+   single burnt orange rationed to the brew and add actions. The old
+   light/dark pair is gone rather than overridden — keeping a light
+   palette nobody can reach would only be dead weight.
 
-    --text-title:var(--paper-100);
-    --text-body:var(--paper-200);
-    --text-muted:var(--pine-300);
-    --text-faint:#7D8F82;
-    --text-link:var(--sage-300);
-    --text-link-hover:var(--roast-300);
-    --text-accent:var(--roast-300);
+   The Cupform ramp NAMES are kept so every rule written against them
+   keeps working; their values are remapped onto the F4 palette. */
+:root{
+  color-scheme: dark;
 
-    --border-hairline:rgba(246,241,232,.10);
-    --border-default:rgba(246,241,232,.16);
-    --border-strong:rgba(246,241,232,.30);
-    --border-focus:var(--sage-300);
+  /* Dark neutrals take over the old pine ramp: pine was the inverse
+     and primary surface, which is exactly the role these now play. */
+  --pine-900:#0B0A0A;
+  --pine-800:#1C1B19;
+  --pine-700:#252321;
+  --pine-600:#34312E;
+  --pine-500:#4A4743;
+  --pine-300:#A39F99;
+  --pine-100:#D9D6D0;
 
-    --action-primary:var(--sage-300);
-    --action-primary-hover:var(--pine-100);
-    --action-primary-press:var(--sage-500);
-    --action-primary-text:var(--pine-900);
-    --action-secondary-border:rgba(246,241,232,.22);
-    --action-disabled:rgba(246,241,232,.08);
-    --action-disabled-text:#6F8074;
+  --sage-500:#7E7A74;
+  --sage-300:#A39F99;
+  --sage-100:#252321;
 
-    --accent-star:var(--roast-500);
-    --accent-star-empty:rgba(246,241,232,.20);
+  /* Roast becomes the burnt orange. 600 carries white text at ~4.9:1;
+     300 is the peach used for accent text and lines on the dark ground. */
+  --roast-700:#A33A0E;
+  --roast-600:#C84A16;
+  --roast-500:#DA6328;
+  --roast-300:#F5A66B;
+  --roast-100:#3A2418;
 
-    --state-error:#D9705C;
-    --state-error-surface:rgba(217,112,92,.16);
+  --caramel-500:#7E7A74;
+  --caramel-300:#4A4743;
+  --caramel-100:#252321;
 
-    /* Black noise vanishes on a dark ground — invert the tooth. */
-    --texture-paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' fill='%23fff' opacity='.03'/%3E%3C/svg%3E");
-    --rule-dotted:repeating-linear-gradient(to right,var(--border-default) 0 2px,transparent 2px 6px);
+  --green-600:#7FC59A;
+  --amber-600:#E0A84A;
+  --red-600:#F08A7A;
+  --blue-600:#8FB3C9;
 
-    --shadow-card:0 1px 2px rgba(0,0,0,.34),0 2px 8px rgba(0,0,0,.28);
-    --shadow-raised:0 2px 4px rgba(0,0,0,.38),0 8px 20px rgba(0,0,0,.36);
-    --shadow-sheet:0 -2px 6px rgba(0,0,0,.34),0 -16px 40px rgba(0,0,0,.46);
-    --shadow-focus:0 0 0 2px var(--pine-900),0 0 0 4px var(--sage-300);
-  }
+  --bg-app:#111010;
+  --surface-card:#1C1B19;
+  --surface-sunken:#252321;
+  --surface-inverse:#1C1B19;
+  --surface-inverse-deep:#0B0A0A;
+  --surface-accent:rgba(200,74,22,.16);
+  --surface-warm:#252321;
+  --surface-scrim:rgba(0,0,0,.66);
+
+  --text-title:#EDEBE7;
+  --text-body:#D9D6D0;
+  --text-muted:#A39F99;
+  --text-faint:#8A867F;
+  --text-on-inverse:#EDEBE7;
+  --text-on-inverse-muted:#A39F99;
+  --text-accent:#F5A66B;
+  --text-link:#F5A66B;
+  --text-link-hover:#FFC08F;
+
+  --border-hairline:#2E2C29;
+  --border-default:#34312E;
+  --border-strong:#4A4743;
+  --border-inverse:#2E2C29;
+  --border-focus:#F5A66B;
+
+  /* The neutral primary is the light pill — F4's selected tab and
+     every "commit" button that is not the brew action. */
+  --action-primary:#EDEBE7;
+  --action-primary-hover:#FFFFFF;
+  --action-primary-press:#D9D6D0;
+  --action-primary-text:#111010;
+  --action-secondary-border:#34312E;
+  --action-disabled:#252321;
+  --action-disabled-text:#6E6A65;
+
+  --nav-add-bg:#C84A16;
+  --accent-star:#F5A66B;
+  --accent-star-empty:#4A4743;
+  --accent-favorite:#F5A66B;
+  --accent-timer:#C84A16;
+
+  --state-success:#7FC59A;
+  --state-error:#F08A7A;
+  --state-error-surface:rgba(240,138,122,.14);
+
+  --font-display:"Albert Sans","Helvetica Neue",system-ui,sans-serif;
+  --font-text:"Albert Sans","Helvetica Neue",system-ui,sans-serif;
+  --font-mono:"Albert Sans","Helvetica Neue",system-ui,sans-serif;
+  --weight-light:300;
+  --weight-thin:200;
+  --tracking-display:-0.03em;
+  --tracking-mono:0;
+
+  --radius-xs:6px;
+  --radius-sm:10px;
+  --radius-md:16px;
+  --radius-lg:24px;
+  --radius-sheet:28px;
+  --control-h-md:48px;
+  --control-h-lg:56px;
+
+  /* No paper tooth on a dark ground: F4 is flat. */
+  --texture-paper:none;
+
+  --shadow-card:0 1px 2px rgba(0,0,0,.4);
+  --shadow-raised:0 18px 36px -14px rgba(0,0,0,.7);
+  --shadow-sheet:0 -14px 40px rgba(0,0,0,.6);
+  --shadow-press:inset 0 1px 2px rgba(0,0,0,.5);
+  --shadow-focus:0 0 0 2px #111010,0 0 0 4px #F5A66B;
 }
+
 
 /* ---------- reset / base (v3 tokens/base.css) ---------- */
 *,*::before,*::after{box-sizing:border-box}
@@ -301,7 +360,6 @@ svg.ico-fill{fill:currentColor;stroke:none}
   text-transform:lowercase;
 }
 .brand-text em{font-style:normal;color:var(--text-muted);margin-left:.3em}
-@media (prefers-color-scheme: dark){ .brand-mark{stroke:var(--sage-300)} }
 
 /* ---------- app nav ----------
    One element, two shapes. Under 861px it is a bottom tab bar with the
@@ -1505,215 +1563,124 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .iconbtn:active{transform:scale(var(--press-scale))}
 .iconbtn.danger:hover{color:var(--state-error);background:var(--state-error-surface)}
 
-/* ---------- brew timer ----------
-   Follows the app's own light/dark setting like every other surface,
-   rather than being forced onto the inverse pine surface unconditionally
-   the way v3's own BrewTimer always does — with the rest of the app in
-   light mode, a permanently-dark timer read as inconsistent rather than
-   deliberate. Structure and typography still follow v3's BrewTimer
-   (eyebrow step counter, mono readouts, the instruction in the display
-   serif, capsule accent control, a next-step footer); the ring keeps
-   this app's own semantics of one closed circle for the whole brew, with
-   a segment per pour. Progress moves linearly and never eases — easing
-   would misreport elapsed time. The roast accent (progress arc, start
-   button) is the one constant between light and dark — v3 rations roast
-   specifically for "the live timer" regardless of surface. */
-/* Real sizing (width/height/border/shadow) lives on .overlay-full
-   .sheet-timer below — the timer only ever renders inside that
-   fullscreen wrapper, so this rule carries just the color/texture that
-   both light and dark share. */
-.sheet-timer{
-  background:var(--surface-card);background-image:var(--texture-paper);
-  border-color:var(--border-hairline);color:var(--text-body);
+/* ---------- brew timer (F4) ----------
+   One column you can read from a metre away: the clock set huge and thin,
+   a gauge of water in the cone against this pour's target, the pour
+   itself in an orange card, what comes next, and the controls with the
+   whole brew drawn as a ring around the pause button. Progress moves
+   linearly and never eases — easing would misreport elapsed time. */
+.sheet-timer{background:var(--bg-app);color:var(--text-body)}
+.sheet-timer .sheet-head{border:0;padding:max(16px,env(safe-area-inset-top)) 20px 0;display:block}
+.tm-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tm-title{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center}
+.tm-title h2{margin:0;max-width:100%;font:var(--weight-medium) 14px/1.3 var(--font-text);letter-spacing:0;color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timer-eyebrow{font:var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-muted)}
+.tm-circ{
+  width:44px;height:44px;flex:none;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
 }
-.sheet-timer .sheet-head{border-bottom-color:var(--border-hairline);padding-bottom:12px;flex-direction:column;align-items:stretch;gap:6px}
-.sheet-timer .sheet-head h2{color:var(--text-title)}
-.timer-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.timer-head-actions{display:flex;align-items:center;gap:8px;flex:none}
-.sheet-timer .timer-mute.is-muted{color:var(--text-faint)}
-.timer-eyebrow{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
-.timer-clock{font:var(--weight-medium) 14px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted)}
-.sheet-timer .iconbtn{color:var(--text-muted)}
-.sheet-timer .iconbtn:hover{background:var(--surface-sunken);color:var(--text-title)}
+.tm-circ:hover{background:var(--surface-sunken)}
+.tm-circ:active{transform:scale(var(--press-scale))}
+.tm-circ .ico{width:17px;height:17px}
+.timer-mute.is-muted{color:var(--text-faint)}
 
-.timer-body{display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px var(--pad-sheet) 0;overflow:hidden;min-height:0}
-/* Unwrapped below the desktop breakpoint — their children flow straight
-   into .timer-body's own single flex column, so mobile's ring → readouts
-   → instruction → steps → next-strip order is completely unaffected by
-   this grouping existing in the markup. See min-width:861px below. */
-.timer-hero,.timer-list{display:contents}
+.timer-body{display:flex;flex-direction:column;gap:0;padding:0 20px;overflow-y:auto;min-height:0;flex:1}
+.timer-hero{display:flex;flex-direction:column}
+.timer-list{display:none}
 
-/* Smaller than the fullscreen takeover's first pass — the ring was
-   winning too much of the guaranteed height at the step list's expense;
-   this leaves noticeably more of the screen for the steps themselves,
-   which are what you actually read mid-pour. Still bounded by vh so a
-   short phone in landscape can't force the list off-screen. Desktop's
-   own hero-column size is set separately at the min-width:861px
-   breakpoint below and is untouched by this. */
-.timer-ring{position:relative;width:min(200px,52vw,24vh);aspect-ratio:1;flex:none}
-.timer-ring svg{width:100%;height:100%;display:block;overflow:visible}
-.timer-ring circle{fill:none}
-.ttrack{stroke:var(--border-hairline);stroke-width:14}
-/* The plan, drawn once: one arc per pour, brightening as it passes. */
-.tseg{stroke:var(--pine-700);stroke-opacity:.14;stroke-width:14;transition:stroke-opacity var(--dur-slow) var(--ease-standard)}
-.tseg.is-past{stroke-opacity:.26}
-.tseg.is-now{stroke-opacity:.40}
-.tprog{stroke:var(--roast-500);stroke-width:14;stroke-linecap:round}
-.timer-ring .thead circle{fill:var(--roast-500);stroke:var(--surface-card);stroke-width:3}
-.sheet-timer.is-done .tprog{stroke:var(--pine-700)}
-.sheet-timer.is-done .timer-ring .thead circle{fill:var(--pine-700)}
-.sheet-timer.is-done .timer-elapsed{color:var(--pine-700)}
+.tm-clock{display:flex;flex-direction:column;align-items:center;padding-top:clamp(12px,4vh,30px)}
+.timer-elapsed{
+  font:var(--weight-thin) clamp(84px,30vw,132px)/1 var(--font-text);letter-spacing:-0.06em;
+  color:var(--text-title);font-variant-numeric:tabular-nums;
+}
+.timer-total{font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-muted);margin-top:4px}
+.sheet-timer.is-done .timer-elapsed{color:var(--text-accent)}
 
-.timer-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;pointer-events:none}
-.timer-elapsed{font:var(--weight-bold) 44px/1 var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--text-title)}
-.timer-total{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+.tm-gauge{
+  margin-top:clamp(14px,3vh,26px);padding:18px 20px;border-radius:26px;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  display:flex;flex-direction:column;gap:12px;
+}
+.tm-gauge-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.tm-gauge-top .k{font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted)}
+.timer-poured{font:var(--weight-thin) 26px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.timer-poured small{font:var(--weight-regular) 13px/1 var(--font-text);letter-spacing:0;color:var(--text-muted)}
+.tm-bar{position:relative;height:12px;border-radius:6px;background:var(--surface-sunken);overflow:hidden}
+.tm-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:var(--text-accent)}
+.tm-tick{position:absolute;top:0;bottom:0;width:1px;background:var(--bg-app)}
+.tm-target{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--text-title);transition:left var(--dur-base) var(--ease-out)}
+.tm-scale{position:relative;height:14px;font:var(--weight-regular) 11px/14px var(--font-text);color:var(--text-muted);font-variant-numeric:tabular-nums}
+.tm-scale span{position:absolute;top:0;white-space:nowrap}
+.tm-scale .lo{left:0}
+.tm-scale .hi{right:0}
+.tm-scale .hi.is-target{color:var(--text-title);font-weight:var(--weight-medium)}
+.tm-scale .tg{transform:translateX(-50%);color:var(--text-title);font-weight:var(--weight-medium);transition:left var(--dur-base) var(--ease-out)}
 
-/* v3's two secondary readouts: time left in this step, water poured. */
-.timer-readouts{display:flex;align-items:flex-start;justify-content:center;gap:28px;width:100%}
-.timer-readout{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
-.timer-readout .rv{font:var(--weight-bold) 20px/1.05 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-title)}
-.timer-readout .rv small{font:var(--weight-medium) 12px/1 var(--font-text);color:var(--text-muted);margin-left:2px}
-.timer-readout .rk{font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-muted)}
-
-/* The instruction itself — the display serif, the largest text here, and
-   the only thing on this screen you read while pouring. A card rather
-   than a rule-and-a-line: mid-brew it has to be findable at a glance
-   from a metre away, and roast marks it as the live one. */
 .timer-now{
-  flex:none;width:100%;display:flex;flex-direction:column;gap:6px;
-  padding:14px 16px;border-radius:var(--radius-lg);
-  background:rgba(194,104,59,.16);
-  border:var(--border-w-hairline) solid rgba(224,167,131,.28);
+  margin-top:10px;padding:18px 20px;border-radius:26px;display:flex;flex-direction:column;gap:6px;
+  background:rgba(200,74,22,.18);border:var(--border-w-hairline) solid rgba(245,166,107,.28);
 }
-.timer-now-kicker{
-  font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);
-  text-transform:uppercase;color:var(--roast-300);
+.timer-now-kicker{font:var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-accent);font-variant-numeric:tabular-nums}
+.timer-now-label{font:var(--weight-regular) clamp(20px,5.6vw,26px)/1.2 var(--font-text);letter-spacing:-0.025em;color:var(--text-title);text-wrap:pretty}
+.timer-now-sub{font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-body)}
+.timer-now-sub:empty{display:none}
+.sheet-timer.is-done .timer-now{background:var(--surface-card);border-color:var(--border-hairline)}
+
+.timer-next{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin:16px 4px 0;font:var(--weight-regular) 14px/1.4 var(--font-text)}
+.timer-next .nt{flex:none;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.timer-next .nx{min-width:0;color:var(--text-title);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.sheet-timer.pulse .timer-now{animation:nowIn var(--dur-base) var(--ease-out)}
+@keyframes nowIn{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.sheet-timer .timer-foot{
+  display:flex;justify-content:center;align-items:center;gap:26px;border:0;background:transparent;
+  padding:16px 20px max(26px,env(safe-area-inset-bottom));
 }
-.timer-now-label{font:var(--weight-regular) 21px/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display);color:var(--paper-000);text-wrap:pretty}
-/* Finished: the ring has gone pine, and so does this. */
-.sheet-timer.is-done .timer-now{background:rgba(186,195,179,.12);border-color:rgba(186,195,179,.24)}
-.sheet-timer.is-done .timer-now-kicker{color:var(--sage-300)}
+.timer-side{
+  width:56px;height:56px;flex:none;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.timer-side:hover{background:var(--surface-sunken)}
+.timer-side:active{transform:scale(var(--press-scale))}
+.timer-side .ico{width:19px;height:19px}
+.tm-play{position:relative;width:100px;height:100px;flex:none;display:flex;align-items:center;justify-content:center}
+.tm-play svg.tm-ring{position:absolute;inset:0;width:100%;height:100%}
+.tm-ring circle{fill:none;stroke-width:3}
+.tm-ring .ttrack{stroke:var(--surface-sunken)}
+.tm-ring .tprog{stroke:var(--text-accent);stroke-linecap:round}
+.timer-toggle{
+  position:relative;width:80px;height:80px;border-radius:var(--radius-full);border:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--accent-timer);color:#FFFFFF;
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.timer-toggle:hover{background:var(--roast-700)}
+.timer-toggle:active{transform:scale(.95)}
+.timer-toggle .ico{width:24px;height:24px}
 
-.sheet-timer.pulse .timer-ring{animation:ringPulse var(--dur-slow) var(--ease-out)}
-.sheet-timer.pulse .timer-now-label{animation:nowIn var(--dur-base) var(--ease-out)}
-@keyframes ringPulse{0%{transform:scale(1)}38%{transform:scale(1.03)}100%{transform:scale(1)}}
-@keyframes nowIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-
-.timer-steps{align-self:stretch;margin:0 calc(var(--pad-sheet) * -1);flex:1 1 auto;min-height:0;display:flex;flex-direction:column;list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;border-top:var(--border-w-hairline) solid var(--border-hairline);padding:8px 0 0}
-.timer-step{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:baseline;padding:8px var(--pad-sheet);font:var(--type-body-sm);font-size:14px;color:var(--text-body);transition:background-color var(--dur-base) var(--ease-standard),color var(--dur-base) var(--ease-standard)}
-.timer-step .ts-t,.timer-step .ts-w{font:var(--weight-medium) 11px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted);white-space:nowrap}
-.timer-step.is-past{color:var(--text-faint)}
-.timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--border-default)}
-.timer-step.is-now{background:var(--surface-accent);color:var(--text-title)}
-.timer-step.is-now .ts-t{color:var(--text-link)}
-
-/* "Next · …" strip, v3's BrewTimer footer. */
-.timer-next{display:flex;align-items:center;gap:9px;padding:10px var(--pad-sheet);background:var(--surface-sunken);border-top:var(--border-w-hairline) solid var(--border-hairline);flex:none}
-.timer-next .ico{width:15px;height:15px;color:var(--pine-600)}
-.timer-next .nx{flex:1;min-width:0;font:var(--weight-medium) 14px/1.3 var(--font-text);color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.timer-next .nt{font:var(--weight-medium) 12px/1.2 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-muted)}
-
-.timer-foot{justify-content:center;gap:10px;background:var(--surface-sunken);border-top-color:var(--border-hairline)}
-/* The start control is one of only two true capsules in the system. */
-.timer-foot .timer-toggle{flex:1;max-width:220px;justify-content:center;border-radius:var(--radius-full);background:var(--roast-600);border-color:var(--roast-600);color:var(--paper-000);min-height:var(--control-h-lg)}
-.timer-foot .timer-toggle:hover{background:var(--roast-500);border-color:var(--roast-500)}
-.timer-foot .timer-toggle:active{background:var(--roast-700)}
-.timer-foot .timer-side{width:var(--control-h-lg);min-height:var(--control-h-lg);padding:0;flex:none;background:transparent;border-color:var(--border-default);color:var(--text-muted)}
-.timer-foot .timer-side:hover{background:var(--surface-card);border-color:var(--border-strong)}
-
-/* Desktop: a fullscreen timer has real width to spend, and a single
-   column just stretched wide leaves the ring centered in a lot of bare
-   paper either side of it. Split into two: the ring/readouts/instruction
-   as a hero column that stays put, the step list as its own scrolling
-   column beside it — the same shape as a media player's now-playing
-   screen (art fixed, tracklist scrolls). 861px matches the breakpoint
-   the recipe detail page already stacks its own two-column layout at,
-   for one consistent rhythm across the app rather than a bespoke number
-   here. */
+/* Desktop: the same column, plus the whole schedule beside it. */
 @media(min-width:861px){
-  .timer-body{
-    display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);
-    align-items:start;gap:44px;padding-top:8px;
+  .timer-body{display:grid;grid-template-columns:minmax(0,440px) minmax(0,360px);justify-content:center;gap:48px;align-items:start}
+  .timer-list{display:block;padding-top:clamp(12px,4vh,30px)}
+  .timer-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .timer-step{
+    display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:baseline;
+    padding:11px 14px;border-radius:16px;font:var(--weight-regular) 15px/1.4 var(--font-text);color:var(--text-body);
+    transition:background-color var(--dur-base) var(--ease-standard),color var(--dur-base) var(--ease-standard);
   }
-  .timer-hero{display:flex;flex-direction:column;align-items:center;gap:18px}
-  /* align-items:start above (not stretch) so this sizes to its own
-     content instead of being forced to match the hero column's height —
-     stretching it was leaving a five-step recipe's "Next" strip stranded
-     far below the visible rows, with a dead gap between them where the
-     list had nothing left to show but kept the space anyway. A short
-     list now just sits at its natural height, "Next" directly under it;
-     a long one caps at max-height and scrolls within its own box instead
-     of pushing everything below it down the page. */
-  .timer-list{display:flex;flex-direction:column;gap:0}
-  .timer-steps{margin:0;flex:none;max-height:min(52vh,460px);min-height:0;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:6px}
-  .timer-ring{width:min(320px,90%)}
+  .timer-step .ts-t,.timer-step .ts-w{font-size:13px;color:var(--text-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .timer-step.is-past{color:var(--text-faint)}
+  .timer-step.is-past .ts-l{text-decoration:line-through;text-decoration-color:var(--border-strong)}
+  .timer-step.is-now{background:var(--surface-card);color:var(--text-title)}
+  .timer-step.is-now .ts-t,.timer-step.is-now .ts-w{color:var(--text-accent)}
 }
 
-/* The timer is always the inverse-pine surface, whatever the OS theme is
-   set to. This is v3's own BrewTimer spec — the app previously followed
-   the system here, which meant the one screen you stand over in a dim
-   kitchen could come up bright paper. Everything else in the app still
-   follows the system. */
-/* Rebinding the tokens rather than restating every rule: the timer's own
-   styles above are written against the semantic aliases, so pinning the
-   dark values on the container makes all of them resolve dark. Overriding
-   rule by rule does not work here — .overlay.overlay-full carries two
-   classes and outranks anything written as .overlay-full. */
-.overlay.overlay-full,.overlay-full .sheet-timer{
-  --surface-card:var(--pine-800);
-  --surface-sunken:#1F2A23;
-  --surface-inverse:var(--pine-800);
-  --surface-inverse-deep:#141C17;
-  --surface-accent:rgba(186,195,179,.12);
-  --text-title:var(--paper-100);
-  --text-body:var(--paper-200);
-  --text-muted:var(--pine-300);
-  --text-faint:#7D8F82;
-  --text-link:var(--sage-300);
-  --border-hairline:rgba(246,241,232,.10);
-  --border-default:rgba(246,241,232,.16);
-  --action-primary:var(--sage-300);
-  --action-primary-text:var(--pine-900);
-  --accent-star-empty:rgba(246,241,232,.20);
-  /* Black noise vanishes on a dark ground — invert the tooth. */
-  --texture-paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' fill='%23fff' opacity='.03'/%3E%3C/svg%3E");
-}
-.overlay.overlay-full{background-color:var(--surface-inverse);background-image:var(--texture-paper)}
-.overlay-full .sheet-timer{background:var(--surface-inverse);border-color:var(--pine-900);color:var(--text-on-inverse)}
-.sheet-timer .sheet-head{border-bottom-color:var(--border-inverse)}
-.sheet-timer .sheet-head h2{color:var(--paper-000)}
-.timer-eyebrow,.timer-clock{color:var(--text-on-inverse-muted)}
-.sheet-timer .iconbtn{color:var(--paper-200)}
-.sheet-timer .iconbtn:hover{background:rgba(246,241,232,.10);color:var(--paper-000)}
-
-.ttrack{stroke:rgba(246,241,232,.10)}
-.tseg{stroke:var(--paper-000)}
-.timer-ring .thead circle{stroke:var(--pine-700)}
-.sheet-timer.is-done .tprog{stroke:var(--sage-300)}
-.sheet-timer.is-done .timer-ring .thead circle{fill:var(--sage-300)}
-.sheet-timer.is-done .timer-elapsed{color:var(--sage-300)}
-
-.timer-elapsed{color:var(--paper-000)}
-.timer-total{color:var(--text-on-inverse-muted)}
-.timer-readout .rv{color:var(--paper-000)}
-.timer-readout .rv small,.timer-readout .rk{color:var(--text-on-inverse-muted)}
-
-.timer-steps{border-top-color:var(--border-inverse)}
-.timer-step{color:var(--paper-200)}
-.timer-step .ts-t,.timer-step .ts-w{color:var(--text-on-inverse-muted)}
-.timer-step.is-past{color:var(--text-on-inverse-muted)}
-.timer-step.is-past .ts-l{text-decoration-color:var(--border-inverse)}
-.timer-step.is-now{background:rgba(194,104,59,.18);color:var(--paper-000)}
-.timer-step.is-now .ts-t{color:var(--roast-300)}
-
-.timer-next{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
-.timer-next .ico{color:var(--sage-300)}
-.timer-next .nx{color:var(--paper-200)}
-.timer-next .nt{color:var(--text-on-inverse-muted)}
-
-.timer-foot{background:var(--surface-inverse-deep);border-top-color:var(--border-inverse)}
-.timer-foot .timer-side{border-color:var(--border-inverse);color:var(--paper-200)}
-.timer-foot .timer-side:hover{background:rgba(246,241,232,.08);border-color:var(--border-inverse)}
+.overlay.overlay-full{background:var(--bg-app)}
 
 /* play button on library cards */
 .card-tools{display:flex;align-items:center;gap:6px;flex:none}
@@ -1908,3 +1875,1109 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   *{animation-duration:.01ms !important;transition-duration:.01ms !important}
   .card:hover{transform:none}
 }
+
+/* ============================================================
+   F4 "Evening" skin
+   Everything below restyles shared components for the F4 direction.
+   It sits last so it wins on order alone, and is kept in one place so
+   the whole direction can be read — or reverted — as a unit.
+   ============================================================ */
+
+/* Labels: F4 has no tracked uppercase eyebrows. Small, sentence case,
+   muted — the hierarchy comes from size and weight, not shouting. */
+.section-title,.lbl,.field > label,.detail-head .kicker,.steps-head span,
+.bigstat .k,.stat .k,.form-sep-label,.greet-day,.resume-kicker,.rs .k,
+.timer-eyebrow,.timer-total,.timer-readout .rk,.rank-rate-k,.menu-label{
+  font:var(--weight-medium) 13px/1.3 var(--font-text);
+  letter-spacing:0;text-transform:none;color:var(--text-muted);
+}
+
+/* Display type: Albert Sans set large and light, tracked in. */
+.hero h1,.detail-head h1,.library-head h1,.ranking-head h1,.gate-sheet h1{
+  font-weight:var(--weight-regular);letter-spacing:-0.035em;
+}
+.page-head h2,.dialog h2,.sheet-head h2{font-weight:var(--weight-regular);letter-spacing:-0.02em}
+
+/* Measurements: thin and oversized, never bold. */
+.bigstat .v{font-weight:var(--weight-thin);font-size:30px;letter-spacing:-0.04em}
+.bigstat .v small{font-weight:var(--weight-regular);letter-spacing:0}
+.rs .v,.stat .v,.rank-top .rank-v{font-weight:var(--weight-light);letter-spacing:-0.02em}
+.hero .count,.sechead-count{font-weight:var(--weight-medium)}
+
+/* Buttons are pills. Weight drops to medium: on a dark ground semibold
+   white text glows. */
+.btn{border-radius:var(--radius-full);font-weight:var(--weight-medium);letter-spacing:0}
+.btn-ghost{background:var(--surface-card);border-color:var(--border-default);color:var(--text-title)}
+.btn-ghost:hover{background:var(--surface-sunken);border-color:var(--border-strong)}
+.btn-quiet:hover{background:var(--surface-sunken)}
+.btn-accent,.btn-accent:hover{color:#FFFFFF}
+/* Google's own button reads as the light pill on the dark sheet. */
+.btn-google{background:#EDEBE7;color:#111010;border-color:#EDEBE7}
+.btn-google:hover{background:#FFFFFF;border-color:#FFFFFF}
+
+/* Fields: dark wells with a hairline, rounder. Search is a full pill. */
+.inp,.combo-field,.sel select,.search input{
+  background:var(--surface-card);border-color:var(--border-default);color:var(--text-title);
+}
+.search input{border-radius:var(--radius-full)}
+.combo-list,.menu{background:var(--surface-card);border-color:var(--border-default)}
+.combo-opt:hover,.combo-opt.on,.menu button:hover{background:var(--surface-sunken)}
+.tabs{background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);border-radius:var(--radius-full)}
+.tabs button{border-radius:var(--radius-full)}
+.segs{border-radius:var(--radius-full);background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline)}
+.seg{border-radius:var(--radius-full)}
+
+.brand-mark{stroke:var(--text-accent)}
+
+/* ---------- nav ----------
+   Phone: a floating capsule, icons only, the current place a light disc
+   and Add recipe the orange one. Labels stay in the markup for screen
+   readers and are hidden visually — five icons this familiar read faster
+   than five words at 10px. Desktop keeps the sidebar, re-toned. */
+.nav-item{position:relative}
+@media(max-width:860px){
+  .appnav{
+    left:50%;right:auto;bottom:max(18px, env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    padding:6px;border:var(--border-w-hairline) solid #34312E;border-radius:var(--radius-full);
+    background:#252321;box-shadow:var(--shadow-raised);
+  }
+  .nav-items{gap:4px}
+  .nav-item{
+    flex:none;width:52px;height:52px;min-height:0;gap:0;
+    border-radius:var(--radius-full);justify-content:center;align-items:center;
+    color:#EDEBE7;
+  }
+  .nav-item > span:not(.nav-add-mark){
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;
+  }
+  .nav-item.on{background:#EDEBE7;color:#111010}
+  .nav-add{background:var(--nav-add-bg);color:#FFFFFF}
+  .nav-add:active{background:var(--roast-700)}
+  .nav-add .nav-add-mark{
+    width:auto;height:auto;margin:0;background:none;box-shadow:none;border-radius:0;color:inherit;
+  }
+  body{padding-bottom:calc(var(--nav-h, 96px) + 18px)}
+}
+@media(min-width:861px){
+  .appnav{background:var(--bg-app)}
+  .nav-item.on{background:var(--surface-sunken);color:var(--text-title);font-weight:var(--weight-semibold)}
+  .nav-add{color:#FFFFFF}
+}
+@media(max-width:860px){ body.on-recipe .appnav{display:none} }
+
+/* ---------- liquid glass capsule ----------
+   Layers, back to front: the backdrop, blurred and saturated (bent at the
+   rim on Chromium — see glassNav in app.js); a thin dark tint so icons
+   hold contrast over anything; a specular rim, bright where light would
+   catch the top-left and bottom-right edges; a soft sheen across the top.
+   The selected tab is a smaller lens of the same glass that slides. */
+.nav-lens{display:none}
+@media(max-width:860px){
+  .appnav{
+    --glass-tint:rgba(30,28,26,.38);
+    background:var(--glass-tint);background-image:none;
+    border:0;isolation:isolate;overflow:hidden;
+    -webkit-backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+    backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.20),
+      inset 0 -1px 0 rgba(255,255,255,.05),
+      0 18px 40px -14px rgba(0,0,0,.75),
+      0 2px 6px rgba(0,0,0,.25);
+  }
+  .glass-bend .appnav{--glass-tint:rgba(30,28,26,.30)}
+  /* Specular rim: a gradient border cut out of a full-size box. */
+  .appnav::before{
+    content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+    border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg,
+      rgba(255,255,255,.55) 0%, rgba(255,255,255,.12) 22%,
+      rgba(255,255,255,.03) 50%, rgba(255,255,255,.10) 78%, rgba(255,255,255,.38) 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  }
+  /* Sheen: light pooled along the top of the glass. */
+  .appnav::after{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
+    background:
+      radial-gradient(120% 70% at 30% -20%, rgba(255,255,255,.16), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.06), transparent 50%);
+  }
+
+  .nav-items{position:relative}
+  .nav-item{z-index:1;color:rgba(255,255,255,.88);transition:color var(--dur-base) var(--ease-standard)}
+  .nav-item .ico{transition:transform var(--dur-fast) var(--ease-standard)}
+  .nav-item:active .ico{transform:scale(.86)}
+  /* The lens carries the selection now, so the tab itself stays clear
+     and only its icon takes the accent, the way iOS tints a chosen tab. */
+  .nav-item.on{background:transparent;color:var(--text-accent)}
+  .nav-lens{
+    display:block;position:absolute;left:0;top:0;width:52px;height:52px;z-index:0;
+    border-radius:var(--radius-full);pointer-events:none;opacity:0;
+    background:
+      radial-gradient(90% 60% at 50% 0%, rgba(255,255,255,.22), transparent 70%),
+      rgba(255,255,255,.10);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.38),
+      inset 0 -1px 0 rgba(255,255,255,.08),
+      inset 0 0 0 .5px rgba(255,255,255,.16),
+      0 4px 14px -6px rgba(0,0,0,.5);
+    transition:opacity var(--dur-base) var(--ease-standard);
+  }
+  .nav-lens.is-placed{opacity:1}
+
+  /* Add recipe: the same glass, filled with orange. */
+  .nav-add{
+    background:
+      radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.30), transparent 65%),
+      rgba(200,74,22,.88);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.40),
+      inset 0 -1px 0 rgba(0,0,0,.18),
+      0 6px 16px -6px rgba(200,74,22,.7);
+  }
+  .nav-add:active{background:rgba(163,58,14,.92)}
+}
+/* Settings that ask for less see-through UI get a solid capsule. */
+@media(max-width:860px) and (prefers-reduced-transparency:reduce){
+  .appnav,.glass-bend .appnav{
+    background:#252321;-webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  @media(max-width:860px){ .appnav{background:rgba(37,35,33,.94)} }
+}
+
+/* ---------- home ---------- */
+.home{max-width:760px;margin:0 auto;padding:26px 0 24px;display:flex;flex-direction:column}
+.home-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.home-title{display:flex;flex-direction:column;gap:2px;min-width:0}
+.home-day{font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted)}
+.home-title h1{display:flex;align-items:center;gap:8px;font:var(--weight-light) 26px/1.15 var(--font-display);letter-spacing:-0.02em}
+/* The bean mark ahead of the name, in the accent. */
+.home-bean{width:24px;height:24px;flex:none;fill:none;stroke:var(--text-accent);stroke-width:1.5;stroke-linecap:round}
+.home-av{
+  width:44px;height:44px;border-radius:var(--radius-full);flex:none;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  font:var(--weight-medium) 15px/1 var(--font-text);color:var(--text-title);
+}
+.home-av img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Method-type tabs: one capsule, the current type a light pill. Scrolls
+   sideways when a library has more types than fit. */
+.ktabs{
+  display:flex;gap:4px;margin-top:20px;padding:4px;overflow-x:auto;scrollbar-width:none;
+  border-radius:var(--radius-full);background:var(--surface-card);
+  border:var(--border-w-hairline) solid var(--border-hairline);
+}
+.ktabs::-webkit-scrollbar{display:none}
+.ktab{
+  flex:1 0 auto;min-height:38px;padding:0 14px;border-radius:var(--radius-full);
+  font:var(--weight-regular) 13px/1 var(--font-text);color:var(--text-muted);white-space:nowrap;
+  transition:var(--transition-control);
+}
+.ktab:hover{color:var(--text-title)}
+.ktab.on{background:var(--action-primary);color:var(--action-primary-text);font-weight:var(--weight-medium)}
+
+/* Carousel: bleeds to the screen edges and snaps a card at a time. */
+.carousel{
+  display:flex;gap:12px;margin:18px calc(var(--gutter-screen) * -1) 0;padding:0 var(--gutter-screen);
+  overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 var(--gutter-screen);
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.carousel::-webkit-scrollbar{display:none}
+@media(min-width:641px){ .carousel{margin:18px -24px 0;padding:0 24px;scroll-padding:0 24px} }
+.slide{
+  position:relative;flex:none;width:min(296px, 78vw);scroll-snap-align:start;
+  border-radius:var(--radius-sheet);background:var(--surface-card);
+  border:var(--border-w-hairline) solid var(--border-hairline);
+}
+.slide-link{position:absolute;inset:0;z-index:0;border-radius:inherit}
+.slide-body{
+  position:relative;z-index:1;pointer-events:none;
+  display:flex;flex-direction:column;justify-content:space-between;gap:16px;
+  min-height:270px;box-sizing:border-box;padding:22px;
+}
+.slide-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.slide-chip{padding:5px 10px;border-radius:var(--radius-full);background:var(--surface-sunken);font:var(--weight-regular) 12px/1 var(--font-text);color:var(--text-muted)}
+.slide-chip.is-continue{background:rgba(200,74,22,.2);color:var(--text-accent);font-weight:var(--weight-medium)}
+.slide-method{font:var(--weight-regular) 12px/1.2 var(--font-text);color:var(--text-muted);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slide-spark{display:block;width:100%;height:64px}
+.slide-spark .area{fill:rgba(200,74,22,.18)}
+.slide-spark .line{fill:none;stroke:var(--text-accent);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.slide-spark.is-empty{height:12px}
+.slide-name{display:flex;flex-direction:column;gap:3px}
+.slide-name .nm{font:var(--weight-regular) 24px/1.15 var(--font-display);letter-spacing:-0.025em;color:var(--text-title)}
+.slide-name .mt{font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted)}
+.slide-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.slide-nums{display:flex;gap:18px}
+.slide-nums span{display:flex;flex-direction:column}
+.slide-nums b{font:var(--weight-thin) 30px/1 var(--font-text);letter-spacing:-0.04em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.slide-nums i{font:var(--weight-regular) 12px/1.4 var(--font-text);font-style:normal;color:var(--text-muted)}
+.slide-brew{
+  pointer-events:auto;flex:none;width:52px;height:52px;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--accent-timer);color:#FFFFFF;transition:var(--transition-control);
+}
+.slide-brew:hover{background:var(--roast-500)}
+.slide-brew:active{transform:scale(var(--press-scale))}
+.slide-brew .ico{width:16px;height:16px;fill:currentColor;stroke:none}
+.slide-open{flex:none;width:44px;height:44px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;background:var(--surface-sunken);color:var(--text-muted)}
+.carousel-dots{display:flex;gap:6px;justify-content:center;margin-top:12px}
+.carousel-dots .dot{width:5px;height:5px;border-radius:3px;background:#4A4743;transition:width var(--dur-base) var(--ease-out),background-color var(--dur-base) var(--ease-out)}
+.carousel-dots .dot.on{width:18px;background:var(--text-title)}
+
+/* Search pill with the filter control beside it. */
+.home-search{display:flex;align-items:center;gap:8px;margin-top:18px}
+.search-pill{
+  flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:50px;padding:0 18px;
+  border-radius:var(--radius-full);background:var(--surface-card);
+  border:var(--border-w-hairline) solid var(--border-hairline);
+}
+.search-pill:focus-within{border-color:var(--border-focus);box-shadow:var(--shadow-focus)}
+.search-pill .ico{width:18px;height:18px;color:var(--text-muted);flex:none}
+.search-pill input{flex:1;min-width:0;border:0;background:transparent;outline:none;font:var(--weight-regular) 16px/1 var(--font-text);color:var(--text-title)}
+.search-pill input::placeholder{color:var(--text-faint)}
+.search-pill input:focus,.search-pill input:focus-visible{box-shadow:none}
+.search-filter{
+  position:relative;flex:none;width:50px;height:50px;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+}
+.search-filter.on{background:var(--action-primary);color:var(--action-primary-text);border-color:var(--action-primary)}
+.search-filter .ico{width:19px;height:19px}
+.search-badge{
+  position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;
+  border-radius:var(--radius-full);background:var(--accent-timer);color:#FFFFFF;
+  font:var(--weight-semibold) 11px/18px var(--font-text);text-align:center;
+}
+
+.home-sec{display:flex;justify-content:space-between;align-items:baseline;margin-top:24px;padding-bottom:4px}
+.home-sec-t{font:var(--weight-medium) 15px/1.3 var(--font-text);color:var(--text-title)}
+.home-sec-n{font:var(--weight-regular) 13px/1 var(--font-text);color:var(--text-muted)}
+.home-sec-a{min-height:36px;padding:0 4px;font:var(--weight-regular) 13px/1 var(--font-text);color:var(--text-accent)}
+
+/* Every recipe as a row: method monogram, name, method and roaster, the
+   ratio (or shot time) set thin on the right. */
+.hrows{display:flex;flex-direction:column}
+.hrow{
+  display:flex;align-items:center;gap:12px;padding:12px 0;
+  border-bottom:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+}
+.hrow:hover{color:var(--text-title)}
+.hrow:hover .hrow-chev{color:var(--text-title)}
+.hrow-mono{
+  width:42px;height:42px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  font:var(--weight-semibold) 12px/1 var(--font-text);color:var(--text-accent);
+}
+.hrow-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hrow-txt .nm{font:var(--weight-medium) 16px/1.3 var(--font-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow-txt .mt{font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow-fav .ico{width:13px;height:13px;color:var(--accent-favorite);vertical-align:-1px}
+.hrow-side{flex:none;font:var(--weight-thin) 22px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.hrow-chev{flex:none;color:var(--text-muted);display:flex}
+.hrow-chev .ico{width:16px;height:16px}
+
+/* ---------- recipe (F4) ----------
+   One column, read top to bottom the way you brew: what it is, how much,
+   the three numbers you set before pouring, then the pours. */
+.rd{max-width:640px;margin:0 auto;padding-top:8px}
+.rd-top{display:flex;align-items:center;gap:8px}
+.rd-gap{flex:1}
+.rd-btn{
+  width:44px;height:44px;flex:none;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.rd-btn:hover{background:var(--surface-sunken);color:var(--text-title)}
+.rd-btn:active{transform:scale(var(--press-scale))}
+.rd-btn .ico,.rd-btn svg{width:18px;height:18px}
+.rd-btn.fav.on{color:var(--accent-favorite)}
+
+.rd-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:20px}
+.rd-chips:empty{display:none}
+.rd-chip{
+  padding:5px 11px;border-radius:var(--radius-full);
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-body);
+}
+.rd-name{margin:12px 0 0;font:var(--weight-regular) clamp(32px,6vw,44px)/1.05 var(--font-display);letter-spacing:-0.035em;color:var(--text-title)}
+.rd-sub{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:6px;font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-muted)}
+.rd-sub:empty{display:none}
+.rd-score .stars{color:var(--accent-favorite)}
+
+.rd-dose{
+  display:flex;flex-direction:column;gap:14px;margin-top:22px;padding:18px 20px;
+  border-radius:26px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+}
+.rd-dose-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted)}
+.rd-lock{padding:4px 10px;border-radius:var(--radius-full);background:var(--surface-sunken);font-size:12px;color:var(--text-body);white-space:nowrap}
+.rd-dose-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rd-step-btn{
+  width:48px;height:48px;flex:none;border-radius:var(--radius-full);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-sunken);border:var(--border-w-hairline) solid var(--border-default);color:var(--text-title);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.rd-step-btn:hover{background:var(--pine-600)}
+.rd-step-btn:active{transform:scale(.92)}
+.rd-step-btn:disabled{opacity:.4;pointer-events:none}
+.rd-step-btn .ico{width:18px;height:18px;stroke-width:1.8}
+.rd-dose-nums{display:flex;align-items:baseline;justify-content:center;gap:14px;min-width:0}
+.rd-dose-nums > span:not(.rd-arrow){display:flex;flex-direction:column;align-items:center}
+.rd-dose-nums b{font:var(--weight-thin) 52px/1 var(--font-text);letter-spacing:-0.05em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.rd-dose-nums i{font:normal var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-muted);margin-top:4px}
+.rd-arrow{font:var(--weight-thin) 22px/1 var(--font-text);color:var(--text-faint)}
+.rd-dose.is-static .rd-dose-nums{justify-content:flex-start;gap:30px}
+.rd-dose-note{margin:0;text-align:center;font:var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-muted)}
+.rd-reset{display:inline;padding:0;min-height:0;font:inherit;color:var(--text-accent);text-decoration:underline;text-underline-offset:3px}
+
+.rd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:10px}
+.rd-tile{
+  display:flex;flex-direction:column;gap:2px;padding:14px;min-width:0;
+  border-radius:20px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+}
+.rd-tile .k{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-tile .v{font:var(--weight-thin) 24px/1.1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.rd-tile .v.is-text{font:var(--weight-regular) 15px/1.25 var(--font-text);letter-spacing:0;padding-top:4px}
+
+.rd-h2{margin:30px 0 0;font:var(--weight-medium) 18px/1.3 var(--font-text);letter-spacing:-0.015em;color:var(--text-title)}
+.rd-steps{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column}
+.rd-step{
+  position:relative;display:grid;grid-template-columns:20px 44px minmax(0,1fr) auto;column-gap:10px;
+  align-items:baseline;padding-bottom:18px;
+}
+.rd-step:last-child{padding-bottom:0}
+.rd-step:not(:last-child)::before{content:"";position:absolute;left:4.5px;top:19px;bottom:-3px;width:1px;background:var(--border-default)}
+/* The dot sits on the step's first line (16px text at 1.4 = 22.4px), and
+   the rail runs from under it to the next step's dot. */
+.rd-dot{width:10px;height:10px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--text-accent);align-self:start;margin-top:6px}
+.rd-dot.is-first{background:var(--text-accent)}
+.rd-t{font:var(--weight-regular) 13px/1.4 var(--font-text);color:var(--text-muted);font-variant-numeric:tabular-nums}
+.rd-l{font:var(--weight-regular) 16px/1.4 var(--font-text);color:var(--text-title)}
+.rd-w{font:var(--weight-regular) 13px/1.4 var(--font-text);color:var(--text-muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rd-hint{margin:14px 0 0;font:var(--weight-regular) 13px/1.5 var(--font-text);color:var(--text-muted)}
+.rd-hint a{color:var(--text-accent)}
+
+.rd-note{margin-top:12px;padding:16px 18px;border-radius:20px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline)}
+.rd-h2 + .rd-note,.rd-steps + .rd-note,.rd-hint + .rd-note{margin-top:24px}
+.rd-note .k{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted)}
+.rd-note p{margin:6px 0 0;font:var(--weight-regular) 15px/1.55 var(--font-text);color:var(--text-body);white-space:pre-wrap}
+.rd-specs{margin:10px 0 0;display:flex;flex-direction:column}
+.rd-spec{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:var(--border-w-hairline) solid var(--border-hairline)}
+.rd-spec dt{font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-muted)}
+.rd-spec dd{margin:0;font:var(--weight-regular) 14px/1.4 var(--font-text);color:var(--text-title);text-align:right}
+
+/* The brew bar: one orange pill with the length of the brew and a play
+   disc, the edit circle beside it. */
+.detail-bar.rd-bar{max-width:640px;margin:30px auto 0;gap:10px}
+.rd-brew{
+  flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  min-height:58px;padding:0 8px 0 24px;border-radius:var(--radius-full);
+  background:var(--accent-timer);color:#FFFFFF;font:var(--weight-medium) 17px/1 var(--font-text);
+  transition:background-color var(--dur-fast) var(--ease-standard),transform var(--dur-fast) var(--ease-standard);
+}
+.rd-brew:hover{background:var(--roast-700)}
+.rd-brew:active{transform:scale(.98)}
+.rd-brew-end{display:flex;align-items:center;gap:10px}
+.rd-brew-time{font-weight:var(--weight-light);opacity:.85;font-variant-numeric:tabular-nums}
+.rd-brew-disc{width:42px;height:42px;border-radius:var(--radius-full);background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.rd-brew-disc .ico{width:14px;height:14px}
+.rd-edit{width:58px;height:58px}
+@media(max-width:860px){
+  /* The capsule nav steps aside on a recipe, and the brew bar floats
+     where it was (glass — see "glass surfaces"). */
+  .detail-bar.rd-bar{max-width:none;margin:0}
+  .rd{padding-bottom:110px}
+}
+@media(min-width:861px){
+  /* On a wide screen the bar floats at the foot of the window rather than
+     waiting at the end of the page. */
+  .detail-bar.rd-bar{position:sticky;bottom:20px;z-index:5}
+}
+
+/* ---------- remaining pages (F4) ---------- */
+.account-head{margin-bottom:-8px}
+/* Sheet close and back controls as the same circles the recipe and timer
+   use for theirs. */
+.sheet-head .iconbtn,.page-title-row .iconbtn{
+  width:40px;height:40px;background:var(--surface-card);
+  border:var(--border-w-hairline) solid var(--border-hairline);color:var(--text-title);
+}
+.sheet-head .iconbtn:hover,.page-title-row .iconbtn:hover{background:var(--surface-sunken)}
+.sheet-head .iconbtn .ico,.page-title-row .iconbtn .ico{width:17px;height:17px}
+.gate-point .ico{color:var(--text-accent)}
+.gate-steam{color:var(--text-accent);opacity:.7}
+
+/* Back to top floats over the page beside the capsule, so it is the same
+   glass (blur and rim only — too small for a bend to read). */
+.back-to-top{
+  background:rgba(30,28,26,.38);color:#FFFFFF;border:0;
+  -webkit-backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+  backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.24),
+    inset 0 0 0 .5px rgba(255,255,255,.14),
+    0 10px 24px -10px rgba(0,0,0,.7);
+}
+@media (prefers-reduced-transparency:reduce){
+  .back-to-top{background:#252321;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+
+
+/* ---------- glass surfaces ----------
+   The capsule's recipe, for anything else that floats: tint, blurred
+   backdrop, specular rim, top sheen. Elements opt in with .glass and set
+   their own position; data-glass adds the rim bend on Chromium. */
+.glass{
+  --glass-tint:rgba(30,28,26,.38);
+  background:
+    radial-gradient(120% 70% at 30% -20%, rgba(255,255,255,.14), transparent 60%),
+    var(--glass-tint);
+  border:0;
+  -webkit-backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+  backdrop-filter:blur(14px) saturate(190%) brightness(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.20),
+    inset 0 -1px 0 rgba(255,255,255,.05),
+    0 14px 34px -14px rgba(0,0,0,.7);
+}
+.glass::before{
+  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  border-radius:inherit;padding:1px;
+  background:linear-gradient(135deg,
+    rgba(255,255,255,.50) 0%, rgba(255,255,255,.12) 22%,
+    rgba(255,255,255,.03) 50%, rgba(255,255,255,.10) 78%, rgba(255,255,255,.34) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+}
+.glass-bend .glass{--glass-tint:rgba(30,28,26,.30)}
+@media (prefers-reduced-transparency:reduce){
+  .glass,.glass-bend .glass{background:#252321;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+
+/* The selection lens, shared by every tab group: a smaller piece of the
+   same glass that slides to the chosen tab (see slideLens in app.js). */
+.tab-lens{
+  position:absolute;left:0;top:0;z-index:0;pointer-events:none;opacity:0;
+  border-radius:var(--radius-full);
+  background:
+    radial-gradient(90% 60% at 50% 0%, rgba(255,255,255,.22), transparent 70%),
+    rgba(255,255,255,.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.38),
+    inset 0 -1px 0 rgba(255,255,255,.08),
+    inset 0 0 0 .5px rgba(255,255,255,.16),
+    0 4px 14px -6px rgba(0,0,0,.5);
+  transition:opacity var(--dur-base) var(--ease-standard);
+}
+.tab-lens.is-placed{opacity:1}
+.ktabs,.tabs,.segs{position:relative}
+.ktab,.tabs button,.seg{position:relative;z-index:1}
+/* The lens carries the selection: the tab stays clear, its text lifts. */
+.ktab.on,.tabs button.on,.seg.on{background:transparent;color:var(--text-title);font-weight:var(--weight-medium)}
+
+/* Home's method tabs: a glass bar that sticks under the top edge, so the
+   carousel and the list scroll beneath it. */
+.ktabs-glass{
+  position:sticky;top:max(10px, env(safe-area-inset-top));z-index:20;
+  margin-top:20px;border-radius:var(--radius-full);overflow:hidden;
+}
+.ktabs-glass .ktabs{margin:0;background:transparent;border:0}
+/* The library tabs and the language switch sit in the page, not over it,
+   so they take the glass look without a backdrop to bend. */
+.tabs,.segs{
+  background:
+    radial-gradient(120% 70% at 30% -20%, rgba(255,255,255,.08), transparent 60%),
+    rgba(255,255,255,.035);
+  border:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px rgba(255,255,255,.06);
+}
+
+/* Recipe brew bar: a floating glass capsule over the bottom of the page,
+   the orange pill and the edit circle set into it. */
+.detail-bar.rd-bar{border-radius:var(--radius-full);padding:6px;border:0;gap:6px}
+.rd-bar .rd-brew{
+  min-height:54px;
+  background:
+    radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.28), transparent 65%),
+    rgba(200,74,22,.86);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),inset 0 -1px 0 rgba(0,0,0,.18),0 6px 16px -8px rgba(200,74,22,.8);
+}
+.rd-bar .rd-brew:hover{background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.28), transparent 65%),rgba(163,58,14,.9)}
+.rd-bar .rd-edit{
+  width:54px;height:54px;border:0;
+  background:radial-gradient(90% 60% at 50% 0%, rgba(255,255,255,.18), transparent 70%),rgba(255,255,255,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 0 0 .5px rgba(255,255,255,.14);
+}
+.rd-bar .rd-edit:hover{background:rgba(255,255,255,.14)}
+@media(max-width:860px){
+  .detail-bar.rd-bar{
+    left:12px;right:12px;bottom:max(14px, env(safe-area-inset-bottom));
+    padding:6px;border-top:0;
+  }
+}
+
+/* ---------- timer glass ----------
+   Glass needs something behind it, so the timer gets warm light: an
+   orange glow rising from the controls, two fainter ones drifting while
+   the brew runs. The controls, the gauge and the pour card are glass
+   over it. */
+.overlay-full .sheet.sheet-timer{position:relative;z-index:1}
+
+.tm-circ.glass,.timer-side.glass,.timer-toggle.glass{position:relative}
+.tm-circ.glass:hover,.timer-side.glass:hover{background:radial-gradient(120% 70% at 30% -20%, rgba(255,255,255,.2), transparent 60%),var(--glass-tint)}
+.tm-gauge.glass,.timer-now.glass{position:relative;border:0}
+.tm-gauge .tm-bar{background:rgba(255,255,255,.08)}
+.tm-gauge .tm-tick{background:rgba(17,16,16,.6)}
+.timer-now.glass{--glass-tint:rgba(200,74,22,.22)}
+.glass-bend .timer-now.glass{--glass-tint:rgba(200,74,22,.18)}
+.sheet-timer.is-done .timer-now.glass{--glass-tint:rgba(30,28,26,.38)}
+.timer-toggle.glass{
+  --glass-tint:rgba(200,74,22,.84);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.40),inset 0 -1px 0 rgba(0,0,0,.18),0 10px 26px -10px rgba(200,74,22,.9);
+}
+.glass-bend .timer-toggle.glass{--glass-tint:rgba(200,74,22,.80)}
+.timer-toggle.glass:hover{--glass-tint:rgba(163,58,14,.9)}
+
+
+/* ---------- home cards as glass ----------
+   Warm light behind the carousel, so the glass cards have something to
+   hold; the stats are coffee, water and the grind you set. */
+.home{position:relative;isolation:isolate}
+.slide-stats{display:flex;flex-direction:column;gap:10px;min-width:0}
+.slide-grind{display:flex;align-items:center;gap:7px;min-width:0;font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-body)}
+.slide-grind .ico{width:15px;height:15px;flex:none;color:var(--text-accent)}
+.slide-grind span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slide-chip{background:rgba(255,255,255,.08)}
+
+.hspecs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.hspec{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--radius-full);
+  background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+  font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);white-space:nowrap;
+}
+.hspec b{font-weight:var(--weight-medium);color:var(--text-title)}
+.hspec .ico{width:12px;height:12px;color:var(--text-accent)}
+.hspec-grind{color:var(--text-body);max-width:100%;overflow:hidden;text-overflow:ellipsis}
+
+/* Selected tab: the same as the menu — glass lens, orange label. */
+.ktab.on,.tabs button.on,.seg.on{color:var(--text-accent)}
+.slide-body{min-height:0;gap:18px}
+.slide-name{margin-top:6px}
+
+
+/* ---------- form pages: glass controls ----------
+   The same flat page as home, with the actions floating over the form in
+   a glass capsule like the brew bar: the primary orange, the rest clear
+   glass. The close and quick-add buttons are glass circles. */
+.page-inner{position:relative;background:var(--bg-app);border:0}
+.page-head{background:var(--bg-app);border-bottom:0}
+.page .sheet-body{padding-bottom:110px}
+.page .sheet-foot.glass{
+  position:absolute;left:12px;right:12px;z-index:5;
+  bottom:calc(max(14px, env(safe-area-inset-bottom)) + var(--kb,0px));
+  padding:6px;gap:6px;border-radius:var(--radius-full);
+}
+.page .sheet-foot .btn{min-height:50px;flex:1;border:0}
+.page .sheet-foot .btn-ghost,.page .sheet-foot .btn:not(.btn-primary):not(.btn-danger){
+  background:radial-gradient(90% 60% at 50% 0%, rgba(255,255,255,.18), transparent 70%),rgba(255,255,255,.08);
+  color:var(--text-title);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 0 0 .5px rgba(255,255,255,.14);
+}
+.page .sheet-foot .btn-ghost:hover{background:rgba(255,255,255,.14)}
+.page .sheet-foot .btn-primary{
+  background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.28), transparent 65%),rgba(200,74,22,.86);
+  color:#FFFFFF;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),inset 0 -1px 0 rgba(0,0,0,.18),0 6px 16px -8px rgba(200,74,22,.8);
+}
+.page .sheet-foot .btn-primary:hover{background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.28), transparent 65%),rgba(163,58,14,.9)}
+.page .sheet-foot .filters-clear{flex:0 0 auto;margin-right:0}
+
+.page-title-row .iconbtn,.addbtn{
+  border:0;color:var(--text-title);
+  background:radial-gradient(90% 60% at 50% 0%, rgba(255,255,255,.18), transparent 70%),rgba(255,255,255,.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 0 0 0 .5px rgba(255,255,255,.14),0 4px 12px -6px rgba(0,0,0,.6);
+}
+.addbtn{width:48px;height:48px;border-radius:var(--radius-full);border-style:none}
+.page-title-row .iconbtn:hover,.addbtn:hover{background:rgba(255,255,255,.14);color:var(--text-accent);border-style:none}
+
+/* ==========================================================
+   Light theme — the F4 layout on warm white
+   ----------------------------------------------------------
+   Chosen in Account › Appearance (data-theme on <html>). The tokens
+   carry most of it; the rules after them redo the glass, whose dark
+   recipe is written in white-on-dark light and shadow. Orange stays the
+   fill for the brew and add actions; as text it darkens to #B23F0F so it
+   holds 4.5:1 on white. */
+:root[data-theme="light"]{
+  color-scheme:light;
+
+  --pine-900:#F4F2EE;
+  --pine-800:#FFFFFF;
+  --pine-700:#EFECE6;
+  --pine-600:#E4E0D9;
+  --pine-500:#BDB7AE;
+  --pine-300:#6B675F;
+  --pine-100:#3F3B36;
+  --sage-500:#857F77;
+  --sage-300:#6B675F;
+  --sage-100:#EFECE6;
+  --roast-300:#B23F0F;
+  --roast-100:#FBE6DA;
+  --caramel-500:#857F77;
+  --caramel-300:#D9D4CC;
+  --caramel-100:#EFECE6;
+
+  --green-600:#2F7D4F;
+  --amber-600:#9A6510;
+  --red-600:#B42318;
+  --blue-600:#2F6A8C;
+
+  --bg-app:#F4F2EE;
+  --surface-card:#FFFFFF;
+  --surface-sunken:#EFECE6;
+  --surface-inverse:#FFFFFF;
+  --surface-inverse-deep:#F4F2EE;
+  --surface-accent:rgba(200,74,22,.10);
+  --surface-warm:#EFECE6;
+  --surface-scrim:rgba(26,24,22,.35);
+
+  --text-title:#1A1816;
+  --text-body:#3F3B36;
+  --text-muted:#6B675F;
+  --text-faint:#857F77;
+  --text-on-inverse:#1A1816;
+  --text-on-inverse-muted:#6B675F;
+  --text-accent:#B23F0F;
+  --text-link:#B23F0F;
+  --text-link-hover:#8F300A;
+
+  --border-hairline:#E4E0D9;
+  --border-default:#D9D4CC;
+  --border-strong:#BDB7AE;
+  --border-inverse:#E4E0D9;
+  --border-focus:#C84A16;
+
+  --action-primary:#1A1816;
+  --action-primary-hover:#000000;
+  --action-primary-press:#3F3B36;
+  --action-primary-text:#FFFFFF;
+  --action-secondary-border:#D9D4CC;
+  --action-disabled:#EFECE6;
+  --action-disabled-text:#A39F99;
+
+  --accent-star:#C84A16;
+  --accent-star-empty:#D9D4CC;
+  --accent-favorite:#C84A16;
+
+  --state-success:#2F7D4F;
+  --state-error:#B42318;
+  --state-error-surface:rgba(180,35,24,.08);
+
+  --shadow-card:0 1px 2px rgba(26,24,22,.06);
+  --shadow-raised:0 18px 36px -16px rgba(26,24,22,.28);
+  --shadow-sheet:0 -14px 40px rgba(26,24,22,.18);
+  --shadow-press:inset 0 1px 2px rgba(26,24,22,.12);
+  --shadow-focus:0 0 0 2px #F4F2EE,0 0 0 4px #C84A16;
+}
+[data-theme="light"] .btn-google{background:#1A1816;color:#FFFFFF;border-color:#1A1816}
+[data-theme="light"] .btn-google:hover{background:#000000;border-color:#000000}
+[data-theme="light"] .carousel-dots .dot{background:#CFCAC2}
+[data-theme="light"] .slide{box-shadow:0 14px 30px -22px rgba(26,24,22,.3)}
+[data-theme="light"] .slide-chip{background:#EFECE6;color:#5E5A53}
+[data-theme="light"] .slide-chip.is-continue{background:#FBE6DA;color:#A63A0D}
+[data-theme="light"] .hspec{background:#FFFFFF;box-shadow:inset 0 0 0 1px rgba(26,24,22,.08)}
+[data-theme="light"] .rd-dose{box-shadow:0 14px 30px -22px rgba(26,24,22,.3)}
+[data-theme="light"] .rd-step-btn{background:#F7F5F1}
+[data-theme="light"] .rd-step-btn:hover{background:#EFECE6}
+
+/* Frosted white glass: a milky tint, a white top edge, a hairline of
+   ink round the rim and a soft grey drop shadow. */
+[data-theme="light"] .appnav,
+[data-theme="light"] .glass,
+[data-theme="light"] .back-to-top{
+  --glass-tint:rgba(234,231,225,.66);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(26,24,22,.04),
+    inset 0 0 0 1px rgba(26,24,22,.07),
+    0 18px 36px -14px rgba(26,24,22,.30);
+}
+[data-theme="light"].glass-bend .appnav,
+[data-theme="light"].glass-bend .glass{--glass-tint:rgba(234,231,225,.58)}
+[data-theme="light"] .back-to-top{background:var(--glass-tint);color:#1A1816}
+[data-theme="light"] .appnav::before,
+[data-theme="light"] .glass::before{
+  background:linear-gradient(135deg,
+    rgba(255,255,255,.95) 0%, rgba(255,255,255,.4) 30%,
+    rgba(255,255,255,.1) 60%, rgba(255,255,255,.7) 100%);
+}
+@media(max-width:860px){
+  [data-theme="light"] .nav-item{color:#2A2723}
+  [data-theme="light"] .nav-item.on{color:var(--text-accent)}
+  /* The orange add button keeps its white mark. */
+  [data-theme="light"] .nav-add{color:#FFFFFF}
+}
+/* The selection lens and the clear glass buttons: a raised white pill. */
+[data-theme="light"] .nav-lens,
+[data-theme="light"] .tab-lens,
+[data-theme="light"] .rd-bar .rd-edit,
+[data-theme="light"] .page .sheet-foot .btn-ghost,
+[data-theme="light"] .page .sheet-foot .btn:not(.btn-primary):not(.btn-danger),
+[data-theme="light"] .page-title-row .iconbtn,
+[data-theme="light"] .addbtn{
+  background:linear-gradient(180deg,#FFFFFF,#F5F2EE);
+  color:var(--text-title);
+  box-shadow:inset 0 1px 0 #FFFFFF,0 0 0 1px rgba(26,24,22,.08),0 6px 14px -5px rgba(26,24,22,.28);
+}
+[data-theme="light"] .tab-lens,[data-theme="light"] .nav-lens{color:inherit}
+[data-theme="light"] .rd-bar .rd-edit:hover,
+[data-theme="light"] .page .sheet-foot .btn-ghost:hover,
+[data-theme="light"] .page-title-row .iconbtn:hover,
+[data-theme="light"] .addbtn:hover{background:#FFFFFF;color:var(--text-accent)}
+[data-theme="light"] .tabs,
+[data-theme="light"] .segs{
+  background:rgba(26,24,22,.04);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 0 1px rgba(26,24,22,.06);
+}
+/* Timer: white glass controls and gauge, a pale orange pour card. */
+[data-theme="light"] .tm-gauge .tm-bar{background:rgba(26,24,22,.07)}
+[data-theme="light"] .tm-gauge .tm-tick{background:rgba(255,255,255,.95)}
+[data-theme="light"] .tm-fill{background:#E07A3E}
+[data-theme="light"] .tm-ring .ttrack{stroke:#E4E0D9}
+[data-theme="light"] .tm-ring .tprog{stroke:#C84A16}
+[data-theme="light"] .timer-now.glass,
+[data-theme="light"].glass-bend .timer-now.glass{
+  --glass-tint:rgba(250,226,210,.75);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 0 0 1px rgba(200,74,22,.18);
+}
+[data-theme="light"] .sheet-timer.is-done .timer-now.glass{--glass-tint:rgba(255,255,255,.7)}
+[data-theme="light"] .timer-toggle.glass,
+[data-theme="light"].glass-bend .timer-toggle.glass{
+  --glass-tint:rgba(200,74,22,.92);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 10px 24px -10px rgba(200,74,22,.8);
+}
+@media (prefers-reduced-transparency:reduce){
+  [data-theme="light"] .appnav,
+  [data-theme="light"] .glass,
+  [data-theme="light"] .back-to-top{background:#FFFFFF}
+}
+
+/* ---------- recipe cards (All recipes) ---------- */
+.hrows.hcards{gap:10px;margin-top:6px}
+.hcard{
+  display:flex;flex-direction:column;gap:14px;padding:16px 18px;border-radius:22px;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  color:var(--text-title);transition:transform var(--dur-fast) var(--ease-standard);
+}
+.hcard:hover{color:var(--text-title);border-color:var(--border-default)}
+.hcard:active{transform:scale(var(--press-scale-card))}
+.hc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hc-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hc-txt .nm{font:var(--weight-medium) 17px/1.3 var(--font-text)}
+.hc-txt .mt{font:var(--weight-regular) 13px/1.35 var(--font-text);color:var(--text-muted)}
+.hc-fav{flex:none;color:var(--accent-favorite);display:flex}
+.hc-fav svg{width:16px;height:16px}
+.hc-strip{display:flex;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px}
+.hc-cell{flex:1 1 0;display:flex;flex-direction:column;gap:2px;min-width:0}
+.hc-cell + .hc-cell{padding-left:12px;border-left:var(--border-w-hairline) solid var(--border-hairline)}
+.hc-cell .v{font:var(--weight-thin) 22px/1.1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hc-cell .v.is-text{font:var(--weight-regular) 14px/1.25 var(--font-text);letter-spacing:0;white-space:normal;padding-top:3px}
+.hc-cell .k{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[data-theme="light"] .hcard{box-shadow:0 10px 24px -20px rgba(26,24,22,.35)}
+
+/* Carousel cards share a height; the slack goes between the name and the
+   numbers, so a one-line name never leaves a gap under the card's foot. */
+.slide{display:flex}
+.slide-body{flex:1;height:auto}
+.slide-foot{margin-top:auto}
+.slide-name .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.slide-nums b{letter-spacing:-0.03em}
+
+/* ==========================================================
+   Coffee details
+   ========================================================== */
+/* Brewer icons — line drawings in the card's icon tile, the tabs, the
+   carousel and the recipe's method chip. */
+.brewer-ico{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.hc-ico{
+  flex:none;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--surface-sunken);color:var(--text-accent);
+}
+.hc-ico .ico{width:22px;height:22px}
+.hc-top{align-items:center}
+.hc-txt{flex:1}
+.hc-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;align-self:flex-start}
+.ktab{display:inline-flex;align-items:center;gap:6px}
+.ktab .brewer-ico{width:16px;height:16px}
+.slide-method{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.slide-method .brewer-ico{width:15px;height:15px;flex:none;color:var(--text-accent)}
+.slide-method span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-chip{display:inline-flex;align-items:center;gap:6px}
+.rd-chip .brewer-ico{width:14px;height:14px;color:var(--text-accent)}
+
+/* The recipe's bag label: paper, the roaster across the top, a degassing
+   valve, the coffee's facts in a ruled grid and its tasting notes. */
+.bag-label{
+  position:relative;margin-top:14px;padding:22px 20px 18px;
+  border-radius:6px 6px 22px 22px;background:#E9DFCF;color:#2A1E14;
+  box-shadow:0 20px 40px -24px rgba(0,0,0,.8);
+}
+.bl-valve{position:absolute;top:14px;right:16px;width:22px;height:22px;border-radius:50%;border:1.5px solid #8B7A66;display:flex;align-items:center;justify-content:center}
+.bl-valve i{width:8px;height:8px;border-radius:50%;background:#8B7A66}
+.bl-roaster{display:block;padding-right:34px;font:var(--weight-semibold) 11px/1.3 var(--font-text);letter-spacing:.08em;text-transform:uppercase;color:#6B5A47}
+.bag-label .rd-name{margin-top:8px;color:#2A1E14;padding-right:10px}
+.bag-label .rd-score{display:inline-flex;margin-top:8px}
+.bag-label .stars svg.on{color:#A63A0D;fill:#A63A0D}
+.bag-label .stars svg.on .crease{stroke:#E9DFCF}
+.bag-label .stars svg.off{color:#BCA98F}
+.bl-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:16px 0 0;border-top:1px solid #C9B9A3}
+.bl-fact{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid #C9B9A3;min-width:0}
+.bl-fact:nth-child(even){padding-left:12px;border-left:1px solid #C9B9A3}
+.bl-fact dt{font:var(--weight-regular) 11px/1.3 var(--font-text);color:#6B5A47}
+.bl-fact dd{margin:0;font:var(--weight-regular) 14px/1.35 var(--font-text);color:#2A1E14;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bl-notes{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.bl-notes span{padding:4px 10px;border-radius:999px;background:#D9CBB5;font:var(--weight-regular) 12px/1.3 var(--font-text);color:#2A1E14}
+.bl-notes-text{margin:12px 0 0;font:var(--weight-regular) 14px/1.5 var(--font-text);color:#3F3224}
+[data-theme="light"] .bag-label{box-shadow:0 14px 30px -20px rgba(26,24,22,.35),inset 0 0 0 1px rgba(42,30,20,.08)}
+
+/* The dose card's labels carry a bean and a drop. */
+.rd-dose-nums i{display:inline-flex;align-items:center;gap:5px}
+.rd-dose-nums i .ico{width:13px;height:13px;fill:none;stroke-width:1.6}
+.rd-dose-nums i .bean-mark{stroke:#C9A27A}
+.rd-dose-nums i .ico:not(.bean-mark){stroke:#8FB3C9}
+[data-theme="light"] .rd-dose-nums i .bean-mark{stroke:#8A5A36}
+[data-theme="light"] .rd-dose-nums i .ico:not(.bean-mark){stroke:#2F6A8C}
+
+/* Empty state cup and the loading steam. */
+.empty .cup{width:44px;height:44px;fill:none;stroke:var(--text-faint);stroke-width:1.3;stroke-linecap:round;margin-bottom:14px}
+.loading-card .steam{width:56px;height:56px;fill:none;stroke:#C9A27A;stroke-width:1.5;stroke-linecap:round;margin-bottom:16px}
+.loading-card .steam path{animation:steamRise 2.4s ease-in-out infinite}
+.loading-card .steam path:nth-child(2){animation-delay:.4s}
+.loading-card .steam path:nth-child(3){animation-delay:.8s}
+@keyframes steamRise{0%{opacity:0;transform:translateY(4px)}40%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.loading-card .steam path{animation:none}}
+
+/* ---------- timer: the cone fills ---------- */
+.tm-clock.is-split{flex-direction:row;justify-content:space-between;align-items:center;padding:clamp(8px,2vh,18px) 8px 0}
+.tm-time,.tm-water{display:flex;flex-direction:column}
+.tm-water{align-items:flex-end}
+.tm-clock.is-split .timer-elapsed{font-size:clamp(60px,20vw,84px)}
+.tm-water .timer-poured{font:var(--weight-thin) 34px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.tm-water .timer-poured small{font-size:14px;color:var(--text-muted);letter-spacing:0}
+.tm-cone{display:flex;justify-content:center;margin-top:clamp(4px,1.5vh,14px)}
+.tm-cone svg{width:auto;height:min(270px,31vh);display:block;overflow:visible}
+.cone-stream{fill:none;stroke:#8FB3C9;stroke-width:3;stroke-linecap:round;opacity:0;transition:opacity .4s}
+.is-pouring .cone-stream{opacity:.9}
+.cone-body{fill:var(--surface-card);stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
+.cone-liquid{fill:#6B4226}
+.cone-crema{fill:none;stroke:#C9A27A;stroke-width:3;stroke-linecap:round}
+.cone-bed{fill:#3A2418}
+.cone-bubbles circle{fill:none;stroke:#C9A27A;stroke-width:1.2;opacity:0;transition:opacity .4s}
+.is-bloom.is-running .cone-bubbles circle{opacity:.75;animation:bubble 1.8s ease-in-out infinite}
+.is-bloom.is-running .cone-bubbles circle:nth-child(2){animation-delay:.6s}
+.is-bloom.is-running .cone-bubbles circle:nth-child(3){animation-delay:1.2s}
+@keyframes bubble{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.cone-target{fill:none;stroke:var(--text-accent);stroke-width:1.5;stroke-dasharray:4 5}
+.cone-target-k{font:var(--weight-medium) 12px var(--font-text);fill:var(--text-accent)}
+.cone-tip{fill:var(--surface-sunken);stroke:var(--border-strong);stroke-width:1.5}
+.cone-drip{fill:none;stroke:#6B4226;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:3 5;opacity:0}
+.is-running .cone-drip{opacity:1;animation:drip .9s linear infinite}
+@keyframes drip{to{stroke-dashoffset:-8}}
+.cone-cup{fill:none;stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
+.cone-cup-fill{fill:#4A2B18}
+[data-theme="light"] .cone-liquid{fill:#8A5A36}
+[data-theme="light"] .cone-bed{fill:#4A2B18}
+[data-theme="light"] .cone-cup-fill{fill:#6B4226}
+[data-theme="light"] .cone-stream{stroke:#5B8FB0}
+@media (prefers-reduced-motion:reduce){
+  .is-running .cone-drip,.is-bloom.is-running .cone-bubbles circle{animation:none}
+}
+
+/* Brew complete: a steaming cup and the cup score in beans. */
+.tm-done-cup,.tm-rate{display:none}
+.sheet-timer.is-done .timer-now{align-items:center;text-align:center}
+.sheet-timer.is-done .tm-done-cup{display:block;width:72px;height:64px}
+.tm-done-cup svg{width:100%;height:100%}
+.dc-steam{stroke:#C9A27A;stroke-width:1.6;opacity:.7}
+.dc-cup{stroke:var(--text-title);stroke-width:1.6}
+.dc-coffee{stroke:#6B4226;stroke-width:3}
+.dc-saucer{stroke:var(--border-strong);stroke-width:1.6}
+.sheet-timer.is-done .tm-rate{display:inline-flex;gap:2px;margin-top:6px}
+.tm-rate button{width:44px;height:44px;display:flex;align-items:center;justify-content:center;padding:0}
+.tm-rate button svg{width:24px;height:24px}
+.tm-rate button.on svg .crease{stroke:var(--bg-app)}
+.sheet-timer.is-done .tm-cone .cone-liquid,.sheet-timer.is-done .tm-cone .cone-crema{opacity:.25}
+/* Done: the cone steps back so the cup and the beans fit. */
+.sheet-timer.is-done .tm-cone svg{height:min(150px,17vh)}
+.sheet-timer.is-done .timer-next,.sheet-timer.is-done .cone-target,.sheet-timer.is-done .cone-target-k{display:none}
+.sheet-timer.is-done .timer-now{gap:4px;padding-top:14px;padding-bottom:12px}
+.sheet-timer.is-done .tm-done-cup{width:60px;height:54px}
+/* A label grid with an odd count: no rule under the last row. */
+.bl-fact:last-child,.bl-fact:nth-last-child(2):nth-child(odd){border-bottom:0}
+.rd-dose-nums b small{font-size:.42em;letter-spacing:0;margin-left:1px;color:var(--text-muted)}
+/* With no brew button, the bar's note sits in the capsule on its own:
+   inset it from the rounded edge like the pill's own label. */
+.rd-bar .detail-bar-note{padding:0 10px 0 18px;font:var(--weight-regular) 13px/1.4 var(--font-text);color:var(--text-body)}
+
+
+/* Timer controls float in a glass capsule over the bottom of the screen,
+   like the menu; the screen's content scrolls clear of it. */
+.sheet-timer{position:relative}
+.sheet-timer .timer-foot.glass{
+  position:absolute;left:50%;bottom:max(18px, env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;
+  padding:8px 10px;gap:14px;border-radius:var(--radius-full);
+}
+.sheet-timer .timer-body{padding-bottom:132px}
+.timer-foot .timer-side.glass{
+  background:radial-gradient(90% 60% at 50% 0%, rgba(255,255,255,.16), transparent 70%),rgba(255,255,255,.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 .5px rgba(255,255,255,.12);
+  -webkit-backdrop-filter:none;backdrop-filter:none!important;
+}
+.timer-foot .timer-side.glass::before{display:none}
+[data-theme="light"] .timer-foot .timer-side.glass{
+  background:linear-gradient(180deg,#FFFFFF,#F5F2EE);
+  box-shadow:inset 0 1px 0 #FFFFFF,0 0 0 .5px rgba(26,24,22,.10),0 4px 12px -4px rgba(26,24,22,.22);
+}
+
+/* The whole timer screen scrolls as one page — the header goes with it —
+   while the glass controls stay pinned to the bottom of the screen. */
+.overlay-full .sheet.sheet-timer{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.sheet-timer .sheet-head,.sheet-timer .timer-body{flex:none}
+.sheet-timer .timer-body{overflow:visible;min-height:auto}
+.sheet-timer .timer-foot.glass{position:fixed}
+
+/* ---------- ranking (F4) ---------- */
+.rk{max-width:640px;margin:0 auto}
+.rk .ranking-head{margin-bottom:14px}
+.rk-hero{
+  display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:26px;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+}
+.rk-hero-top{display:flex;justify-content:space-between;align-items:center}
+.rk-hero-k{font:var(--weight-medium) 12px/1.3 var(--font-text);color:var(--text-accent)}
+.rk-hero-top .stars svg{width:15px;height:15px}
+.rk-hero-nm{font:var(--weight-regular) 26px/1.15 var(--font-display);letter-spacing:-0.025em;color:var(--text-title)}
+.rk-hero-nm:hover{color:var(--text-title)}
+.rk-hero-mt{font:var(--weight-regular) 13px/1.35 var(--font-text);color:var(--text-muted);margin-top:-8px}
+.rk-hero-foot{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.rk-hero-nums{display:flex;gap:18px}
+.rk-hero-nums span{display:flex;flex-direction:column}
+.rk-hero-nums b{font:var(--weight-thin) 26px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title)}
+.rk-hero-nums i{font:normal var(--weight-regular) 12px/1.4 var(--font-text);color:var(--text-muted)}
+.rk-again{
+  display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 18px;border-radius:var(--radius-full);
+  background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.26), transparent 65%),var(--accent-timer);
+  color:#FFFFFF;font:var(--weight-medium) 15px/1 var(--font-text);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px -8px rgba(200,74,22,.8);
+}
+.rk-again .ico{width:13px;height:13px}
+.rk-tabs{margin-top:22px}
+.rk-tabs .seg{flex:1}
+.rk-list{display:flex;flex-direction:column;margin-top:12px;border-radius:22px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);overflow:hidden}
+.rk-row{display:flex;align-items:center;gap:12px;padding:14px 16px;color:var(--text-title)}
+.rk-row + .rk-row{border-top:var(--border-w-hairline) solid var(--border-hairline)}
+a.rk-row:hover{color:var(--text-title);background:var(--surface-sunken)}
+.rk-no{flex:none;width:18px;font:var(--weight-regular) 13px/1 var(--font-text);color:var(--text-muted);text-align:center}
+.rk-no.is-top{color:var(--text-accent);font-weight:var(--weight-semibold)}
+.rk-ico{flex:none;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--surface-sunken);color:var(--text-accent)}
+.rk-ico .ico{width:20px;height:20px}
+.rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rk-txt .nm{font:var(--weight-medium) 16px/1.3 var(--font-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-txt .mt{font:var(--weight-regular) 12px/1.35 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-bar{position:relative;height:5px;margin-top:6px;border-radius:3px;background:var(--surface-sunken);overflow:hidden}
+.rk-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--accent-timer)}
+.rk-score{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:44px}
+.rk-score .v{font:var(--weight-thin) 24px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.rk-score .k{font:var(--weight-regular) 11px/1.3 var(--font-text);color:var(--text-muted);white-space:nowrap}
+.rk-score .stars svg{width:10px;height:10px}
+.rk-note{margin:10px 4px 0;font:var(--weight-regular) 12px/1.45 var(--font-text);color:var(--text-muted)}
+.rk-wait{display:flex;gap:10px;margin:8px calc(var(--gutter-screen) * -1) 0;padding:0 var(--gutter-screen) 4px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory}
+.rk-wait::-webkit-scrollbar{display:none}
+.rk-wcard{flex:none;width:220px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;padding:14px 12px 8px 16px;border-radius:20px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline)}
+.rk-wcard .nm{font:var(--weight-medium) 15px/1.3 var(--font-text);color:var(--text-title);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-wcard .mt{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-wcard .rate{margin:4px 0 0 -8px}
+.rk-wcard .rate button{width:38px;height:38px;display:flex;align-items:center;justify-content:center}
+
+/* ---------- sign-in: the bag label ---------- */
+.login{background:var(--bg-app)}
+.login-hero{flex:1 1 auto;min-height:380px;display:flex;align-items:center;justify-content:center;padding:48px 24px 24px}
+.login-label{
+  position:relative;width:min(250px,68vw);padding:26px 22px 20px;border-radius:6px 6px 26px 26px;
+  background:#E9DFCF;color:#2A1E14;transform:rotate(-3deg);
+  box-shadow:0 30px 60px -28px rgba(0,0,0,.9);
+  display:flex;flex-direction:column;
+  animation:labelIn .7s var(--ease-out) both;
+}
+@keyframes labelIn{from{opacity:0;transform:rotate(-8deg) translateY(16px)}to{opacity:1;transform:rotate(-3deg)}}
+@media (prefers-reduced-motion:reduce){.login-label{animation:none}}
+.login-bean{width:34px;height:34px;fill:none;stroke:#A63A0D;stroke-width:1.5;stroke-linecap:round}
+.ll-kicker{margin-top:14px;font:var(--weight-semibold) 11px/1.3 var(--font-text);letter-spacing:.08em;text-transform:uppercase;color:#6B5A47}
+.ll-name{margin-top:6px;font:var(--weight-regular) 34px/1.02 var(--font-display);letter-spacing:-0.03em;color:#2A1E14}
+.ll-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:16px;border-top:1px solid #C9B9A3}
+.ll-fact{display:flex;flex-direction:column;gap:2px;padding:9px 0}
+.ll-fact:nth-child(-n+2){border-bottom:1px solid #C9B9A3}
+.ll-fact:nth-child(even){padding-left:10px;border-left:1px solid #C9B9A3}
+.ll-fact .k{font:var(--weight-regular) 11px/1.3 var(--font-text);color:#6B5A47}
+.ll-fact .v{font:var(--weight-regular) 13px/1.3 var(--font-text);color:#2A1E14}
+.login-sheet{
+  flex:none;display:flex;flex-direction:column;gap:18px;
+  width:100%;max-width:480px;margin:0 auto;box-sizing:border-box;
+  padding:8px var(--gutter-screen) max(36px, env(safe-area-inset-bottom));
+}
+.login-sheet h1{font:var(--weight-regular) clamp(26px,6.4vw,30px)/1.15 var(--font-display);letter-spacing:-0.025em;color:var(--text-title);text-wrap:pretty}
+.login-sheet .gate-lede{margin:0;font:var(--weight-regular) 15px/1.5 var(--font-text);color:var(--text-muted)}
+.login-sheet .btn-google{width:100%;min-height:var(--control-h-lg)}
+.login-sheet .gate-foot{margin:0;font:var(--weight-regular) 12px/1.5 var(--font-text);color:var(--text-faint);text-align:center}
+[data-theme="light"] .login-label{box-shadow:0 30px 60px -30px rgba(26,24,22,.45),inset 0 0 0 1px rgba(42,30,20,.06)}
+@media(min-width:861px){
+  .login{flex-direction:row;align-items:center;justify-content:center;gap:64px;padding:0 48px}
+  .login-hero{flex:0 0 auto;min-height:0;padding:0}
+  .login-label{width:300px}
+  .login-sheet{margin:0;padding:0}
+}
+
+/* ---------- Google sign-in button ----------
+   Google's own button, to its branding guidelines rather than restyled
+   into the app: Roboto Medium 14px, the four-colour G at 20px, 12px side
+   padding with 10px between mark and label, a pill shape. The dark
+   variant (#131314 fill, #8E918F outline, #E3E3E3 label) on the dark
+   theme, the light one (white fill, #747775 outline, #1F1F1F label) on
+   the light theme. */
+.btn.btn-google,
+.login-sheet .btn.btn-google{
+  gap:10px;min-height:44px;padding:0 12px;border-radius:999px;
+  background:#131314;border:1px solid #8E918F;color:#E3E3E3;
+  font:500 14px/20px 'Roboto',arial,sans-serif;letter-spacing:.25px;
+  box-shadow:none;
+}
+.btn.btn-google:hover{background:#2A2A2C;border-color:#8E918F;color:#E3E3E3}
+.btn.btn-google .ico{width:20px;height:20px}
+[data-theme="light"] .btn.btn-google,
+[data-theme="light"] .login-sheet .btn.btn-google{background:#FFFFFF;border-color:#747775;color:#1F1F1F}
+[data-theme="light"] .btn.btn-google:hover{background:#F2F2F2;border-color:#747775;color:#1F1F1F}
+/* The sign-in screen is exactly one screen: no gap kept for a menu that is
+   not there, and the label area gives way before the page would scroll. */
+body:has(.gate-screen){padding-bottom:0}
+.login-hero{min-height:0;padding:28px 24px 12px}
+@media(max-height:700px){
+  .login-label{padding:20px 18px 16px;width:min(230px,64vw)}
+  .ll-name{font-size:30px}
+  .login-bean{width:28px;height:28px}
+}
+@media(max-height:600px){
+  .ll-grid{display:none}
+  .login-sheet{gap:14px}
+}
+/* The G is Google's filled mark: the app's line-icon outline must not
+   touch it. */
+.btn-google svg.ico{stroke:none}

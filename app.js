@@ -536,14 +536,15 @@ function preset(styleId, dose, water, methodName) {
     if (m.indexOf('espresso') > -1 || m.indexOf('moka') > -1) return [];
     // James Hoffmann's V60: five equal pours (each a fifth of the total
     // water) at 0:00, 0:45, 1:10, 1:30 and 1:50, then let it draw down —
-    // no stirring needed.
+    // no stirring needed. Each pour goes in over 10 seconds (`pour`), then
+    // you wait for the next one.
     var fifth = g(water / 5);
     return [
-      { t: '0:00', label: 'Bloom — pour the first fifth of the water.', water: fifth },
-      { t: '0:45', label: 'Pour the second fifth.', water: fifth },
-      { t: '1:10', label: 'Pour the third fifth.', water: fifth },
-      { t: '1:30', label: 'Pour the fourth fifth.', water: fifth },
-      { t: '1:50', label: 'Pour the final fifth, then let it draw down — no stirring needed.', water: g(water) - fifth * 4 }
+      { t: '0:00', label: 'Bloom — pour the first fifth of the water.', water: fifth, pour: 10 },
+      { t: '0:45', label: 'Pour the second fifth.', water: fifth, pour: 10 },
+      { t: '1:10', label: 'Pour the third fifth.', water: fifth, pour: 10 },
+      { t: '1:30', label: 'Pour the fourth fifth.', water: fifth, pour: 10 },
+      { t: '1:50', label: 'Pour the final fifth, then let it draw down — no stirring needed.', water: g(water) - fifth * 4, pour: 10 }
     ];
   }
 
@@ -654,6 +655,35 @@ var TRANSLATIONS = {
     'Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.': 'Dê uma nota a um preparo e o café entra no ranking. Dois ou três já bastam para ver quais pacotes valem repetir.',
     'Start with the one you just opened': 'Comece pela que você acabou de abrir',
     'The rest': 'Os demais',
+    'Brewing for': 'Preparando para',
+    'Ratio locked': 'Proporção travada',
+    'Less coffee': 'Menos café',
+    'More coffee': 'Mais café',
+    'g coffee': 'g de café',
+    'g water': 'g de água',
+    'Scaled for this brew only — the recipe keeps': 'Ajustado só para este preparo — a receita continua com',
+    'Change the dose and every pour below rescales.': 'Mude a dose e todos os despejos se ajustam.',
+    'Reset': 'Desfazer',
+    'Roasted by': 'Torrado por',
+    'Start brewing': 'Começar a preparar',
+    'Time': 'Tempo',
+    'Back': 'Voltar',
+    'Tasting notes': 'Notas de prova',
+    'No steps recorded —': 'Nenhum passo registrado —',
+    'add them': 'adicione',
+    'Method type': 'Tipo de método',
+    'Pour over': 'Coado',
+    'Pressure': 'Pressão',
+    'Immersion': 'Imersão',
+    'Drip filter': 'Cafeteira',
+    'Stovetop': 'Fogão',
+    'Continue': 'Continuar',
+    'Recent': 'Recente',
+    'grams': 'gramas',
+    'water': 'água',
+    'shot': 'extração',
+    'Search': 'Buscar',
+    'Search recipes': 'Buscar receitas',
     'Show options': 'Mostrar opções',
     'Tap to search': 'Toque para buscar',
     'Search ': 'Buscar ',
@@ -705,6 +735,9 @@ var TRANSLATIONS = {
     'Sign out': 'Sair',
     'Reset library…': 'Redefinir biblioteca…',
     'Language': 'Idioma',
+    'Appearance': 'Aparência',
+    'Dark': 'Escuro',
+    'Light': 'Claro',
     'Device language': 'Idioma do dispositivo',
     'Account menu': 'Menu da conta',
     'Back to top': 'Voltar ao topo',
@@ -878,6 +911,38 @@ var TRANSLATIONS = {
     'Last step': 'Última etapa',
     'Left in this step': 'Restante nesta etapa',
     'Water poured': 'Água despejada',
+    'Shot': 'Extração',
+    'Brewing your library…': 'Preparando sua biblioteca…',
+    'Enjoy your cup': 'Aproveite seu café',
+    'Rate this cup': 'Avalie esta xícara',
+    'poured': 'despejados',
+    'Your coffee · every device': 'Seu café · todo dispositivo',
+    'Contents': 'Conteúdo',
+    'Pours': 'Despejos',
+    'Timed': 'Cronometrados',
+    'Scales': 'Ajustável',
+    'Sync': 'Sincronia',
+    'Live': 'Ao vivo',
+    'Your best cup': 'Seu melhor café',
+    'Rank by': 'Classificar por',
+    'rating': 'avaliação',
+    'ratings': 'avaliações',
+    'avg': 'média',
+    'Waiting for a score': 'Aguardando nota',
+    'Scores are weighted by how many ratings stand behind them; the plain average shows when it differs.': 'As notas pesam pelo número de avaliações; a média simples aparece quando é diferente.',
+    'Give a brew a cup score and it joins the ranking. Two or three is enough to see which bags are worth buying again.': 'Dê uma nota a um preparo e ele entra no ranking. Duas ou três bastam para ver quais pacotes valem a recompra.',
+    'Wait': 'Aguarde',
+    'next pour in': 'próximo despejo em',
+    'Water in the cone': 'Água no filtro',
+    'left': 'restantes',
+    'target': 'meta',
+    'Add': 'Adicione',
+    'up to': 'até',
+    'Close': 'Fechar',
+    'Restart': 'Recomeçar',
+    'Skip to next step': 'Pular para a próxima etapa',
+    'Mute step cues': 'Silenciar avisos',
+    'Unmute step cues': 'Ativar avisos',
     'Start brewing': 'Iniciar preparo',
     'Resume': 'Retomar',
     'Pause': 'Pausar',
@@ -1077,6 +1142,9 @@ var ICON = {
   signout: '<svg viewBox="0 0 24 24" class="ico"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h9"/></svg>',
   trash: '<svg viewBox="0 0 24 24" class="ico"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14"/></svg>',
+  drop: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 3.5c3.5 4.2 6 7.6 6 10.6a6 6 0 0 1-12 0c0-3 2.5-6.4 6-10.6z"/></svg>',
+  cup: '<svg viewBox="0 0 24 24" class="cup"><path d="M5 9h12v4a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H16"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14"/></svg>',
   close: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" class="ico"><path d="M15 18l-6-6 6-6"/></svg>',
   search: '<svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
@@ -1139,7 +1207,7 @@ var COMBO_ICON = {
    6. Filters
    --------------------------------------------------------- */
 
-var filters = { q: '', coffee: '', roaster: '', grinder: '', method: '', style: '', fav: false, sort: 'new' };
+var filters = { q: '', coffee: '', roaster: '', grinder: '', method: '', style: '', fav: false, sort: 'new', kind: '' };
 /* Which set the comboboxes read and write. Home points it at the live
    filters; the filters page points it at its own draft, so nothing the
    page touches reaches the list until Apply. */
@@ -1199,6 +1267,7 @@ function visibleRecipes(f) {
     if (f.roaster && roasterIdOf(r) !== f.roaster) return false;
     if (f.grinder && r.grinderId !== f.grinder) return false;
     if (f.method && r.methodId !== f.method) return false;
+    if (f.kind && brewerOf(r) !== f.kind) return false;
     if (f.style && r.styleId !== f.style) return false;
     if (f.fav && !r.fav) return false;
     if (q) {
@@ -1238,29 +1307,271 @@ var GOOGLE_G_ICON = '<svg viewBox="0 0 48 48" class="ico" aria-hidden="true">' +
    desktop. Anything that has to sit above it — the pinned brew action,
    Back to top, the page's own bottom padding — measures it rather than
    guessing, which is how a 16px gap opened up under the brew bar. */
+/* ---- coffee details ----
+   Brewer icons: each method gets a drawing of its brewer instead of a
+   two-letter monogram, matched on the method's name (then its kind), so
+   "Espresso — DEX basket" and "Espresso — 3Bomber" share the portafilter. */
+var BREWER_SVG = {
+  v60: '<path d="M4 6h16l-6 11h-4z"/><path d="M6.4 10h11.2" opacity=".45"/><path d="M9 20h6"/>',
+  origami: '<path d="M3 6h18l-6.5 10h-5z"/><path d="M8 6l2 10M16 6l-2 10"/><path d="M10 19h4"/>',
+  espresso: '<path d="M4 8h12v3a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 9h4"/><path d="M8 19h4"/>',
+  moka: '<path d="M7 4h10l-1.5 7h-7z"/><path d="M8.5 11h7l1.5 9H7z"/><path d="M17 6h2v4"/>',
+  flat: '<path d="M4 6h16l-4 9H8z"/><path d="M9 15h6v3H9z"/>',
+  chemex: '<path d="M6 3h12l-4 8 4 9H6l4-9z"/><path d="M9.5 11h5"/>',
+  aeropress: '<rect x="7" y="3" width="10" height="13" rx="1"/><path d="M5 16h14M9 19.5h6"/>',
+  press: '<rect x="6" y="7" width="11" height="13" rx="1.5"/><path d="M11.5 3v10M8.5 13h6"/><path d="M17 10h2v6h-2"/>',
+  drip: '<rect x="4" y="3" width="16" height="5" rx="1"/><path d="M6 8v12h12V8"/><path d="M9 13h6v5H9z"/>',
+  bean: '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/><path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g>'
+};
+
+function brewerKey(me) {
+  if (!me) return 'bean';
+  var n = (me.name || '').toLowerCase();
+  var k = (me.kind || '').toLowerCase();
+  if (/origami/.test(n)) return 'origami';
+  if (/v60|hario|cone|cono/.test(n)) return 'v60';
+  if (/espresso|portafilter/.test(n)) return 'espresso';
+  if (/moka|bialetti|stovetop|italiana/.test(n)) return 'moka';
+  if (/b75|kalita|wave|flat|april|orea/.test(n)) return 'flat';
+  if (/chemex/.test(n)) return 'chemex';
+  if (/aeropress/.test(n)) return 'aeropress';
+  if (/french|prensa|press|clever|immers/.test(n)) return 'press';
+  if (/drip|cafeteira|machine|m[aá]quina/.test(n)) return 'drip';
+  if (/pressure|press[aã]o/.test(k)) return 'espresso';
+  if (/immersion|imers/.test(k)) return 'press';
+  if (/drip|cafeteira/.test(k)) return 'drip';
+  if (/stovetop|fog[aã]o/.test(k)) return 'moka';
+  if (/pour|coado/.test(k)) return 'v60';
+  return 'bean';
+}
+
+function brewerIcon(me) {
+  return '<svg viewBox="0 0 24 24" class="ico brewer-ico" aria-hidden="true">' + BREWER_SVG[brewerKey(me)] + '</svg>';
+}
+
+/* ---- appearance ----
+   Dark is F4 as designed; light is the same layout on warm white, with
+   frosted white glass. "Device" follows the phone's own setting. The
+   choice is per device (localStorage), like the language. index.html
+   applies it before the stylesheet paints, so a light phone never
+   flashes dark on load; this keeps it current afterwards. */
+var themeChoice = (function () {
+  try { return localStorage.getItem('brewTheme') || 'dark'; } catch (e) { return 'dark'; }
+})();
+var themeQuery = window.matchMedia('(prefers-color-scheme: light)');
+
+function applyTheme(device) {
+  var choice = device ? 'auto' : themeChoice;
+  var mode = choice === 'auto' ? (themeQuery.matches ? 'light' : 'dark') : choice;
+  document.documentElement.setAttribute('data-theme', mode);
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', mode === 'light' ? '#F4F2EE' : '#111010');
+  var cs = document.querySelector('meta[name="color-scheme"]');
+  if (cs) cs.setAttribute('content', mode);
+}
+
+function setTheme(choice) {
+  themeChoice = choice;
+  try { localStorage.setItem('brewTheme', choice); } catch (e) { /* private mode */ }
+  applyTheme();
+}
+
+applyTheme();
+if (themeQuery.addEventListener) themeQuery.addEventListener('change', function () {
+  if (authPhase === 'signedOut') applyTheme(true);
+  else if (themeChoice === 'auto') applyTheme();
+});
+
+/* ---- liquid glass ----
+   Floating controls are glass in the iOS sense: the page behind is
+   blurred and saturated (every engine), and on Chromium it is also bent
+   at the rim, the way a thick lens bends what is under its edge. That
+   bend is an SVG displacement filter driven by a map drawn to the
+   element's exact size and corner radius: each pixel says how far, and
+   which way, to look for the backdrop — strongest at the rim, nothing in
+   the middle. Red, green and blue are bent by slightly different amounts,
+   which leaves the faint colour fringe real glass has. Safari and Firefox
+   cannot run an SVG filter as a backdrop filter, so they get the blur,
+   the tint and the specular rim without the bend — still glass.
+
+   Anything marked data-glass gets the bend; its value is the blur in px. */
+var GLASS_BEND = !!navigator.userAgentData && !!(window.CSS && CSS.supports &&
+  CSS.supports('backdrop-filter', 'url(#g)'));
+
+function glassQuiet() {
+  return window.matchMedia('(prefers-reduced-transparency: reduce)').matches;
+}
+
+function glassMap(w, h, r) {
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var ctx = c.getContext('2d');
+  var img = ctx.createImageData(w, h);
+  var hw = w / 2, hh = h / 2;
+  // Signed distance to a rounded rectangle: negative inside.
+  function sdf(px, py) {
+    var qx = Math.abs(px - hw) - (hw - r), qy = Math.abs(py - hh) - (hh - r);
+    var ox = Math.max(qx, 0), oy = Math.max(qy, 0);
+    return Math.sqrt(ox * ox + oy * oy) + Math.min(Math.max(qx, qy), 0) - r;
+  }
+  var rim = Math.min(20, hw, hh);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      var px = x + 0.5, py = y + 0.5, i = (y * w + x) * 4;
+      var depth = -sdf(px, py);
+      var k = depth >= rim ? 0 : Math.pow(1 - Math.max(depth, 0) / rim, 2);
+      var nx = 0, ny = 0;
+      if (k) {
+        nx = sdf(px + 1, py) - sdf(px - 1, py);
+        ny = sdf(px, py + 1) - sdf(px, py - 1);
+        var n = Math.sqrt(nx * nx + ny * ny) || 1;
+        nx /= n; ny /= n;
+      }
+      // Look inward from the rim: the edge shows what is further in.
+      img.data[i] = 128 - 127 * k * nx;
+      img.data[i + 1] = 128 - 127 * k * ny;
+      img.data[i + 2] = 128;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return c.toDataURL();
+}
+
+function glassFilter(w, h, r) {
+  var id = 'glass-' + w + 'x' + h + 'r' + r;
+  if (document.getElementById(id)) return id;
+  var host = document.getElementById('glassDefs');
+  if (!host) {
+    host = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    host.id = 'glassDefs';
+    host.setAttribute('aria-hidden', 'true');
+    host.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+    document.body.appendChild(host);
+  }
+  // One filter per size, shared by every element of that size; a window
+  // resized through many widths should not keep them all.
+  if (host.childNodes.length > 40) host.innerHTML = '';
+  var s = Math.round(Math.min(26, Math.min(w, h) * 0.45));
+  function pass(scale, row, name) {
+    return '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + scale + '" xChannelSelector="R" yChannelSelector="G" result="d' + name + '"/>' +
+      '<feColorMatrix in="d' + name + '" type="matrix" values="' + row + '" result="' + name + '"/>';
+  }
+  host.insertAdjacentHTML('beforeend',
+    '<filter id="' + id + '" x="0" y="0" width="' + w + '" height="' + h + '" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">' +
+      '<feImage href="' + glassMap(w, h, r) + '" x="0" y="0" width="' + w + '" height="' + h + '" preserveAspectRatio="none" result="map"/>' +
+      pass(s, '1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0', 'r') +
+      pass(s + 4, '0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0', 'g') +
+      pass(s + 8, '0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0', 'b') +
+      '<feBlend in="r" in2="g" mode="screen" result="rg"/>' +
+      '<feBlend in="rg" in2="b" mode="screen"/>' +
+    '</filter>');
+  return id;
+}
+
+function glassBend(el, blur) {
+  if (!el) return;
+  if (!GLASS_BEND || glassQuiet()) { el.style.backdropFilter = ''; return; }
+  var w = Math.round(el.offsetWidth), h = Math.round(el.offsetHeight);
+  if (!w || !h) return;
+  var r = Math.round(Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, w / 2, h / 2));
+  el.style.backdropFilter = 'url(#' + glassFilter(w, h, r) + ') blur(' + blur + 'px) saturate(190%) brightness(1.08)';
+  document.documentElement.classList.add('glass-bend');
+}
+
+function glassAll(root) {
+  var els = (root || document).querySelectorAll('[data-glass]');
+  for (var i = 0; i < els.length; i++) glassBend(els[i], Number(els[i].getAttribute('data-glass')) || 5);
+}
+
+/* The selected tab sits under a lens that slides between tabs, stretching
+   as it travels and settling with a little give — the same move the iOS
+   tab bar makes. `from` is where the lens was ({x, y, w, h}), or null to
+   place it without moving. */
+function slideLens(lens, from, to) {
+  var end = 'translate(' + to.x + 'px,' + to.y + 'px)';
+  lens.style.width = to.w + 'px';
+  lens.style.height = to.h + 'px';
+  lens.style.transform = end;
+  lens.classList.add('is-placed');
+  lens._pos = to;
+  if (!from || (from.x === to.x && from.w === to.w) || !lens.animate ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var mx = (from.x + to.x) / 2, mw = (from.w + to.w) / 2, nudge = to.x > from.x ? 3 : -3;
+  lens.animate([
+    { transform: 'translate(' + from.x + 'px,' + from.y + 'px)', width: from.w + 'px' },
+    { transform: 'translate(' + mx + 'px,' + to.y + 'px) scale(1.18,.88)', width: mw + 'px', offset: 0.45 },
+    { transform: 'translate(' + (to.x + nudge) + 'px,' + to.y + 'px) scale(.97,1.03)', width: to.w + 'px', offset: 0.8 },
+    { transform: end, width: to.w + 'px' }
+  ], { duration: 480, easing: 'cubic-bezier(.3,.7,.25,1)' });
+}
+
+function lensPos(box) {
+  var lens = box && box.querySelector('.tab-lens');
+  return (lens && lens._pos) || null;
+}
+
+// Puts (or slides) a tab group's lens onto its .on tab. The lens is made
+// here when the group's markup has none, so repainting a group's buttons
+// needs no lens markup of its own.
+function tabsLens(box, from) {
+  if (!box) return;
+  var lens = box.querySelector('.tab-lens');
+  if (!lens) {
+    lens = document.createElement('span');
+    lens.className = 'tab-lens';
+    lens.setAttribute('aria-hidden', 'true');
+    box.insertBefore(lens, box.firstChild);
+  }
+  var on = box.querySelector('.on');
+  if (!on) { lens.classList.remove('is-placed'); return; }
+  slideLens(lens, from, { x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight });
+}
+
+function placeLens(animate) {
+  var nav = document.getElementById('appNav');
+  var lens = nav && nav.querySelector('.nav-lens');
+  if (!lens) return;
+  var on = nav.querySelector('[data-nav].on');
+  if (!on || nav.hidden || getComputedStyle(lens).display === 'none') { lens._pos = null; return; }
+  slideLens(lens, animate ? lens._pos : null,
+    { x: on.offsetLeft, y: on.offsetTop, w: on.offsetWidth, h: on.offsetHeight });
+}
+
 function measureNav() {
   var nav = document.getElementById('appNav');
-  var shown = nav && !nav.hidden;
+  var shown = nav && !nav.hidden && getComputedStyle(nav).display !== 'none';
   var side = shown && getComputedStyle(nav).position === 'fixed' &&
     window.matchMedia('(min-width:861px)').matches;
   // Height when it is a bottom bar, width when it is a sidebar, zero for
   // both when it is not on screen at all — the sign-in screen has no nav,
   // and reserving the sidebar's width there left the page inset by 232px
   // with the hero unable to reach the left edge.
-  document.documentElement.style.setProperty('--nav-h', (shown && !side ? nav.offsetHeight : 0) + 'px');
+  // The capsule floats clear of the bottom edge, so what has to be kept
+  // free is everything from its top down — not just its own height.
+  var reserve = (shown && !side) ? Math.max(0, Math.round(window.innerHeight - nav.getBoundingClientRect().top)) : 0;
+  document.documentElement.style.setProperty('--nav-h', reserve + 'px');
   document.documentElement.style.setProperty('--nav-w', (side ? nav.offsetWidth : 0) + 'px');
+  if (shown && !side) { glassBend(nav, 5); placeLens(false); }
+  else if (nav) nav.style.backdropFilter = '';
+  glassAll();
 }
 
 function updateNav() {
   var nav = document.getElementById('appNav');
   if (!nav) return;
 
+  var hash = location.hash || '#/';
+
   // The nav is the app's whole chrome now, so it only exists once there is
   // an app to navigate — the sign-in gate owns the screen on its own.
   nav.hidden = authPhase !== 'ready' || !currentUser;
+  // On a phone a recipe tucks the capsule away (CSS, keyed off this class):
+  // that page pins its own Start brewing bar where the capsule would sit,
+  // and has a back button for the way out. The desktop sidebar stays.
+  document.body.classList.toggle('on-recipe', hash.indexOf('#/r/') === 0);
   measureNav();
 
-  var hash = location.hash || '#/';
   var here = hash === '#/account' ? 'account'
     : hash === '#/library' ? 'library'
     : hash === '#/ranking' ? 'ranking'
@@ -1273,6 +1584,7 @@ function updateNav() {
     if (on) items[i].setAttribute('aria-current', 'page');
     else items[i].removeAttribute('aria-current');
   }
+  placeLens(true);
 }
 
 function renderGate(title, message, footHTML) {
@@ -1285,52 +1597,41 @@ function renderGate(title, message, footHTML) {
 }
 
 function renderLoading() {
-  renderGate('Brew Library', 'Loading your library…', '');
+  view.innerHTML = '<div class="gate"><div class="gate-card loading-card">' + STEAM_SVG +
+    '<h1>' + esc(t('Brewing your library…')) + '</h1></div></div>';
 }
+// Three wisps rising, used while the library loads.
+var STEAM_SVG = '<svg class="steam" viewBox="0 0 24 24" aria-hidden="true">' +
+  '<path d="M8 19c-2-3 2-5 0-8s2-5 0-7"/><path d="M12 20c-2-3 2-5 0-8s2-5 0-7"/><path d="M16 19c-2-3 2-5 0-8s2-5 0-7"/></svg>';
 
 /* The one screen a first-time visitor sees, so it gets a picture and a
    reason rather than a bean and a button. Its own layout, not renderGate:
    loading and the connection error are momentary states that want to stay
    small and quiet, and dressing them up would be dressing up a failure. */
+/* The sign-in screen: the app's own bag label — the bean, the name, a
+   ruled grid of what is inside — over the pitch and Google's button.
+   It follows the device's light or dark setting, not the saved
+   appearance, which belongs to an account that is not signed in yet. */
 function renderSignIn() {
-  function point(text) {
-    return '<li class="gate-point">' + ICON.check + '<span>' + esc(t(text)) + '</span></li>';
+  applyTheme(true);
+  function fact(k, v) {
+    return '<span class="ll-fact"><span class="k">' + esc(t(k)) + '</span><span class="v">' + esc(t(v)) + '</span></span>';
   }
-  view.innerHTML = '<div class="gate-screen">' +
-    '<div class="gate-hero">' +
-      // Line art rather than a photograph: v3 is a drawn system, and a
-      // stock photo of coffee is the one thing every coffee app already has.
-      '<svg class="gate-art" viewBox="0 0 120 106" aria-hidden="true">' +
-        '<g class="gate-steam">' +
-          '<path d="M50 20c-3-4-3-7 0-11s3-7 0-11"/>' +
-          '<path d="M60 17c-3-4-3-7 0-11s3-7 0-11"/>' +
-          '<path d="M70 20c-3-4-3-7 0-11s3-7 0-11"/>' +
-        '</g>' +
-        '<path d="M34 34h52l-16 30H50z"/>' +
-        '<path d="M45 41h30" stroke-dasharray="3 4"/>' +
-        '<path d="M60 64v9"/>' +
-        '<path d="M42 75h36v18a8 8 0 0 1-8 8H50a8 8 0 0 1-8-8z"/>' +
-        '<path d="M42 82h36" stroke-dasharray="3 4"/>' +
-        '<path d="M78 79h5a6 6 0 0 1 0 12h-5"/>' +
-      '</svg>' +
-      '<div class="gate-wordmark">' +
-        '<svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">' +
-          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
-          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
-        '<span class="brand-text">Brew<em>Library</em></span>' +
+  view.innerHTML = '<div class="gate-screen login">' +
+    '<div class="login-hero">' +
+      '<div class="login-label" aria-hidden="true">' +
+        '<span class="bl-valve"><i></i></span>' +
+        '<svg class="login-bean" viewBox="0 0 24 24">' + BREWER_SVG.bean + '</svg>' +
+        '<span class="ll-kicker">' + esc(t('Your coffee · every device')) + '</span>' +
+        '<span class="ll-name">Brew Library</span>' +
+        '<span class="ll-grid">' +
+          fact('Contents', 'Recipes') + fact('Pours', 'Timed') + fact('Dose', 'Scales') + fact('Sync', 'Live') +
+        '</span>' +
       '</div>' +
     '</div>' +
-
-    '<div class="gate-sheet">' +
-      '<div>' +
-        '<h1>' + esc(t('Every recipe you have dialled in, on every device.')) + '</h1>' +
-        '<p class="gate-lede">' + esc(t('Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.')) + '</p>' +
-      '</div>' +
-      '<ul class="gate-points">' +
-        point('Pour steps computed live from the recipe style') +
-        point('Real-time sync, nothing to save by hand') +
-        point('Your library stays private to your account') +
-      '</ul>' +
+    '<div class="login-sheet">' +
+      '<h1>' + esc(t('Every recipe you have dialled in, on every device.')) + '</h1>' +
+      '<p class="gate-lede">' + esc(t('Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.')) + '</p>' +
       '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON +
         '<span>' + esc(t('Continue with Google')) + '</span></button>' +
       '<p class="gate-foot">' + esc(t('Open to anyone with a Google account. Your recipes are never shared between accounts.')) + '</p>' +
@@ -1347,10 +1648,13 @@ function render() {
 
   if (authPhase === 'loading') { renderLoading(); return; }
   if (authPhase === 'signedOut') { renderSignIn(); return; }
+  // Signed in: back to the account's own appearance.
+  applyTheme();
   if (authPhase === 'error') { renderFirebaseError(); return; }
 
   var hash = location.hash || '#/';
   var m = hash.match(/^#\/r\/(.+)$/);
+  if (!m) doseView = { id: null, dose: null };
   if (m) renderDetail(decodeURIComponent(m[1]));
   else if (hash === '#/account') renderAccount();
   else if (hash === '#/library') renderLibrary();
@@ -1476,87 +1780,11 @@ function greetingKey() {
   return 'Evening';
 }
 
-function greetingHTML() {
-  var name = (currentUser && currentUser.displayName || '').split(' ')[0];
-  var photo = currentUser && currentUser.photoURL;
-  var letter = (name || (currentUser && currentUser.email) || '?').trim().charAt(0).toUpperCase();
-  return '<div class="greet">' +
-    '<a class="greet-av" href="#/account" aria-label="' + esc(t('Account')) + '">' +
-      (photo ? '<img src="' + esc(photo) + '" alt="" />' : '<span>' + esc(letter) + '</span>') +
-    '</a>' +
-    '<div class="greet-txt">' +
-      '<span class="greet-day">' + esc(new Date().toLocaleDateString(locale(),
-        { weekday: 'long', day: 'numeric', month: 'long' })) + '</span>' +
-      '<span class="greet-name">' + esc(t(greetingKey())) + (name ? ', ' + esc(name) : '') + '</span>' +
-    '</div>' +
-  '</div>';
-}
 
 /* The methods you actually brew with, most-used first — a shortcut past
    the full combo below.
 
-   Every method with recipes filed under it gets a chip. There is no cap:
-   the row scrolls, so a limit only decides which of your own methods you
-   are not allowed to see, and at five it was cutting off V60. Methods
-   nothing is filed under are still left out, since tapping one would only
-   ever empty the list; the combo lists those with a zero beside them. */
-function methodChipsHTML() {
-  var counts = coll('method').map(function (me) {
-    return { id: me.id, name: me.name, n: state.recipes.filter(function (r) { return r.methodId === me.id; }).length };
-  }).filter(function (m) { return m.n > 0; })
-    .sort(function (a, b) { return b.n - a.n; });
-  if (counts.length < 2) return '';
 
-  var html = '<div class="chips">' +
-    '<button class="chip' + (filters.method ? '' : ' on') + '" data-action="pick-method" data-id="">' +
-      esc(t('All')) + '</button>';
-  counts.forEach(function (m) {
-    html += '<button class="chip' + (filters.method === m.id ? ' on' : '') + '" ' +
-      'data-action="pick-method" data-id="' + esc(m.id) + '">' + esc(m.name) + '</button>';
-  });
-  return html + '</div>';
-}
-
-/* Hands back the last thing you brewed, with the two numbers you need to
-   weigh it out and a control that goes straight to the ring. Suppressed
-   while filtering — you came here looking for something else. */
-function resumeHTML() {
-  if (filtersActive()) return '';
-  var seen = lastSeen();
-  if (!seen) return '';
-  var r = seen.recipe;
-  var roaster = roasterOf(r);
-  return '<div class="sechead"><span class="section-title">' +
-      esc(t('Pick up where you left off')) + '</span></div>' +
-    '<section class="resume">' +
-    '<a class="resume-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' +
-      esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
-    '<svg class="resume-mark" viewBox="0 0 24 24" aria-hidden="true">' +
-      '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
-      '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
-    '<div class="resume-body">' +
-      '<div class="resume-top">' +
-        '<span class="resume-kicker">' + esc(nameOf('method', r.methodId)) + ' · ' +
-          esc(nameOf('style', r.styleId)) + '</span>' +
-        '<span class="resume-name">' + esc(titleOf(r)) + '</span>' +
-        '<span class="resume-meta">' + (roaster ? esc(roaster) + ' · ' : '') +
-          esc(t('opened')) + ' ' + esc(agoLabel(seen.at)) + '</span>' +
-      '</div>' +
-      '<div class="resume-row">' +
-        '<div class="resume-stats">' +
-          '<div class="rs"><span class="k">' + esc(t('Dose')) + '</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
-          '<div class="rs"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
-          '<div class="rs"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
-        '</div>' +
-        (timerPlan(r)
-          ? '<button class="resume-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
-            ICON.play + '<span>' + esc(t('Brew')) + '</span></button>'
-          : '<a class="resume-brew resume-open" href="#/r/' + encodeURIComponent(r.id) + '">' +
-            '<span>' + esc(t('Open')) + '</span>' + ICON.chevRight + '</a>') +
-      '</div>' +
-    '</div>' +
-  '</section>';
-}
 
 /* Repaints whichever surface owns the comboboxes right now. */
 /* Which view was last painted. Entrance animations are gated on this:
@@ -1580,7 +1808,7 @@ function openFilters() {
       q: filters.q,
       coffee: filters.coffee, roaster: filters.roaster, grinder: filters.grinder,
       method: filters.method, style: filters.style,
-      fav: filters.fav, sort: filters.sort
+      fav: filters.fav, sort: filters.sort, kind: filters.kind
     },
     onClose: function () { filterTarget = filters; openCombo = null; comboQuery = ''; },
     render: function () {
@@ -1621,53 +1849,185 @@ function openFilters() {
   openModal(m);
 }
 
+/* ---- home (F4) ----
+   A header, the method-type tabs, a carousel that opens on the recipe you
+   were last looking at, the search pill, and every recipe as a row. */
+
+/* One tab per brewer — V60, Origami, Espresso… — most used first, so the
+   tabs follow the library rather than a fixed list. Methods that only
+   differ by a detail after a dash or in brackets ("Espresso — DEX
+   basket", "Espresso — 3Bomber (18g basket)") share their brewer's tab. */
+function brewerOf(r) {
+  var me = findIn('method', r.methodId);
+  return me ? me.name.split(/\s+[—–-]\s+|\s*\(/)[0].trim() : '';
+}
+
+function kindTabsHTML() {
+  var counts = {}, firstMethod = {};
+  state.recipes.forEach(function (r) {
+    var b = brewerOf(r);
+    if (b) {
+      counts[b] = (counts[b] || 0) + 1;
+      if (!firstMethod[b]) firstMethod[b] = findIn('method', r.methodId);
+    }
+  });
+  var names = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+  if (names.length < 2) return '';
+  function tab(value, label) {
+    var on = (filters.kind || '') === value;
+    return '<button type="button" role="tab" aria-selected="' + on + '" class="ktab' + (on ? ' on' : '') +
+      '" data-action="pick-kind" data-kind="' + esc(value) + '">' +
+      (value ? brewerIcon(firstMethod[value]) : '') + '<span>' + esc(label) + '</span></button>';
+  }
+  return '<div class="ktabs-glass glass" data-glass="5"><div class="ktabs" role="tablist" aria-label="' + esc(t('Method')) + '">' +
+    tab('', t('All')) + names.map(function (n) { return tab(n, n); }).join('') + '</div></div>';
+}
+
+function monogram(r) {
+  var me = findIn('method', r.methodId);
+  var letters = ((me && me.name) || titleOf(r)).replace(/[^A-Za-zÀ-ÿ0-9]/g, '');
+  return letters.slice(0, 2).toUpperCase() || '·';
+}
+
+function slideHTML(r, kind) {
+  var grind = grindText(r);
+  var roaster = roasterOf(r);
+  var style = nameOf('style', r.styleId);
+  var plan = timerPlan(r);
+  var hasWater = r.water !== '' && r.water != null;
+  return '<div class="slide">' +
+    '<a class="slide-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' + esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
+    '<div class="slide-body">' +
+      '<div class="slide-top">' +
+        '<span class="slide-chip' + (kind === 'continue' ? ' is-continue' : '') + '">' +
+          esc(t(kind === 'continue' ? 'Continue' : 'Recent')) + '</span>' +
+        '<span class="slide-method">' + brewerIcon(findIn('method', r.methodId)) + '<span>' + esc(nameOf('method', r.methodId)) + '</span></span>' +
+      '</div>' +
+      '<div class="slide-name">' +
+        '<span class="nm">' + esc(titleOf(r)) + '</span>' +
+        '<span class="mt">' + esc([roaster, style].filter(Boolean).join(' · ')) + '</span>' +
+      '</div>' +
+      '<div class="slide-foot">' +
+        '<div class="slide-stats">' +
+        '<div class="slide-nums">' +
+          '<span><b>' + num(r.dose) + 'g</b><i>' + esc(t('coffee')) + '</i></span>' +
+          (hasWater
+            ? '<span><b>' + num(r.water) + 'g</b><i>' + esc(t('water')) + '</i></span>'
+            : (r.brewTime ? '<span><b>' + esc(String(r.brewTime).replace('~', '')) + '</b><i>' + esc(t('shot')) + '</i></span>' : '')) +
+        '</div>' +
+        (grind ? '<div class="slide-grind">' + ICON.grinder + '<span>' + esc(grind) + '</span></div>' : '') +
+        '</div>' +
+        (plan
+          ? '<button type="button" class="slide-brew" data-action="timer" data-id="' + esc(r.id) + '" aria-label="' +
+              esc(t('Brew') + ' ' + titleOf(r)) + '">' + ICON.play + '</button>'
+          : '<span class="slide-open" aria-hidden="true">' + ICON.chevRight + '</span>') +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+/* Opens on the recipe you last looked at, then the newest additions. */
+function carouselHTML() {
+  var seen = lastSeen();
+  var first = seen ? seen.recipe : null;
+  var recent = state.recipes.slice()
+    .sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); })
+    .filter(function (r) { return !first || r.id !== first.id; })
+    .slice(0, first ? 4 : 5);
+  var slides = (first ? [slideHTML(first, 'continue')] : [])
+    .concat(recent.map(function (r) { return slideHTML(r, 'recent'); }));
+  if (!slides.length) return '';
+  var dots = '';
+  for (var i = 0; i < slides.length; i++) dots += '<span class="dot' + (i === 0 ? ' on' : '') + '"></span>';
+  return '<div class="carousel" id="homeCarousel">' + slides.join('') + '</div>' +
+    (slides.length > 1 ? '<div class="carousel-dots" aria-hidden="true">' + dots + '</div>' : '');
+}
+
+// The grinder and its setting in one line: "KINGrinder · 1 turn + 55 clicks".
+function grindText(r) {
+  var gr = findIn('grinder', r.grinderId);
+  return [gr ? gr.name : '', r.grindSize || ''].filter(Boolean).join(' · ');
+}
+
+/* Every recipe as a card: name and where it comes from on top, then a
+   strip of the three numbers you set before brewing — coffee, water (or
+   the shot time) and the grind, under the grinder's name. */
+function homeRowHTML(r) {
+  var roaster = roasterOf(r);
+  var gr = findIn('grinder', r.grinderId);
+  function cell(v, k, text) {
+    return '<span class="hc-cell"><span class="v' + (text ? ' is-text' : '') + '">' + v + '</span>' +
+      '<span class="k">' + esc(k) + '</span></span>';
+  }
+  var cells = '';
+  if (r.dose !== '' && r.dose != null) cells += cell(num(r.dose) + 'g', t('Coffee'));
+  if (r.water !== '' && r.water != null) cells += cell(num(r.water) + 'g', t('Water'));
+  else if (r.brewTime) cells += cell(esc(String(r.brewTime).replace('~', '')), t('Shot'));
+  if (r.grindSize) cells += cell(esc(r.grindSize), gr ? gr.name : t('Grind'), true);
+  return '<a class="hcard" href="#/r/' + encodeURIComponent(r.id) + '">' +
+    '<span class="hc-top">' +
+      '<span class="hc-ico">' + brewerIcon(findIn('method', r.methodId)) + '</span>' +
+      '<span class="hc-txt"><span class="nm">' + esc(titleOf(r)) + '</span>' +
+        '<span class="mt">' + esc([nameOf('method', r.methodId), roaster].filter(Boolean).join(' · ')) + '</span></span>' +
+      (r.fav ? '<span class="hc-side"><span class="hc-fav" aria-label="' + esc(t('Favourite')) + '">' + iconStar(true) + '</span></span>' : '') +
+    '</span>' +
+    (cells ? '<span class="hc-strip">' + cells + '</span>' : '') +
+  '</a>';
+}
+
 function renderHome(entering) {
   // Only the router passes this. Every other caller — a keystroke in the
-  // search field, a chip, applying filters — repaints without replaying
+  // search field, a tab, applying filters — repaints without replaying
   // the page's entrance under the caret.
   view.classList.toggle('view-enter', entering === true);
   var list = visibleRecipes();
   var total = state.recipes.length;
+  // The carousel is for picking up where you were; while you are hunting
+  // for something else it only pushes the results down.
+  var hunting = filtersActive();
 
-  var html = '';
-  html += greetingHTML();
-  html += '<section class="hero">' +
-    '<h1>' + esc(t('What are you')) + '<br>' + esc(t('brewing')) +
-      ' <em>' + esc(t('today?')) + '</em></h1>' +
-    (filtersActive()
-      ? '<p><span class="count">' + list.length + '</span> ' +
-        esc(tPlural(list.length, 'recipe', 'recipes')) + ' ' + esc(t('of')) + ' ' + total +
-        (list.length ? '' : ' · ' + esc(t('nothing matches — try clearing a filter'))) + '</p>'
-      : '<p><span class="count">' + total + '</span> ' + esc(tPlural(total, 'recipe', 'recipes')) +
-        ' · ' + state.coffees.length + ' ' + esc(tPlural(state.coffees.length, 'coffee', 'coffees')) +
-        ' · ' + state.roasters.length + ' ' + esc(tPlural(state.roasters.length, 'roaster', 'roasters')) + '</p>') +
-    '</section>';
+  var name = (currentUser && currentUser.displayName || '').split(' ')[0];
+  var photo = currentUser && currentUser.photoURL;
+  var letter = (name || (currentUser && currentUser.email) || '?').trim().charAt(0).toUpperCase();
 
-  var moreCount = moreFiltersCount();
-  html += '<div class="filters">' +
-    '<div class="search">' + ICON.search +
-      '<input id="q" type="search" placeholder="' + esc(t('Search recipes…')) + '" value="' + esc(filters.q) + '" />' +
-    '</div>' +
-    '<button class="pill-toggle' + (filters.fav ? ' on' : '') + '" data-action="toggle-fav-filter">' +
-      ICON.star + esc(t('Favourites')) + '</button>' +
-    '<button class="pill-toggle' + (moreCount ? ' on' : '') + '" data-action="filters-open">' +
-      ICON.sliders + esc(t('Filters')) +
-      (moreCount ? '<span class="filter-count">' + moreCount + '</span>' : '') +
-    '</button>' +
-    (filtersActive() ? '<button class="btn btn-quiet btn-sm" data-action="clear-filters">' + esc(t('Clear')) + '</button>' : '') +
-  '</div>';
+  var html = '<div class="home">' +
+    '<header class="home-head">' +
+      '<div class="home-title">' +
+        '<span class="home-day">' + esc(new Date().toLocaleDateString(locale(),
+          { weekday: 'long', day: 'numeric', month: 'long' })) + '</span>' +
+        '<h1><svg class="brand-mark home-bean" viewBox="0 0 24 24" aria-hidden="true">' +
+          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
+          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
+          '<span>' + esc(t('Brew Library')) + '</span></h1>' +
+      '</div>' +
+      '<a class="home-av" href="#/account" aria-label="' + esc(t('Account')) + '">' +
+        (photo ? '<img src="' + esc(photo) + '" alt="" />' : '<span>' + esc(letter) + '</span>') +
+      '</a>' +
+    '</header>' +
+    kindTabsHTML() +
+    (hunting ? '' : carouselHTML());
 
-  html += methodChipsHTML();
-  html += resumeHTML();
+  var moreCount = moreFiltersCount() + (filters.fav ? 1 : 0);
+  html += '<div class="home-search">' +
+      '<label class="search-pill">' + ICON.search +
+        '<input id="q" type="search" placeholder="' + esc(t('Search') + ' ' + total + ' ' + tPlural(total, 'recipe', 'recipes')) +
+          '" value="' + esc(filters.q) + '" aria-label="' + esc(t('Search recipes')) + '" />' +
+      '</label>' +
+      '<button type="button" class="search-filter' + (moreCount ? ' on' : '') + '" data-action="filters-open" aria-label="' +
+        esc(t('Filters')) + (moreCount ? ' (' + moreCount + ')' : '') + '">' + ICON.sliders +
+        (moreCount ? '<span class="search-badge">' + moreCount + '</span>' : '') +
+      '</button>' +
+    '</div>';
 
-  if (list.length) {
-    html += '<div class="sechead"><span class="section-title">' +
-      esc(t(filtersActive() ? 'Matching recipes' : 'All recipes')) + '</span>' +
-      '<span class="sechead-count">' + list.length + '</span></div>';
-  }
+  html += '<div class="home-sec">' +
+      '<span class="home-sec-t">' + esc(t(hunting || filters.kind ? 'Matching recipes' : 'All recipes')) + '</span>' +
+      (hunting || filters.kind
+        ? '<button type="button" class="home-sec-a" data-action="clear-filters">' + esc(t('Clear')) + ' · ' + list.length + '/' + total + '</button>'
+        : '<span class="home-sec-n">' + total + '</span>') +
+    '</div>';
 
   if (!list.length) {
-    html += '<div class="empty">' + ICON.bean +
+    html += '<div class="empty">' + ICON.cup +
       '<h3>' + esc(t(total ? 'Nothing matches those filters' : 'No recipes yet')) + '</h3>' +
       '<p>' + esc(t(total
         ? 'Try clearing a filter or two to see the rest of your library.'
@@ -1677,70 +2037,15 @@ function renderHome(entering) {
         : '<button class="btn btn-primary" data-action="new-recipe">' + ICON.plus + esc(t('Add recipe')) + '</button>') +
       '</div>';
   } else {
-    html += '<div class="grid">' + list.map(cardHTML).join('') + '</div>';
+    html += '<div class="hrows hcards">' + list.map(homeRowHTML).join('') + '</div>';
   }
 
-  view.innerHTML = html;
+  view.innerHTML = html + '</div>';
+  tabsLens(view.querySelector('.ktabs'));
+  glassAll(view);
 }
 
-function cardHTML(r) {
-  var bits = [];
-  var grinder = findIn('grinder', r.grinderId);
-  if (grinder) bits.push('<span class="tag">' + esc(grinder.name) + (r.grindSize ? ' · ' + esc(r.grindSize) : '') + '</span>');
-  else if (r.grindSize) bits.push('<span class="tag">' + esc(r.grindSize) + '</span>');
-  if (r.temp) bits.push('<span class="tag">' + esc(String(r.temp)) + '°C</span>');
-  if (r.brewTime) bits.push('<span class="tag">' + esc(r.brewTime) + '</span>');
 
-  var roaster = roasterOf(r);
-
-  // The play/favourite buttons used to live inside this card's <a> — invalid
-  // HTML (interactive content nested in interactive content), and browsers
-  // resolve the ambiguity inconsistently: on real touch input the first tap
-  // can land on the outer link instead of the button, so it took two taps
-  // to actually fire. Fixed with the "stretched link" pattern instead: the
-  // <a> is an invisible full-card hit target with no descendants, painted
-  // *behind* the visible content; the content passes clicks through to it
-  // (pointer-events:none) except for the two real buttons, which sit on
-  // top and get their own taps directly, as true siblings of the link
-  // rather than children of it.
-  return '<div class="card">' +
-    '<a class="card-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="Open ' + esc(titleOf(r)) + '"></a>' +
-    '<div class="card-content">' +
-    '<div class="card-head">' +
-      '<div class="card-head-info">' +
-        // v3 leads the card with the method as a printed tag, then the
-        // name in the display serif, then the roaster.
-        '<div class="tags card-kind">' +
-          '<span class="tag tag-accent">' + esc(nameOf('method', r.methodId)) + '</span>' +
-          '<span class="tag">' + esc(nameOf('style', r.styleId)) + '</span>' +
-        '</div>' +
-        '<div class="card-title">' + esc(titleOf(r)) + '</div>' +
-        (roaster ? '<div class="card-sub"><span>' + esc(roaster) + '</span></div>' : '') +
-        (r.rating ? '<div class="card-rating" aria-label="' +
-          esc(t('Cup score') + ': ' + r.rating + '/5') + '">' + stars(r.rating) + '</div>' : '') +
-      '</div>' +
-      '<div class="card-tools">' +
-        // Only offered when there's actually something to count — a recipe
-        // with neither a brew time nor a schedule has no ring to draw.
-        (timerPlan(r)
-          ? '<button class="cardbtn" data-action="timer" data-id="' + esc(r.id) + '" ' +
-            'title="Start brew timer" aria-label="Start brew timer">' + ICON.play + '</button>'
-          : '') +
-        '<button class="fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="Toggle favourite">' +
-          iconStar(r.fav) + '</button>' +
-      '</div>' +
-    '</div>' +
-    (bits.length ? '<div class="tags">' + bits.join('') + '</div>' : '') +
-    '<div class="card-foot">' +
-      '<div class="stats">' +
-        '<div class="stat"><span class="k">' + esc(t('Dose')) + '</span><span class="v">' + num(r.dose, ' g') + '</span></div>' +
-        '<div class="stat"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.water, ' g') + '</span></div>' +
-        '<div class="stat"><span class="k">' + esc(t('Ratio')) + '</span><span class="v">' + ratio(r.dose, r.water) + '</span></div>' +
-      '</div>' +
-    '</div>' +
-    '</div>' +
-    '</div>';
-}
 
 /* ---- detail ---- */
 
@@ -1826,136 +2131,167 @@ function bigstat(label, value, unit, style) {
 }
 
 /* ---- ranking ----
-   Which bags were actually worth it, as opposed to which you have spent
-   the most time dialling in. Scored per coffee rather than per recipe: a
-   coffee you have four recipes for is one bag you have an opinion about,
-   not four, so its recipes' scores average into a single standing.
+   Which bags, recipes and roasters were actually worth it. Scores live on
+   recipes (one cup score each). A coffee's standing pools the scores of
+   its recipes, a recipe style's (James Hoffmann V60, Lance Hedrick…)
+   pools every brew made with it, and a roaster's pools every recipe of
+   every coffee it roasted.
 
-   Only scored recipes count toward the average. An unrated recipe is not
-   a zero — it is a brew you never got round to judging — and averaging it
-   in as one would push good coffees down for the crime of being brewed
-   often. Coffees with nothing scored sit out entirely and are counted at
-   the foot of the page. */
-function rankedCoffees() {
-  var out = [];
-  coll('coffee').forEach(function (c) {
-    var scored = state.recipes.filter(function (r) {
-      return r.coffeeId === c.id && (r.rating || 0) > 0;
-    });
-    if (!scored.length) return;
-    var sum = scored.reduce(function (n, r) { return n + r.rating; }, 0);
-    out.push({
-      coffee: c,
-      avg: sum / scored.length,
-      scored: scored.length,
-      total: state.recipes.filter(function (r) { return r.coffeeId === c.id; }).length
-    });
-  });
-  out.sort(function (a, b) {
-    return b.avg - a.avg || b.scored - a.scored || a.coffee.name.localeCompare(b.coffee.name);
-  });
-  return out;
+   Only scored recipes count. An unrated recipe is not a zero — it is a
+   brew you never got round to judging.
+
+   Pooled scores are weighted by how many ratings stand behind them, so a
+   single 5 cannot outrank a long run of 5s and 4s. Each pool is ranked by
+   a Bayesian average: its ratings plus RANK_PRIOR imaginary ratings at
+   the library's own average.
+
+     score = (sum of ratings + RANK_PRIOR × library average) / (ratings + RANK_PRIOR)
+
+   With few ratings the score leans toward the library's average; as
+   ratings pile up it converges on the plain average, which is shown
+   beside it. */
+var RANK_PRIOR = 2;
+var rankTab = 'coffee';
+
+function rankStats() {
+  var rated = state.recipes.filter(function (r) { return (r.rating || 0) > 0; });
+  var sum = rated.reduce(function (n, r) { return n + r.rating; }, 0);
+  return { rated: rated, mean: rated.length ? sum / rated.length : 0 };
 }
 
-function rankRowHTML(e, i) {
-  var roaster = roasterNameOf(e.coffee);
-  var meta = [roaster, e.scored + ' ' + t(e.scored === 1 ? 'scored' : 'scored')].filter(Boolean).join(' · ');
-  // The top three carry the page; everything below is a compact row.
-  if (i < 3) {
-    return '<div class="rank-top rank-' + (i + 1) + '">' +
-      (i === 0
-        ? '<svg class="rank-mark" viewBox="0 0 24 24" aria-hidden="true">' +
-          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
-          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>'
+function rankEntries(kind) {
+  var st = rankStats();
+  var pools = {};
+  st.rated.forEach(function (r) {
+    var key = kind === 'roaster' ? roasterIdOf(r) : kind === 'recipe' ? r.styleId : r.coffeeId;
+    if (!key) return;
+    var p = pools[key] || (pools[key] = { key: key, sum: 0, n: 0, coffees: {}, methods: {} });
+    p.sum += r.rating; p.n++; p.coffees[r.coffeeId] = true;
+    if (r.methodId) p.methods[r.methodId] = (p.methods[r.methodId] || 0) + 1;
+  });
+  return Object.keys(pools).map(function (key) {
+    var p = pools[key], e = { n: p.n, avg: p.sum / p.n,
+      score: (p.sum + RANK_PRIOR * st.mean) / (p.n + RANK_PRIOR) };
+    if (kind === 'recipe') {
+      // A recipe style — James Hoffmann V60, Lance Hedrick… — across every
+      // coffee brewed with it, drawn with the brewer it is used on most.
+      var sty = findIn('style', key);
+      var mids = Object.keys(p.methods).sort(function (a, b) { return p.methods[b] - p.methods[a]; });
+      var ncs = Object.keys(p.coffees).length;
+      e.name = sty ? sty.name : '—';
+      e.icon = brewerIcon(findIn('method', mids[0]));
+      e.sub = [sty && sty.author && sty.name.indexOf(sty.author) < 0 ? sty.author : '',
+        ncs + ' ' + tPlural(ncs, 'coffee', 'coffees')].filter(Boolean).join(' · ');
+    } else if (kind === 'roaster') {
+      var ro = findIn('roaster', key);
+      var nc = Object.keys(p.coffees).length;
+      e.name = ro ? ro.name : '—';
+      e.sub = nc + ' ' + tPlural(nc, 'coffee', 'coffees');
+    } else {
+      var c = findIn('coffee', key);
+      e.name = c ? c.name : '—';
+      e.sub = roasterNameOf(c);
+    }
+    return e;
+  }).filter(function (e) { return e.name !== '—'; }).sort(function (a, b) {
+    return b.score - a.score || b.n - a.n || a.name.localeCompare(b.name);
+  });
+}
+
+function rankRowHTML(e, i, kind) {
+  var pooled = true;
+  var inner =
+    '<span class="rk-no' + (i < 3 ? ' is-top' : '') + '">' + (i + 1) + '</span>' +
+    (e.icon ? '<span class="rk-ico">' + e.icon + '</span>' : '') +
+    '<span class="rk-txt"><span class="nm">' + esc(e.name) + '</span>' +
+      '<span class="mt">' + esc([e.sub, pooled ? e.n + ' ' + tPlural(e.n, 'rating', 'ratings') : ''].filter(Boolean).join(' · ')) + '</span>' +
+      '<span class="rk-bar" aria-hidden="true"><i style="width:' + (e.score / 5 * 100).toFixed(1) + '%"></i></span>' +
+    '</span>' +
+    '<span class="rk-score"><span class="v">' + e.score.toFixed(1) + '</span>' +
+      (pooled && Math.abs(e.avg - e.score) >= 0.05
+        ? '<span class="k">' + esc(t('avg')) + ' ' + e.avg.toFixed(1) + '</span>'
+        : (pooled ? '' : '<span class="k">' + stars(e.score) + '</span>')) +
+    '</span>';
+  return e.href
+    ? '<a class="rk-row" href="' + e.href + '">' + inner + '</a>'
+    : '<div class="rk-row">' + inner + '</div>';
+}
+
+// The top-scored recipe, ready to brew again.
+function rankHeroHTML() {
+  var best = rankStats().rated.slice().sort(function (a, b) {
+    return b.rating - a.rating || (b.createdAt || 0) - (a.createdAt || 0);
+  })[0];
+  if (!best) return '';
+  var me = findIn('method', best.methodId), st = findIn('style', best.styleId);
+  var hasWater = best.water !== '' && best.water != null;
+  return '<section class="rk-hero">' +
+    '<div class="rk-hero-top"><span class="rk-hero-k">' + esc(t('Your best cup')) + '</span>' + stars(best.rating) + '</div>' +
+    '<a class="rk-hero-nm" href="#/r/' + encodeURIComponent(best.id) + '">' + esc(titleOf(best)) + '</a>' +
+    '<span class="rk-hero-mt">' + esc([me ? me.name : '', st ? st.name : '', roasterOf(best)].filter(Boolean).join(' · ')) + '</span>' +
+    '<div class="rk-hero-foot">' +
+      '<span class="rk-hero-nums">' +
+        '<span><b>' + num(best.dose) + 'g</b><i>' + esc(t('coffee')) + '</i></span>' +
+        (hasWater ? '<span><b>' + num(best.water) + 'g</b><i>' + esc(t('water')) + '</i></span>' : '') +
+      '</span>' +
+      (timerPlan(best)
+        ? '<button type="button" class="rk-again" data-action="timer" data-id="' + esc(best.id) + '">' + ICON.play + '<span>' + esc(t('Brew again')) + '</span></button>'
         : '') +
-      '<span class="rank-no">' + (i + 1) + '</span>' +
-      '<div class="rank-info">' +
-        '<span class="rank-nm">' + esc(e.coffee.name) + '</span>' +
-        '<span class="rank-meta">' + esc(meta) + '</span>' +
-      '</div>' +
-      '<div class="rank-score">' +
-        '<span class="rank-v">' + e.avg.toFixed(1) + '</span>' +
-        '<span class="rank-k">' + esc(t('avg score')) + '</span>' +
-      '</div>' +
-    '</div>';
-  }
-  return '<div class="rank-row">' +
-    '<span class="rank-no">' + (i + 1) + '</span>' +
-    '<div class="rank-info">' +
-      '<span class="rank-nm">' + esc(e.coffee.name) + '</span>' +
-      '<span class="rank-meta">' + esc(meta) + '</span>' +
     '</div>' +
-    '<div class="rank-score">' +
-      stars(Math.round(e.avg)) +
-      '<span class="rank-k">' + e.avg.toFixed(1) + '</span>' +
-    '</div>' +
-  '</div>';
+  '</section>';
 }
 
-/* Day one is an empty board, so it offers the shortest way off it: the
-   recipe you last looked at, with its score control inline. */
-function rankStarterHTML() {
+// Unscored recipes, the one you last opened first, each with beans to
+// score it on the spot.
+function rankWaitingHTML() {
   var seen = lastSeen();
-  var r = seen && seen.recipe;
-  if (!r) return '';
-  return '<div class="section-title" style="padding-top:30px">' +
-      esc(t('Start with the one you just opened')) + '</div>' +
-    '<div class="rank-starter">' +
-      '<div class="rank-starter-top">' +
-        '<span class="tag tag-accent">' + esc(nameOf('method', r.methodId)) + ' · ' +
-          esc(nameOf('style', r.styleId)) + '</span>' +
-        '<a class="rank-starter-nm" href="#/r/' + encodeURIComponent(r.id) + '">' + esc(titleOf(r)) + '</a>' +
-        '<span class="rank-starter-meta">' +
-          (roasterOf(r) ? esc(roasterOf(r)) + ' · ' : '') +
-          num(r.dose, ' g') + ' / ' + num(r.water, ' g') + '</span>' +
-      '</div>' +
-      '<div class="rank-rate">' +
-        '<span class="rank-rate-k">' + esc(t('Cup score')) + '</span>' +
-        '<div class="rate">' +
-          [1, 2, 3, 4, 5].map(function (n) {
-            return '<button type="button" class="' + (n <= (r.rating || 0) ? 'on' : '') + '" ' +
-              'data-action="rate-recipe" data-id="' + esc(r.id) + '" data-v="' + n + '" ' +
-              'aria-label="' + esc(t('Rate') + ' ' + n) + '">' + iconBean(n <= (r.rating || 0)) + '</button>';
-          }).join('') +
-        '</div>' +
-      '</div>' +
-    '</div>';
+  var first = seen && seen.recipe && !(seen.recipe.rating > 0) ? seen.recipe : null;
+  var rest = state.recipes.filter(function (r) { return !(r.rating > 0) && (!first || r.id !== first.id); })
+    .sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+  var list = (first ? [first] : []).concat(rest).slice(0, 6);
+  if (!list.length) return '';
+  return '<div class="home-sec"><span class="home-sec-t">' + esc(t('Waiting for a score')) + '</span></div>' +
+    '<div class="rk-wait">' + list.map(function (r) {
+      return '<div class="rk-wcard">' +
+        '<a class="nm" href="#/r/' + encodeURIComponent(r.id) + '">' + esc(titleOf(r)) + '</a>' +
+        '<span class="mt">' + esc(nameOf('method', r.methodId)) + '</span>' +
+        '<div class="rate">' + [1, 2, 3, 4, 5].map(function (n) {
+          return '<button type="button" data-action="rate-recipe" data-id="' + esc(r.id) + '" data-v="' + n + '" ' +
+            'aria-label="' + esc(t('Rate') + ' ' + titleOf(r) + ' ' + n) + '">' + iconBean(false) + '</button>';
+        }).join('') + '</div>' +
+      '</div>';
+    }).join('') + '</div>';
 }
 
-function renderRanking() {
+function renderRanking(keepScroll) {
   view.classList.remove('view-enter');
-  var ranked = rankedCoffees();
-  var unscored = coll('coffee').length - ranked.length;
+  var tabs = [['coffee', t('Coffees')], ['recipe', t('Recipes')], ['roaster', t('Roasters')]];
+  var entries = rankEntries(rankTab);
 
-  var html = '<div class="ranking">' +
-    '<div class="ranking-head">' +
-      '<h1>' + esc(t('Best in the cup')) + '</h1>' +
-      '<p>' + esc(t('Your coffees ranked by average cup score across every recipe that uses them.')) + '</p>' +
+  var html = '<div class="ranking rk">' +
+    '<div class="ranking-head"><h1>' + esc(t('Best in the cup')) + '</h1></div>' +
+    rankHeroHTML() +
+    '<div class="segs rk-tabs" role="tablist" aria-label="' + esc(t('Rank by')) + '">' +
+      tabs.map(function (tb) {
+        var on = tb[0] === rankTab;
+        return '<button type="button" role="tab" aria-selected="' + on + '" class="seg' + (on ? ' on' : '') + '" ' +
+          'data-action="rank-tab" data-tab="' + tb[0] + '">' + esc(tb[1]) + '</button>';
+      }).join('') +
     '</div>';
 
-  if (!ranked.length) {
-    html += '<div class="empty rank-empty">' +
-        '<div class="rank-empty-beans">' + stars(0) + '</div>' +
-        '<h3>' + esc(t('Nothing scored yet')) + '</h3>' +
-        '<p>' + esc(t('Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.')) + '</p>' +
-      '</div>' + rankStarterHTML();
+  if (!entries.length) {
+    html += '<div class="empty rank-empty">' + ICON.cup +
+      '<h3>' + esc(t('Nothing scored yet')) + '</h3>' +
+      '<p>' + esc(t('Give a brew a cup score and it joins the ranking. Two or three is enough to see which bags are worth buying again.')) + '</p></div>';
   } else {
-    html += '<div class="rank-podium">' +
-      ranked.slice(0, 3).map(rankRowHTML).join('') + '</div>';
-    if (ranked.length > 3) {
-      html += '<div class="section-title">' + esc(t('The rest')) + '</div>' +
-        '<div class="rank-list">' +
-        ranked.slice(3).map(function (e, i) { return rankRowHTML(e, i + 3); }).join('') +
-        '</div>';
-    }
-    if (unscored) {
-      html += '<p class="rank-foot">' + unscored + ' ' +
-        esc(tPlural(unscored, 'coffee', 'coffees') + ' ' + t('with no score yet. Rate a brew and it joins the ranking.')) + '</p>';
-    }
+    html += '<div class="rk-list">' + entries.map(function (e, i) { return rankRowHTML(e, i, rankTab); }).join('') + '</div>';
+    html += '<p class="rk-note">' + esc(t('Scores are weighted by how many ratings stand behind them; the plain average shows when it differs.')) + '</p>';
   }
+  html += rankWaitingHTML();
 
   view.innerHTML = html + '</div>';
-  window.scrollTo(0, 0);
+  tabsLens(view.querySelector('.rk-tabs'));
+  if (!keepScroll) window.scrollTo(0, 0);
 }
 
 /* ---- account ----
@@ -1974,6 +2310,10 @@ function renderAccount() {
     return '<button class="seg' + (langChoice === code ? ' on' : '') + '" ' +
       'data-action="set-lang" data-lang="' + code + '">' + esc(label) + '</button>';
   }
+  function themeBtn(code, label) {
+    return '<button class="seg' + (themeChoice === code ? ' on' : '') + '" ' +
+      'data-action="set-theme" data-theme-choice="' + code + '">' + esc(label) + '</button>';
+  }
   function row(action, icon, label, meta, danger) {
     return '<button class="acc-row' + (danger ? ' danger' : '') + '" data-action="' + action + '">' +
       icon + '<span class="grow">' + esc(label) + '</span>' +
@@ -1981,6 +2321,7 @@ function renderAccount() {
   }
 
   view.innerHTML = '<div class="account">' +
+    '<div class="ranking-head account-head"><h1>' + esc(t('Account')) + '</h1></div>' +
     '<div class="acc-card">' +
       (photo
         ? '<img class="acc-av" src="' + esc(photo) + '" alt="" />'
@@ -1999,6 +2340,13 @@ function renderAccount() {
     '</div>' +
 
     '<div class="acc-group">' +
+      '<div class="section-title">' + esc(t('Appearance')) + '</div>' +
+      '<div class="segs">' +
+        themeBtn('auto', t('Device')) + themeBtn('dark', t('Dark')) + themeBtn('light', t('Light')) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="acc-group">' +
       '<div class="section-title">' + esc(t('Backup')) + '</div>' +
       row('export', ICON.download, t('Export data'), '.json') +
       row('import', ICON.upload, t('Import data…')) +
@@ -2011,133 +2359,203 @@ function renderAccount() {
     '</div>' +
   '</div>';
   window.scrollTo(0, 0);
+  Array.prototype.forEach.call(view.querySelectorAll('.segs'), function (box) { tabsLens(box); });
 }
 
-function renderDetail(id) {
+/* ---- recipe (F4) ----
+   Dose stepper. Scales this brew without touching the saved recipe: the
+   ratio stays locked, water follows the dose, and the pours rescale —
+   formula styles recompute from the new numbers, hand-written steps have
+   their grams scaled by the same factor. The timer reads the same scaled
+   copy, so what you set here is what you brew. Forgotten as soon as you
+   leave the recipe. */
+var doseView = { id: null, dose: null };
+
+function scalable(r) {
+  var d = Number(r.dose), w = Number(r.water);
+  return d > 0 && w > 0;
+}
+
+function viewRecipe(r) {
+  if (!r || doseView.id !== r.id || doseView.dose == null || !scalable(r)) return r;
+  var k = doseView.dose / Number(r.dose);
+  var out = Object.assign({}, r);
+  out.dose = doseView.dose;
+  out.water = Math.round(Number(r.water) * k);
+  if (r.steps && r.steps.length) {
+    out.steps = r.steps.map(function (st) {
+      var w = Number(st.water);
+      return Object.assign({}, st, w ? { water: Math.round(w * k) } : {});
+    });
+  }
+  return out;
+}
+
+function stepsF4HTML(steps) {
+  var run = 0;
+  return steps.map(function (st, i) {
+    var w = Number(st.water) || 0;
+    run += w;
+    return '<li class="rd-step">' +
+      '<span class="rd-dot' + (i === 0 ? ' is-first' : '') + '" aria-hidden="true"></span>' +
+      '<span class="rd-t">' + esc(st.t || '') + '</span>' +
+      '<span class="rd-l">' + esc(t(st.label || '')) + '</span>' +
+      (w ? '<span class="rd-w">+' + w + ' · ' + run + ' g</span>' : '<span class="rd-w"></span>') +
+    '</li>';
+  }).join('');
+}
+
+/* The top of a recipe reads like the label on its bag: the roaster across
+   the top, the coffee's name, then the facts the coffee has on record —
+   origin, process, altitude, varietal — and its tasting notes.
+   Facts that are not on record are left out, not shown empty. */
+var BEAN_MARK = '<svg viewBox="0 0 24 24" class="ico bean-mark" aria-hidden="true">' + BREWER_SVG.bean + '</svg>';
+
+function bagLabelHTML(r, c, roaster) {
+  var facts = '';
+  function fact(k, v) {
+    if (v) facts += '<div class="bl-fact"><dt>' + esc(k) + '</dt><dd>' + v + '</dd></div>';
+  }
+  if (c) {
+    fact(t('Origin'), esc(c.origin));
+    fact(t('Process'), esc(c.process));
+    fact(t('Altitude'), c.altitude ? esc(String(c.altitude)) : '');
+    fact(t('Varietal'), esc(c.varietal));
+  }
+  var notes = c && c.notes ? String(c.notes).split(/\s*[,;\n·]\s*/).filter(Boolean) : [];
+  // Short comma lists read as chips; anything longer stays a sentence.
+  var asChips = notes.length > 1 && notes.length <= 8 && notes.every(function (n) { return n.length <= 24; });
+  return '<section class="bag-label">' +
+    '<span class="bl-valve" aria-hidden="true"><i></i></span>' +
+    (roaster ? '<span class="bl-roaster">' + esc(roaster) + '</span>' : '') +
+    '<h1 class="rd-name">' + esc(titleOf(r)) + '</h1>' +
+    (r.rating ? '<span class="rd-score">' + stars(r.rating) + '</span>' : '') +
+    (facts ? '<dl class="bl-facts">' + facts + '</dl>' : '') +
+    (notes.length
+      ? (asChips
+        ? '<div class="bl-notes" aria-label="' + esc(t('Tasting notes')) + '">' +
+            notes.map(function (n) { return '<span>' + esc(n) + '</span>'; }).join('') + '</div>'
+        : '<p class="bl-notes-text">' + esc(c.notes) + '</p>')
+      : '') +
+  '</section>';
+}
+
+function renderDetail(id, keepScroll) {
   view.classList.remove('view-enter');
-  var r = recipeById(id);
-  if (!r) {
-    view.innerHTML = '<div class="detail"><a class="back" href="#/">' + ICON.back + esc(t('Library')) + '</a>' +
+  var saved = recipeById(id);
+  if (!saved) {
+    view.innerHTML = '<div class="detail rd"><div class="rd-top"><a class="rd-btn" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a></div>' +
       '<div class="empty">' + ICON.bean + '<h3>' + esc(t('Recipe not found')) + '</h3><p>' + esc(t('It may have been deleted.')) + '</p></div></div>';
     return;
   }
+  if (doseView.id !== id) doseView = { id: id, dose: null };
+  var r = viewRecipe(saved);
+  var scaledNow = doseView.dose != null && doseView.dose !== Number(saved.dose);
 
   var c = findIn('coffee', r.coffeeId);
   var st = findIn('style', r.styleId);
   var gr = findIn('grinder', r.grinderId);
   var me = findIn('method', r.methodId);
-
   var styleDriven = hasFormula(r.styleId);
   var steps = effectiveSteps(r);
-  var stepsHTML = timelineHTML(steps);
+  var roaster = roasterOf(r);
 
   var specs = '';
-  function spec(k, v) { if (v) specs += '<div class="spec"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>'; }
-  spec(t('Coffee'), c ? c.name : '—');
+  function spec(k, v) { if (v) specs += '<div class="rd-spec"><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>'; }
   if (c) {
     var ro = c.roasterId ? findIn('roaster', c.roasterId) : null;
-    spec(t('Roaster'), roasterNameOf(c));
     if (ro && ro.location) spec(t('Roastery'), ro.location);
-    spec(t('Origin'), c.origin); spec(t('Altitude'), c.altitude);
-    spec(t('Process'), c.process); spec(t('Roast'), c.roast); spec(t('Varietal'), c.varietal);
   }
-  spec(t('Grinder'), gr ? gr.name : '—');
-  spec(t('Grind size'), r.grindSize);
-  spec(t('Method'), me ? me.name : '—');
-  spec(t('Recipe style'), st ? st.name : '—');
-  if (st && st.author) spec('Devised by', st.author);
+  if (st && st.author) spec(t('Devised by'), st.author);
 
-  var roaster = roasterOf(r);
-  var html = '<div class="detail">' +
-    // The masthead is an inverse block that runs to the screen edges: the
-    // recipe's identity, set apart from the numbers you read off it below.
-    '<header class="detail-head">' +
-      '<svg class="detail-mark" viewBox="0 0 24 24" aria-hidden="true">' +
-        '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
-        '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
-      '<div class="detail-head-inner">' +
-        '<div class="detail-nav">' +
-          '<a class="navbtn" href="#/" aria-label="' + esc(t('Library')) + '">' + ICON.back + '</a>' +
-          '<span class="detail-nav-gap"></span>' +
-          '<button class="navbtn fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' +
-            esc(r.id) + '" aria-label="' + esc(t('Toggle favourite')) + '">' + iconStar(r.fav) + '</button>' +
-          '<div class="menu-holder detail-more">' +
-            '<button class="navbtn" data-action="toggle-detail-menu" aria-haspopup="true" ' +
-              'aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
-            '<div class="menu" id="detailMenu" hidden>' +
-              '<button data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('Edit')) + '</button>' +
-              '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
-              '<div class="menu-sep"></div>' +
-              '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
-            '</div>' +
-          '</div>' +
+  // The dose card: a stepper when the recipe has both weights to scale,
+  // otherwise just the numbers it does have.
+  var doseCard;
+  if (scalable(saved)) {
+    doseCard = '<section class="rd-dose">' +
+      '<div class="rd-dose-top"><span>' + esc(t('Brewing for')) + '</span>' +
+        '<span class="rd-lock">' + esc(t('Ratio locked')) + ' · ' + ratio(r.dose, r.water) + '</span></div>' +
+      '<div class="rd-dose-row">' +
+        '<button type="button" class="rd-step-btn" data-action="dose-step" data-d="-1" aria-label="' + esc(t('Less coffee')) + '"' +
+          (Number(r.dose) <= 1 ? ' disabled' : '') + '>' + ICON.minus + '</button>' +
+        '<div class="rd-dose-nums">' +
+          '<span><b>' + num(r.dose) + '<small>g</small></b><i>' + BEAN_MARK + esc(t('coffee')) + '</i></span>' +
+          '<span class="rd-arrow" aria-hidden="true">→</span>' +
+          '<span><b>' + num(r.water) + '<small>g</small></b><i>' + ICON.drop + esc(t('water')) + '</i></span>' +
         '</div>' +
-        '<div class="detail-title">' +
-          '<span class="kicker">' + esc(nameOf('method', r.methodId)) + ' · ' + esc(nameOf('style', r.styleId)) + '</span>' +
-          '<h1>' + esc(titleOf(r)) + '</h1>' +
-          '<div class="detail-meta">' +
-            (r.rating ? stars(r.rating) + '<span class="dot"></span>' : '') +
-            (roaster ? '<span>' + esc(roaster) + '</span><span class="dot"></span>' : '') +
-            '<span>' + ratio(r.dose, r.water) + ' ' + esc(t('ratio')) + '</span>' +
-            (c && c.origin ? '<span class="dot"></span><span>' + esc(c.origin) + '</span>' : '') +
-          '</div>' +
+        '<button type="button" class="rd-step-btn" data-action="dose-step" data-d="1" aria-label="' + esc(t('More coffee')) + '">' + ICON.plus + '</button>' +
+      '</div>' +
+      '<p class="rd-dose-note">' + (scaledNow
+        ? esc(t('Scaled for this brew only — the recipe keeps')) + ' ' + num(saved.dose, ' g') + '. ' +
+          '<button type="button" class="rd-reset" data-action="dose-reset">' + esc(t('Reset')) + '</button>'
+        : esc(t('Change the dose and every pour below rescales.'))) + '</p>' +
+    '</section>';
+  } else {
+    doseCard = '<section class="rd-dose is-static"><div class="rd-dose-nums">' +
+      '<span><b>' + num(r.dose) + '<small>g</small></b><i>' + BEAN_MARK + esc(t('coffee')) + '</i></span>' +
+      (r.water !== '' && r.water != null ? '<span><b>' + num(r.water) + '<small>g</small></b><i>' + ICON.drop + esc(t('water')) + '</i></span>' : '') +
+    '</div></section>';
+  }
+
+  var tiles = '';
+  if (r.temp !== '' && r.temp != null) tiles += '<div class="rd-tile"><span class="k">' + esc(t('Water')) + '</span><span class="v">' + num(r.temp) + ' °C</span></div>';
+  if (r.brewTime) tiles += '<div class="rd-tile"><span class="k">' + esc(t('Time')) + '</span><span class="v">' + esc(String(r.brewTime).replace('~', '')) + '</span></div>';
+  if (gr || r.grindSize) tiles += '<div class="rd-tile"><span class="k">' + esc(gr ? gr.name : t('Grind')) + '</span><span class="v is-text">' + esc(r.grindSize || '—') + '</span></div>';
+
+  var html = '<div class="detail rd">' +
+    '<div class="rd-top">' +
+      '<a class="rd-btn" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a>' +
+      '<span class="rd-gap"></span>' +
+      '<button class="rd-btn fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="' + esc(t('Toggle favourite')) + '">' + iconStar(r.fav) + '</button>' +
+      '<div class="menu-holder detail-more">' +
+        '<button class="rd-btn" data-action="toggle-detail-menu" aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
+        '<div class="menu" id="detailMenu" hidden>' +
+          '<button data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('Edit')) + '</button>' +
+          '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
+          '<div class="menu-sep"></div>' +
+          '<button class="danger" data-action="delete" data-id="' + esc(r.id) + '">' + esc(t('Delete recipe…')) + '</button>' +
         '</div>' +
       '</div>' +
-    '</header>' +
-    '<div class="detail-sheet">' +
-    '<div class="bigstats">' +
-      bigstat(t('Dose'), num(r.dose), 'g') +
-      bigstat(t('Water'), num(r.water), 'g') +
-      bigstat(t('Ratio'), ratio(r.dose, r.water)) +
-      bigstat(t('Temperature'), num(r.temp), '°C') +
-      bigstat(t('Brew time'), r.brewTime ? esc(r.brewTime) : '') +
-      bigstat(t('Grind'), r.grindSize ? esc(r.grindSize) : '', '', 'font-size:19px') +
     '</div>' +
 
-    '<div class="detail-body">' +
-      '<aside class="detail-ref">' +
-        '<div class="section-title">' + esc(t('Details')) + '</div>' +
-        '<dl class="specs">' + specs + '</dl>' +
-        (c && c.notes ? '<div class="coffee-note">' + esc(c.notes) + '</div>' : '') +
-        (st && st.notes ? '<div class="block"><div class="section-title">' + esc(t('About this style')) + '</div>' +
-          '<div class="coffee-note" style="margin-top:0">' + esc(t(st.notes)) + '</div></div>' : '') +
-      '</aside>' +
-      '<div class="detail-brew">' +
-        // A recipe with no schedule is not "pouring steps" — for espresso the
-        // heading would announce a section whose own text says it has none.
-        '<div class="section-title">' + esc(t(steps.length ? 'Pouring steps' : 'How to brew it')) + '</div>' +
-        (steps.length
-          ? '<ol class="timeline">' + stepsHTML + '</ol>' +
-            (styleDriven ? '<p class="hint" style="margin-top:12px">' + esc(stepsCaption(r)) + '</p>' : '')
-          : styleDriven
-            ? '<p style="color:var(--text-muted);font:var(--type-body-sm)">' + esc(noStepsMessage(r)) + '</p>'
-            : '<p style="color:var(--text-muted);font:var(--type-body-sm)">No steps recorded — ' +
-              '<a href="#" data-action="edit" data-id="' + esc(r.id) + '" style="color:var(--text-link)">add them</a>.</p>') +
-        (r.notes ? '<div class="block"><div class="section-title">' + esc(t('Personal notes')) + '</div><div class="notes">' + esc(r.notes) + '</div></div>' : '') +
-      '</div>' +
+    '<div class="rd-chips">' +
+      (me ? '<span class="rd-chip">' + brewerIcon(me) + esc(me.name) + '</span>' : '') +
+      (st ? '<span class="rd-chip">' + esc(st.name) + '</span>' : '') +
     '</div>' +
-    '</div>' +
+    bagLabelHTML(r, c, roaster) +
+
+    doseCard +
+    (tiles ? '<div class="rd-tiles">' + tiles + '</div>' : '') +
+
+    '<h2 class="rd-h2">' + esc(t(steps.length ? 'Pouring steps' : 'How to brew it')) + '</h2>' +
+    (steps.length
+      ? '<ol class="rd-steps">' + stepsF4HTML(steps) + '</ol>' +
+        (styleDriven ? '<p class="rd-hint">' + esc(stepsCaption(r)) + '</p>' : '')
+      : styleDriven
+        ? '<p class="rd-hint">' + esc(noStepsMessage(r)) + '</p>'
+        : '<p class="rd-hint">' + esc(t('No steps recorded —')) + ' <a href="#" data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('add them')) + '</a>.</p>') +
+
+    (st && st.notes ? '<div class="rd-note"><span class="k">' + esc(t('About this style')) + '</span><p>' + esc(t(st.notes)) + '</p></div>' : '') +
+    (r.notes ? '<div class="rd-note"><span class="k">' + esc(t('Personal notes')) + '</span><p>' + esc(r.notes) + '</p></div>' : '') +
+    (specs ? '<h2 class="rd-h2">' + esc(t('Details')) + '</h2><dl class="rd-specs">' + specs + '</dl>' : '') +
   '</div>' +
-    // Pinned on a phone, inline under the sheet on a desktop. Brewing is
-    // what this page is for, so the brew action is the one filled control
-    // and wears the same roast the timer's own start button does.
-    //
-    // Deliberately a sibling of .detail, not a child: .detail animates on
-    // entry, and an element with a transform is a containing block for
-    // fixed descendants — nested here the bar pins to the page rather
-    // than the viewport and lands somewhere below the fold.
-    '<div class="detail-bar">' +
+    // A sibling of .detail, not a child: .detail animates on entry, and an
+    // element with a transform is a containing block for fixed descendants.
+    '<div class="detail-bar rd-bar glass" data-glass="6">' +
       (timerPlan(r)
-        ? '<button class="btn btn-accent action-timer" data-action="timer" data-id="' + esc(r.id) + '">' +
-          ICON.play + '<span>' + esc(t('Start brew timer')) + '</span></button>'
+        ? '<button class="rd-brew" data-action="timer" data-id="' + esc(r.id) + '">' +
+            '<span>' + esc(t('Start brewing')) + '</span>' +
+            '<span class="rd-brew-end">' + (timerPlan(r).total ? '<span class="rd-brew-time">' + esc(mmss(timerPlan(r).total)) + '</span>' : '') +
+              '<span class="rd-brew-disc">' + ICON.play + '</span></span>' +
+          '</button>'
         : '<span class="detail-bar-note">' + esc(t('Add a brew time or pouring steps to time this one.')) + '</span>') +
-      '<button class="btn btn-ghost btn-icon action-edit" data-action="edit" data-id="' + esc(r.id) + '" ' +
-        'aria-label="' + esc(t('Edit')) + '">' + ICON.edit + '</button>' +
+      '<button class="rd-btn rd-edit" data-action="edit" data-id="' + esc(r.id) + '" aria-label="' + esc(t('Edit')) + '">' + ICON.edit + '</button>' +
     '</div>';
 
   view.innerHTML = html;
   markSeen(r.id);
-  window.scrollTo(0, 0);
+  if (!keepScroll) window.scrollTo(0, 0);
+  glassAll(view);
 }
 
 /* ---------------------------------------------------------
@@ -2150,8 +2568,6 @@ function renderDetail(id) {
    shows how far through the brew you are.
    --------------------------------------------------------- */
 
-var RING_R = 86;
-var RING_C = 2 * Math.PI * RING_R;
 
 // Times here are free-form ("3:15", "~0:28", "3:10–3:15"), so take the first
 // m:ss found — for a range that's the lower bound, which is the one worth
@@ -2166,7 +2582,7 @@ function secondsOf(v) {
 
 function timerPlan(r) {
   var steps = effectiveSteps(r).map(function (s) {
-    return { at: secondsOf(s.t), label: s.label || '', water: Number(s.water) || 0 };
+    return { at: secondsOf(s.t), label: s.label || '', water: Number(s.water) || 0, pour: Number(s.pour) || 0 };
   }).filter(function (s) { return s.at !== null; });
   steps.sort(function (a, b) { return a.at - b.at; });
 
@@ -2189,7 +2605,8 @@ function timerPlan(r) {
         start: s.at,
         end: i + 1 < steps.length ? steps[i + 1].at : total,
         label: s.label,
-        water: s.water
+        water: s.water,
+        pour: s.pour
       });
     });
   }
@@ -2322,17 +2739,42 @@ function timerRunCues() {
   }
 }
 
-function buildTimerEl(r, plan) {
-  var segHTML = plan.segs.map(function (s, i) {
-    var len = (s.end - s.start) / plan.total * RING_C;
-    // Hairline gap between arcs so the steps read as separate slices —
-    // dropped on slivers too short to survive it.
-    var gap = len > 14 ? 5 : 0;
-    return '<circle class="tseg" data-i="' + i + '" cx="100" cy="100" r="' + RING_R + '" ' +
-      'stroke-dasharray="' + Math.max(len - gap, 1).toFixed(2) + ' ' + RING_C.toFixed(2) + '" ' +
-      'stroke-dashoffset="' + (-(s.start / plan.total * RING_C)).toFixed(2) + '"></circle>';
-  }).join('');
+// The whole brew as one thin ring around the pause button.
+var TM_R = 47, TM_C = 2 * Math.PI * TM_R;
+// A cup with steam, for the end of the brew.
+var DONE_CUP = '<svg viewBox="0 0 72 64" fill="none" stroke-linecap="round">' +
+  '<path class="dc-steam" d="M26 4c-3 4-3 7 0 11M36 2c-3 4-3 7 0 11M46 4c-3 4-3 7 0 11"/>' +
+  '<path class="dc-cup" d="M14 24h40v14a16 16 0 0 1-16 16h-8a16 16 0 0 1-16-16z"/>' +
+  '<path class="dc-cup" d="M54 29h4a6 6 0 0 1 0 12h-5"/>' +
+  '<path class="dc-coffee" d="M17 28h34"/><path class="dc-saucer" d="M8 60h56"/></svg>';
+var TM_PAUSE = '<svg viewBox="0 0 24 24" class="ico ico-fill"><rect x="6.5" y="5" width="3.5" height="14" rx="1"/><rect x="14" y="5" width="3.5" height="14" rx="1"/></svg>';
 
+/* The pour-over cone, side on. The coffee in it rises with the water
+   poured, a dashed line marks where this pour should top out, and the cup
+   underneath fills as the brew draws down. Geometry in a 300×300 box:
+   the cone's walls run from (58,70)–(242,70) down to (128,196)–(172,196). */
+var CONE = { top: 70, bot: 196, full: 84, empty: 192 };
+function coneX(y) { var k = (y - CONE.top) * (70 / 126); return [58 + k, 242 - k]; }
+function coneLevel(frac) { return CONE.empty - Math.max(0, Math.min(1, frac)) * (CONE.empty - CONE.full); }
+
+function coneSVG() {
+  return '<div class="tm-cone"><svg viewBox="0 0 300 300" role="img" aria-label="' + esc(t('Water in the cone')) + '">' +
+    '<path class="cone-stream" d="M150 0 C150 30 152 50 150 66"/>' +
+    '<path class="cone-body" d="M58 70 L242 70 L172 196 L128 196 Z"/>' +
+    '<path class="cone-liquid" d=""/>' +
+    '<path class="cone-crema" d=""/>' +
+    '<path class="cone-bed" d="M118 178 L182 178 L172 196 L128 196 Z"/>' +
+    '<g class="cone-bubbles"><circle cx="132" cy="170" r="3"/><circle cx="158" cy="174" r="2.2"/><circle cx="172" cy="168" r="2.6"/></g>' +
+    '<path class="cone-target" d=""/>' +
+    '<text class="cone-target-k" x="0" y="0"></text>' +
+    '<path class="cone-tip" d="M140 200 L160 200 L156 212 L144 212 Z"/>' +
+    '<path class="cone-drip" d="M150 214 L150 226"/>' +
+    '<path class="cone-cup" d="M100 230 L200 230 L196 288 Q196 294 190 294 L110 294 Q104 294 104 288 Z"/>' +
+    '<path class="cone-cup-fill" d=""/>' +
+  '</svg></div>';
+}
+
+function buildTimerEl(r, plan) {
   var rowsHTML = plan.segs.map(function (s, i) {
     return '<li class="timer-step" data-i="' + i + '">' +
       '<span class="ts-t">' + esc(mmss(s.start)) + '</span>' +
@@ -2346,71 +2788,55 @@ function buildTimerEl(r, plan) {
   // not a card sharing space with the library behind it. See .overlay-full.
   wrap.className = 'overlay overlay-full';
   wrap.innerHTML =
-    '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true">' +
+    '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true" aria-label="' + esc(titleOf(r)) + '">' +
       '<div class="sheet-head">' +
-        '<div class="timer-head-row">' +
-          '<h2>' + esc(titleOf(r)) + '</h2>' +
-          '<span class="timer-head-actions">' +
-            '<button class="iconbtn timer-mute" data-action="timer-mute"></button>' +
-            '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
-          '</span>' +
-        '</div>' +
-        '<div class="timer-head-row">' +
-          '<span class="timer-eyebrow"></span>' +
-          '<span class="timer-clock">00:00 / ' + esc(mmss2(plan.total)) + '</span>' +
+        '<div class="tm-head">' +
+          '<button class="tm-circ glass" data-glass="4" data-action="close-modal" aria-label="' + esc(t('Close')) + '">' + ICON.close + '</button>' +
+          '<span class="tm-title"><h2>' + esc(titleOf(r)) + '</h2><span class="timer-eyebrow"></span></span>' +
+          '<button class="tm-circ glass timer-mute" data-glass="4" data-action="timer-mute"></button>' +
         '</div>' +
       '</div>' +
       '<div class="sheet-body timer-body">' +
-        // .timer-hero and .timer-list are display:contents below the
-        // desktop breakpoint, so mobile's single vertical flow (ring,
-        // readouts, instruction, steps, next-strip) is byte-for-byte
-        // unchanged — they only become real grid columns at the width
-        // that has room for two. See the min-width:861px block.
         '<div class="timer-hero">' +
-          '<div class="timer-ring">' +
-            '<svg viewBox="0 0 200 200" aria-hidden="true">' +
-              '<g transform="rotate(-90 100 100)">' +
-                '<circle class="ttrack" cx="100" cy="100" r="' + RING_R + '"></circle>' +
-                segHTML +
-                '<circle class="tprog" cx="100" cy="100" r="' + RING_R + '" ' +
-                  'stroke-dasharray="0 ' + RING_C.toFixed(2) + '"></circle>' +
-              '</g>' +
-              '<g class="thead"><circle cx="100" cy="' + (100 - RING_R) + '" r="5.5"></circle></g>' +
-            '</svg>' +
-            '<div class="timer-face">' +
-              '<div class="timer-elapsed" role="timer" aria-live="off">00:00</div>' +
-              '<div class="timer-total">' + esc(t('of')) + ' ' + esc(mmss2(plan.total)) + '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="timer-readouts">' +
-            '<div class="timer-readout">' +
-              '<span class="rv timer-left">00:00</span>' +
-              '<span class="rk">' + esc(t('Left in this step')) + '</span>' +
-            '</div>' +
+          '<div class="tm-clock' + (plan.water ? ' is-split' : '') + '">' +
+            '<span class="tm-time"><span class="timer-elapsed" role="timer" aria-live="off">0:00</span>' +
+            '<span class="timer-total">' + esc(t('of')) + ' ' + esc(mmss(plan.total)) + '</span></span>' +
             (plan.water
-              ? '<div class="timer-readout">' +
-                  '<span class="rv timer-poured">0<small>/ ' + plan.water + ' g</small></span>' +
-                  '<span class="rk">' + esc(t('Water poured')) + '</span>' +
-                '</div>'
+              ? '<span class="tm-water"><span class="timer-poured">0<small> g</small></span>' +
+                  '<span class="timer-total">' + esc(t('of')) + ' ' + plan.water + ' g ' + esc(t('poured')) + '</span></span>'
               : '') +
           '</div>' +
-          '<div class="timer-now">' +
+          (plan.water ? coneSVG() : '') +
+          '<div class="timer-now glass" data-glass="8">' +
+            '<span class="tm-done-cup" aria-hidden="true">' + DONE_CUP + '</span>' +
             '<span class="timer-now-kicker"></span>' +
             '<span class="timer-now-label"></span>' +
+            '<span class="timer-now-sub"></span>' +
+            '<div class="tm-rate rate" role="group" aria-label="' + esc(t('Rate this cup')) + '">' +
+              [1, 2, 3, 4, 5].map(function (n) {
+                return '<button type="button" data-action="rate-recipe" data-id="' + esc(r.id) + '" data-v="' + n + '" ' +
+                  'aria-label="' + esc(t('Rate') + ' ' + n) + '">' + iconBean(false) + '</button>';
+              }).join('') +
+            '</div>' +
           '</div>' +
-        '<p class="sr-only timer-announce" role="status" aria-live="polite"></p>' +
+          '<div class="timer-next"><span class="nt"></span><span class="nx"></span></div>' +
+          '<p class="sr-only timer-announce" role="status" aria-live="polite"></p>' +
         '</div>' +
         '<div class="timer-list">' +
           '<ol class="timer-steps">' + rowsHTML + '</ol>' +
-          '<div class="timer-next">' + ICON.arrowDown +
-            '<span class="nx"></span><span class="nt"></span>' +
-          '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="sheet-foot timer-foot">' +
-        '<button class="btn btn-ghost timer-side" data-action="timer-reset" aria-label="Restart" title="Restart">' + ICON.replay + '</button>' +
-        '<button class="btn timer-toggle" data-action="timer-toggle">' + ICON.play + '<span>' + esc(t('Start brewing')) + '</span></button>' +
-        '<button class="btn btn-ghost timer-side" data-action="timer-skip" aria-label="Skip to next step" title="Skip to next step">' + ICON.skip + '</button>' +
+      '<div class="sheet-foot timer-foot glass" data-glass="6">' +
+        '<button class="timer-side glass" data-glass="4" data-action="timer-reset" aria-label="' + esc(t('Restart')) + '" title="' + esc(t('Restart')) + '">' + ICON.replay + '</button>' +
+        '<div class="tm-play">' +
+          '<svg class="tm-ring" viewBox="0 0 100 100" aria-hidden="true">' +
+            '<circle class="ttrack" cx="50" cy="50" r="' + TM_R + '"></circle>' +
+            '<circle class="tprog" cx="50" cy="50" r="' + TM_R + '" transform="rotate(-90 50 50)" ' +
+              'stroke-dasharray="0 ' + TM_C.toFixed(2) + '"></circle>' +
+          '</svg>' +
+          '<button class="timer-toggle glass" data-glass="3" data-action="timer-toggle"></button>' +
+        '</div>' +
+        '<button class="timer-side glass" data-glass="4" data-action="timer-skip" aria-label="' + esc(t('Skip to next step')) + '" title="' + esc(t('Skip to next step')) + '">' + ICON.skip + '</button>' +
       '</div>' +
     '</div>';
   wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
@@ -2418,13 +2844,14 @@ function buildTimerEl(r, plan) {
 }
 
 function openTimer(id) {
-  var r = recipeById(id);
+  var r = viewRecipe(recipeById(id));
   if (!r) return;
   var plan = timerPlan(r);
   if (!plan) { toast(t('Add a brew time or pouring steps first.')); return; }
 
   stopTimer();
   timer = {
+    id: id, ratio: (Number(r.dose) > 0 && Number(r.water) > 0) ? ratio(r.dose, r.water) : '',
     plan: plan, el: buildTimerEl(r, plan), sheet: null,
     elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null,
     cueSeg: null, warned: false, tick: 0
@@ -2454,6 +2881,7 @@ function openTimer(id) {
   // the sheet happens to finish animating in.
   timerPaint();
   timerControls();
+  glassAll(timer.el);
 }
 
 function timerPaint() {
@@ -2461,27 +2889,58 @@ function timerPaint() {
   var plan = timer.plan, el = timer.el;
   var e = Math.min(Math.max(timer.elapsed, 0), plan.total);
   var frac = e / plan.total;
+  var done = e >= plan.total;
 
   el.querySelector('.tprog').setAttribute('stroke-dasharray',
-    (frac * RING_C).toFixed(2) + ' ' + RING_C.toFixed(2));
-  el.querySelector('.thead').setAttribute('transform',
-    'rotate(' + (frac * 360).toFixed(3) + ' 100 100)');
-  el.querySelector('.timer-elapsed').textContent = mmss2(e);
-  el.querySelector('.timer-clock').textContent = mmss2(e) + ' / ' + mmss2(plan.total);
+    (frac * TM_C).toFixed(2) + ' ' + TM_C.toFixed(2));
+  el.querySelector('.timer-elapsed').textContent = mmss(Math.floor(e));
 
   var i = 0, k;
   for (k = 0; k < plan.segs.length; k++) if (e >= plan.segs[k].start) i = k;
 
-  // Per-step readouts refresh every frame; the heavier class work below
-  // only runs when the step actually changes.
+  // Per-step readouts refresh every frame; the heavier work below only
+  // runs when the step actually changes.
   var seg = plan.segs[i];
   var segLen = seg.end - seg.start;
-  el.querySelector('.timer-left').textContent = mmss2(Math.max(0, seg.end - e));
+  var left = mmss(Math.max(0, Math.ceil(seg.end - e)));
+  var kick = el.querySelector('.timer-now-kicker');
+  // A step with a pour time pours over its first `pour` seconds, then waits
+  // for the next step; one without spreads the water across the step.
+  var pourFor = seg.pour ? Math.min(seg.pour, segLen) : segLen;
+  var pouringNow = !!seg.water && e - seg.start < pourFor;
+  if (!done) {
+    // Steps that add no water are not pours — a drawdown or a steep says
+    // so rather than announcing a pour of nothing.
+    if (seg.water && seg.pour) {
+      kick.textContent = pouringNow
+        ? t('Pouring now') + ' · ' + mmss(Math.max(0, Math.ceil(seg.start + pourFor - e))) + ' ' + t('left')
+        : t('Wait') + ' · ' + t('next pour in') + ' ' + left;
+    } else {
+      kick.textContent = (seg.water ? t('Pouring now') : t('Now')) + ' · ' + left + ' ' + t('left');
+    }
+    timer.sheet.classList.toggle('is-waiting', !!seg.water && !pouringNow);
+  }
   var poured = el.querySelector('.timer-poured');
   if (poured) {
-    var pct = segLen > 0 ? Math.min(1, Math.max(0, (e - seg.start) / segLen)) : 1;
+    var pct = pourFor > 0 ? Math.min(1, Math.max(0, (e - seg.start) / pourFor)) : 1;
     var g = seg.from + (seg.upto - seg.from) * pct;
-    poured.innerHTML = Math.round(g) + '<small>/ ' + plan.water + ' g</small>';
+    poured.innerHTML = Math.round(g) + '<small> g</small>';
+    // The bed holds water back as it drains, so the cone shows what is
+    // poured but not yet through: the water poured, draining away as the
+    // brew runs, never below a thin layer until the end.
+    var held = Math.min(1, g / plan.water * (1 - frac) * 1.5);
+    if (g > 0 && !done) held = Math.max(held, 0.06);
+    var ly = coneLevel(held), xs = coneX(ly);
+    el.querySelector('.cone-liquid').setAttribute('d',
+      'M' + xs[0].toFixed(1) + ' ' + ly.toFixed(1) + ' L' + xs[1].toFixed(1) + ' ' + ly.toFixed(1) + ' L172 196 L128 196 Z');
+    el.querySelector('.cone-crema').setAttribute('d',
+      'M' + (xs[0] + 3).toFixed(1) + ' ' + ly.toFixed(1) + ' L' + (xs[1] - 3).toFixed(1) + ' ' + ly.toFixed(1));
+    var cupY = 294 - Math.min(1, frac * 1.1) * 40;
+    el.querySelector('.cone-cup-fill').setAttribute('d', frac > 0.02
+      ? 'M' + (104 - (294 - cupY) * 0.07).toFixed(1) + ' ' + cupY.toFixed(1) + ' L' + (196 + (294 - cupY) * 0.07).toFixed(1) + ' ' + cupY.toFixed(1) +
+        ' L196 288 Q196 294 190 294 L110 294 Q104 294 104 288 Z'
+      : '');
+    timer.sheet.classList.toggle('is-pouring', pouringNow && timer.running && !done);
   }
 
   if (i === timer.seg) return;
@@ -2490,34 +2949,78 @@ function timerPaint() {
   el.querySelector('.timer-eyebrow').textContent =
     t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length;
   var nxt = plan.segs[i + 1];
-  el.querySelector('.timer-next .nx').textContent = nxt ? t('Next') + ' · ' + t(nxt.label) : t('Last step');
-  el.querySelector('.timer-next .nt').textContent = nxt ? mmss2(nxt.start) : '';
+  el.querySelector('.timer-next .nt').textContent = nxt ? t('Next') + ' · ' + mmss(nxt.start) : t('Last step');
+  el.querySelector('.timer-next .nx').textContent = nxt ? t(nxt.label) : '';
 
-  var segs = el.querySelectorAll('.tseg');
+  // This pour's target: a dashed line across the cone at the level the
+  // pour should reach, with its weight beside it.
+  if (poured) {
+    var tgt = el.querySelector('.cone-target'), tgk = el.querySelector('.cone-target-k');
+    if (seg.water) {
+      // Where the coffee will stand the moment this pour is in: the same
+      // fill-and-drain model the liquid uses, read at the end of the pour,
+      // so the rising level meets the line exactly.
+      var endFrac = Math.min(1, (seg.start + (seg.pour ? Math.min(seg.pour, segLen) : segLen)) / plan.total);
+      var ty = coneLevel(Math.min(1, seg.upto / plan.water * (1 - endFrac) * 1.5)), tx = coneX(ty);
+      tgt.setAttribute('d', 'M' + (tx[0] + 6).toFixed(1) + ' ' + ty.toFixed(1) + ' L' + (tx[1] - 6).toFixed(1) + ' ' + ty.toFixed(1));
+      tgk.setAttribute('x', (tx[1] + 2).toFixed(1));
+      tgk.setAttribute('y', (ty + 4).toFixed(1));
+      tgk.textContent = seg.upto + ' g';
+    } else {
+      tgt.setAttribute('d', '');
+      tgk.textContent = '';
+    }
+    timer.sheet.classList.toggle('is-bloom', i === 0 || /bloom|pré-infus/i.test(seg.label || ''));
+  }
+
   var rows = el.querySelectorAll('.timer-step');
-  for (k = 0; k < segs.length; k++) {
-    segs[k].classList.toggle('is-now', k === i);
-    segs[k].classList.toggle('is-past', k < i);
+  for (k = 0; k < rows.length; k++) {
     rows[k].classList.toggle('is-now', k === i);
     rows[k].classList.toggle('is-past', k < i);
   }
-  el.querySelector('.timer-now-label').textContent = t(plan.segs[i].label);
-  // Steps that add no water are not pours — a drawdown or a steep says so
-  // rather than announcing a pour of nothing.
-  var kick = el.querySelector('.timer-now-kicker');
-  if (kick) {
-    kick.textContent = seg.water
-      ? t('Pouring now') + ' · +' + seg.water + ' g'
-      : t('Now');
-  }
+  el.querySelector('.timer-now-label').textContent = t(seg.label);
+  el.querySelector('.timer-now-sub').textContent = seg.water
+    ? t('Add') + ' ' + seg.water + ' g' + (seg.pour ? ' ' + t('in') + ' ' + seg.pour + ' s' : '') +
+      (seg.from ? ' · ' + t('up to') + ' ' + seg.upto + ' g' : '')
+    : '';
   var say = el.querySelector('.timer-announce');
-  if (say) say.textContent = t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length + '. ' + t(plan.segs[i].label);
-  if (rows[i]) rows[i].scrollIntoView({ block: 'nearest' });
+  if (say) say.textContent = t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length + '. ' + t(seg.label);
+  if (rows[i] && rows[i].offsetParent) rows[i].scrollIntoView({ block: 'nearest' });
 
   // Restart the attention pulse from the top on every step change.
   timer.sheet.classList.remove('pulse');
   void timer.sheet.offsetWidth;
   timer.sheet.classList.add('pulse');
+}
+
+// Shows the recipe's cup score on the beans of the finished brew.
+function timerRatePaint() {
+  if (!timer) return;
+  var r = recipeById(timer.id);
+  var n = (r && r.rating) || 0;
+  var btns = timer.el.querySelectorAll('.tm-rate button');
+  for (var i = 0; i < btns.length; i++) {
+    var on = i < n;
+    btns[i].classList.toggle('on', on);
+    btns[i].innerHTML = iconBean(on);
+  }
+}
+
+// The ring has closed: say so in the pour card and offer to go again.
+function timerFinish() {
+  if (!timer) return;
+  timerRun(false);
+  timer.sheet.classList.add('is-done');
+  var plan = timer.plan;
+  timer.el.querySelector('.timer-now-kicker').textContent = t('Done');
+  timer.el.querySelector('.timer-now-label').textContent = t('Enjoy your cup');
+  timer.el.querySelector('.timer-now-sub').textContent = [mmss(plan.total),
+    plan.water ? plan.water + ' g' : '', timer.ratio || ''].filter(Boolean).join(' · ');
+  timer.sheet.classList.remove('is-pouring');
+  timerRatePaint();
+  var say = timer.el.querySelector('.timer-announce');
+  if (say) say.textContent = t('Brew complete.');
+  timerControls();
 }
 
 /* One tick of the brew: advance the clock, fire any cue this moment has
@@ -2527,16 +3030,9 @@ function timerTick() {
   timer.elapsed = timer.from + (performance.now() - timer.at) / 1000;
   if (timer.elapsed >= timer.plan.total) {
     timer.elapsed = timer.plan.total;
-    timerRun(false);
     timerPaint();
-    timer.sheet.classList.add('is-done');
-    timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
-    var doneKick = timer.el.querySelector('.timer-now-kicker');
-    if (doneKick) doneKick.textContent = t('Done');
-    var say = timer.el.querySelector('.timer-announce');
-    if (say) say.textContent = t('Brew complete.');
+    timerFinish();
     timerCue('done');
-    timerControls();
     return;
   }
   timerRunCues();
@@ -2583,18 +3079,20 @@ function timerControls() {
   if (!timer) return;
   var done = timer.elapsed >= timer.plan.total;
   var btn = timer.el.querySelector('.timer-toggle');
-  // v3's label ladder: Start brewing → Pause → Resume → Brew again.
+  // v3's label ladder: Start brewing → Pause → Resume → Brew again. The
+  // button is an icon now, so the ladder is its accessible name.
   var label = done ? t('Brew again')
     : timer.running ? t('Pause')
     : timer.elapsed > 0 ? t('Resume') : t('Start brewing');
-  btn.innerHTML = (done ? ICON.replay : timer.running ? ICON.pause : ICON.play) +
-    '<span>' + label + '</span>';
+  btn.innerHTML = done ? ICON.replay : timer.running ? TM_PAUSE : ICON.play;
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
 
   var mute = timer.el.querySelector('.timer-mute');
   if (mute) {
     mute.innerHTML = timerMuted ? ICON.soundOff : ICON.soundOn;
     mute.setAttribute('aria-pressed', timerMuted ? 'true' : 'false');
-    var ml = timerMuted ? 'Unmute step cues' : 'Mute step cues';
+    var ml = t(timerMuted ? 'Unmute step cues' : 'Mute step cues');
     mute.setAttribute('aria-label', ml);
     mute.setAttribute('title', ml);
     mute.classList.toggle('is-muted', timerMuted);
@@ -2753,6 +3251,7 @@ function renderModals() {
     var heading = el.querySelector('.page-head h2');
     if (crumbs) crumbs.innerHTML = crumbTrail(trail, i);
     if (heading) trail.push({ label: heading.textContent, depth: i });
+    glassAll(el);
 
   });
 
@@ -2841,7 +3340,7 @@ function sheet(opts) {
         '</div>' +
       '</div>' +
       '<div class="sheet-body">' + opts.body + '</div>' +
-      '<div class="sheet-foot">' + opts.foot + '</div>' +
+      '<div class="sheet-foot glass" data-glass="6">' + opts.foot + '</div>' +
     '</div>';
   return wrap;
 }
@@ -4932,6 +5431,7 @@ function renderLibrary() {
     '<div class="list" id="libList">' + libraryListHTML(libraryTab) + '</div>' +
   '</div>';
   window.scrollTo(0, 0);
+  tabsLens(document.getElementById('libTabs'));
 }
 
 /* Swaps the tab strip and the list in place. A full re-render rebuilt the
@@ -5107,6 +5607,17 @@ document.addEventListener('click', function (ev) {
       openRecipeForm(null);
       return;
 
+    case 'set-theme':
+      ev.preventDefault();
+      var themeBox = btn.closest('.segs');
+      var themeFrom = lensPos(themeBox);
+      setTheme(btn.getAttribute('data-theme-choice') || 'dark');
+      Array.prototype.forEach.call(themeBox.querySelectorAll('.seg'), function (b) {
+        b.classList.toggle('on', b === btn);
+      });
+      tabsLens(themeBox, themeFrom);
+      return;
+
     case 'set-lang':
       ev.preventDefault();
       setLang(btn.getAttribute('data-lang') || 'auto');
@@ -5177,10 +5688,7 @@ document.addEventListener('click', function (ev) {
       timer.warned = false;
       timerPaint();
       if (timer.elapsed >= timer.plan.total) {
-        timerRun(false);
-        timer.sheet.classList.add('is-done');
-        timer.el.querySelector('.timer-now-label').textContent = t('Brew complete.');
-        timerControls();
+        timerFinish();
       }
       return;
 
@@ -5225,15 +5733,36 @@ document.addEventListener('click', function (ev) {
       });
       return;
 
-    case 'pick-method':
+    case 'dose-step':
       ev.preventDefault();
-      filters.method = id || '';
+      var dr = recipeById(doseView.id);
+      if (dr && scalable(dr)) {
+        var cur = doseView.dose != null ? doseView.dose : Number(dr.dose);
+        var next = Math.max(1, Math.round(cur + Number(btn.getAttribute('data-d'))));
+        doseView.dose = next === Number(dr.dose) ? null : next;
+        renderDetail(dr.id, true);
+      }
+      return;
+
+    case 'dose-reset':
+      ev.preventDefault();
+      doseView.dose = null;
+      if (doseView.id) renderDetail(doseView.id, true);
+      return;
+
+    case 'pick-kind':
+      ev.preventDefault();
+      var kindFrom = lensPos(document.querySelector('.ktabs'));
+      var kindScroll = (document.querySelector('.ktabs') || {}).scrollLeft || 0;
+      filters.kind = btn.getAttribute('data-kind') || '';
       renderHome();
+      var kt = document.querySelector('.ktabs');
+      if (kt) { kt.scrollLeft = kindScroll; tabsLens(kt, kindFrom); }
       return;
 
     case 'clear-filters':
       filters.q = ''; filters.coffee = ''; filters.roaster = ''; filters.grinder = '';
-      filters.method = ''; filters.style = ''; filters.fav = false;
+      filters.method = ''; filters.style = ''; filters.fav = false; filters.kind = '';
       openCombo = null; comboQuery = '';
       render();
       return;
@@ -5366,6 +5895,14 @@ document.addEventListener('click', function (ev) {
       renderModals();
       return;
 
+    case 'rank-tab':
+      ev.preventDefault();
+      var rkFrom = lensPos(document.querySelector('.rk-tabs'));
+      rankTab = btn.getAttribute('data-tab') || 'coffee';
+      renderRanking(true);
+      tabsLens(document.querySelector('.rk-tabs'), rkFrom);
+      return;
+
     case 'rate-recipe':
       ev.preventDefault();
       var rr = recipeById(id);
@@ -5376,6 +5913,7 @@ document.addEventListener('click', function (ev) {
         rr.rating = rr.rating === want ? 0 : want;
         save();
         render();
+        timerRatePaint();
       }
       return;
 
@@ -5431,7 +5969,11 @@ document.addEventListener('click', function (ev) {
       }, null);
       return;
 
-    case 'lib-tab': libraryTab = type; paintLibraryTab(); return;
+    case 'lib-tab':
+      var libFrom = lensPos(document.getElementById('libTabs'));
+      libraryTab = type; paintLibraryTab();
+      tabsLens(document.getElementById('libTabs'), libFrom);
+      return;
     case 'lib-add': openEntityForm(type, null, null); return;
     case 'lib-edit': openEntityForm(type, findIn(type, id), null); return;
     case 'lib-del': deleteEntity(type, id); return;
@@ -5665,6 +6207,17 @@ document.documentElement.setAttribute('lang', LANG);
 translateMarkup();
 trackVisualViewport();
 boot();
+
+// The carousel's dots follow whichever slide is nearest the left edge.
+document.addEventListener('scroll', function (ev) {
+  var c = ev.target;
+  if (!c || c.id !== 'homeCarousel') return;
+  var slide = c.querySelector('.slide');
+  if (!slide) return;
+  var i = Math.round(c.scrollLeft / (slide.offsetWidth + 12));
+  var dots = document.querySelectorAll('.carousel-dots .dot');
+  for (var k = 0; k < dots.length; k++) dots[k].classList.toggle('on', k === i);
+}, true);
 
 // The bar changes height on rotation and disappears entirely when the
 // layout crosses into the sidebar breakpoint.
