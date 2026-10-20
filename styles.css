@@ -2722,15 +2722,6 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .rd-chip{display:inline-flex;align-items:center;gap:6px}
 .rd-chip .brewer-ico{width:14px;height:14px;color:var(--text-accent)}
 
-/* Roast in three beans, shaded light to dark. */
-.roast{display:inline-flex;flex-direction:column;align-items:flex-end;gap:3px;vertical-align:middle}
-.roast-beans{display:inline-flex;gap:3px}
-.rb{display:block;width:8px;height:12px;border-radius:50%;box-sizing:border-box;border:1px solid var(--border-strong);transform:rotate(-20deg)}
-.rb.on.rb-1{background:#C9A27A;border-color:#C9A27A}
-.rb.on.rb-2{background:#8A5A36;border-color:#8A5A36}
-.rb.on.rb-3{background:#4A2B18;border-color:#6B4226}
-.roast-k{font:var(--weight-regular) 11px/1.2 var(--font-text);color:var(--text-muted);white-space:nowrap}
-
 /* The recipe's bag label: paper, the roaster across the top, a degassing
    valve, the coffee's facts in a ruled grid and its tasting notes. */
 .bag-label{
@@ -2751,8 +2742,6 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .bl-fact:nth-child(even){padding-left:12px;border-left:1px solid #C9B9A3}
 .bl-fact dt{font:var(--weight-regular) 11px/1.3 var(--font-text);color:#6B5A47}
 .bl-fact dd{margin:0;font:var(--weight-regular) 14px/1.35 var(--font-text);color:#2A1E14;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.bl-fact .roast{flex-direction:row}
-.bl-fact .rb{border-color:#BCA98F}
 .bl-notes{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .bl-notes span{padding:4px 10px;border-radius:999px;background:#D9CBB5;font:var(--weight-regular) 12px/1.3 var(--font-text);color:#2A1E14}
 .bl-notes-text{margin:12px 0 0;font:var(--weight-regular) 14px/1.5 var(--font-text);color:#3F3224}
