@@ -916,6 +916,14 @@ var TRANSLATIONS = {
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
     'poured': 'despejados',
+    'Your best cup': 'Seu melhor café',
+    'Rank by': 'Classificar por',
+    'rating': 'avaliação',
+    'ratings': 'avaliações',
+    'avg': 'média',
+    'Waiting for a score': 'Aguardando nota',
+    'Scores are weighted by how many ratings stand behind them; the plain average shows when it differs.': 'As notas pesam pelo número de avaliações; a média simples aparece quando é diferente.',
+    'Give a brew a cup score and it joins the ranking. Two or three is enough to see which bags are worth buying again.': 'Dê uma nota a um preparo e ele entra no ranking. Duas ou três bastam para ver quais pacotes valem a recompra.',
     'Wait': 'Aguarde',
     'next pour in': 'próximo despejo em',
     'Water in the cone': 'Água no filtro',
@@ -2125,136 +2133,168 @@ function bigstat(label, value, unit, style) {
 }
 
 /* ---- ranking ----
-   Which bags were actually worth it, as opposed to which you have spent
-   the most time dialling in. Scored per coffee rather than per recipe: a
-   coffee you have four recipes for is one bag you have an opinion about,
-   not four, so its recipes' scores average into a single standing.
+   Which bags, recipes and roasters were actually worth it. Scores live on
+   recipes (one cup score each); a coffee's standing pools the scores of
+   its recipes, a roaster's pools every recipe of every coffee it roasted.
 
-   Only scored recipes count toward the average. An unrated recipe is not
-   a zero — it is a brew you never got round to judging — and averaging it
-   in as one would push good coffees down for the crime of being brewed
-   often. Coffees with nothing scored sit out entirely and are counted at
-   the foot of the page. */
-function rankedCoffees() {
-  var out = [];
-  coll('coffee').forEach(function (c) {
-    var scored = state.recipes.filter(function (r) {
-      return r.coffeeId === c.id && (r.rating || 0) > 0;
-    });
-    if (!scored.length) return;
-    var sum = scored.reduce(function (n, r) { return n + r.rating; }, 0);
-    out.push({
-      coffee: c,
-      avg: sum / scored.length,
-      scored: scored.length,
-      total: state.recipes.filter(function (r) { return r.coffeeId === c.id; }).length
-    });
-  });
-  out.sort(function (a, b) {
-    return b.avg - a.avg || b.scored - a.scored || a.coffee.name.localeCompare(b.coffee.name);
-  });
-  return out;
+   Only scored recipes count. An unrated recipe is not a zero — it is a
+   brew you never got round to judging.
+
+   Pooled scores are weighted by how many ratings stand behind them, so a
+   single 5 cannot outrank a long run of 5s and 4s. Each pool is ranked by
+   a Bayesian average: its ratings plus RANK_PRIOR imaginary ratings at
+   the library's own average.
+
+     score = (sum of ratings + RANK_PRIOR × library average) / (ratings + RANK_PRIOR)
+
+   With few ratings the score leans toward the library's average; as
+   ratings pile up it converges on the plain average, which is shown
+   beside it. Recipes carry one score each, so they rank on it directly. */
+var RANK_PRIOR = 2;
+var rankTab = 'coffee';
+
+function rankStats() {
+  var rated = state.recipes.filter(function (r) { return (r.rating || 0) > 0; });
+  var sum = rated.reduce(function (n, r) { return n + r.rating; }, 0);
+  return { rated: rated, mean: rated.length ? sum / rated.length : 0 };
 }
 
-function rankRowHTML(e, i) {
-  var roaster = roasterNameOf(e.coffee);
-  var meta = [roaster, e.scored + ' ' + t(e.scored === 1 ? 'scored' : 'scored')].filter(Boolean).join(' · ');
-  // The top three carry the page; everything below is a compact row.
-  if (i < 3) {
-    return '<div class="rank-top rank-' + (i + 1) + '">' +
-      (i === 0
-        ? '<svg class="rank-mark" viewBox="0 0 24 24" aria-hidden="true">' +
-          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
-          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>'
+function rankEntries(kind) {
+  var st = rankStats();
+  if (kind === 'recipe') {
+    return st.rated.slice().sort(function (a, b) {
+      return b.rating - a.rating || (b.createdAt || 0) - (a.createdAt || 0);
+    }).map(function (r) {
+      var me = findIn('method', r.methodId);
+      return {
+        name: titleOf(r), href: '#/r/' + encodeURIComponent(r.id), icon: brewerIcon(me),
+        sub: [me ? me.name : '', roasterOf(r)].filter(Boolean).join(' · '),
+        n: 1, avg: r.rating, score: r.rating
+      };
+    });
+  }
+  var pools = {};
+  st.rated.forEach(function (r) {
+    var key = kind === 'roaster' ? roasterIdOf(r) : r.coffeeId;
+    if (!key) return;
+    var p = pools[key] || (pools[key] = { key: key, sum: 0, n: 0, coffees: {} });
+    p.sum += r.rating; p.n++; p.coffees[r.coffeeId] = true;
+  });
+  return Object.keys(pools).map(function (key) {
+    var p = pools[key], e = { n: p.n, avg: p.sum / p.n,
+      score: (p.sum + RANK_PRIOR * st.mean) / (p.n + RANK_PRIOR) };
+    if (kind === 'roaster') {
+      var ro = findIn('roaster', key);
+      var nc = Object.keys(p.coffees).length;
+      e.name = ro ? ro.name : '—';
+      e.sub = nc + ' ' + tPlural(nc, 'coffee', 'coffees');
+    } else {
+      var c = findIn('coffee', key);
+      e.name = c ? c.name : '—';
+      e.sub = roasterNameOf(c);
+    }
+    return e;
+  }).filter(function (e) { return e.name !== '—'; }).sort(function (a, b) {
+    return b.score - a.score || b.n - a.n || a.name.localeCompare(b.name);
+  });
+}
+
+function rankRowHTML(e, i, kind) {
+  var pooled = kind !== 'recipe';
+  var inner =
+    '<span class="rk-no' + (i < 3 ? ' is-top' : '') + '">' + (i + 1) + '</span>' +
+    (e.icon ? '<span class="rk-ico">' + e.icon + '</span>' : '') +
+    '<span class="rk-txt"><span class="nm">' + esc(e.name) + '</span>' +
+      '<span class="mt">' + esc([e.sub, pooled ? e.n + ' ' + tPlural(e.n, 'rating', 'ratings') : ''].filter(Boolean).join(' · ')) + '</span>' +
+      '<span class="rk-bar" aria-hidden="true"><i style="width:' + (e.score / 5 * 100).toFixed(1) + '%"></i></span>' +
+    '</span>' +
+    '<span class="rk-score"><span class="v">' + e.score.toFixed(1) + '</span>' +
+      (pooled && Math.abs(e.avg - e.score) >= 0.05
+        ? '<span class="k">' + esc(t('avg')) + ' ' + e.avg.toFixed(1) + '</span>'
+        : (pooled ? '' : '<span class="k">' + stars(e.score) + '</span>')) +
+    '</span>';
+  return e.href
+    ? '<a class="rk-row" href="' + e.href + '">' + inner + '</a>'
+    : '<div class="rk-row">' + inner + '</div>';
+}
+
+// The top-scored recipe, ready to brew again.
+function rankHeroHTML() {
+  var best = rankStats().rated.slice().sort(function (a, b) {
+    return b.rating - a.rating || (b.createdAt || 0) - (a.createdAt || 0);
+  })[0];
+  if (!best) return '';
+  var me = findIn('method', best.methodId), st = findIn('style', best.styleId);
+  var hasWater = best.water !== '' && best.water != null;
+  return '<section class="rk-hero">' +
+    '<div class="rk-hero-top"><span class="rk-hero-k">' + esc(t('Your best cup')) + '</span>' + stars(best.rating) + '</div>' +
+    '<a class="rk-hero-nm" href="#/r/' + encodeURIComponent(best.id) + '">' + esc(titleOf(best)) + '</a>' +
+    '<span class="rk-hero-mt">' + esc([me ? me.name : '', st ? st.name : '', roasterOf(best)].filter(Boolean).join(' · ')) + '</span>' +
+    '<div class="rk-hero-foot">' +
+      '<span class="rk-hero-nums">' +
+        '<span><b>' + num(best.dose) + 'g</b><i>' + esc(t('coffee')) + '</i></span>' +
+        (hasWater ? '<span><b>' + num(best.water) + 'g</b><i>' + esc(t('water')) + '</i></span>' : '') +
+      '</span>' +
+      (timerPlan(best)
+        ? '<button type="button" class="rk-again" data-action="timer" data-id="' + esc(best.id) + '">' + ICON.play + '<span>' + esc(t('Brew again')) + '</span></button>'
         : '') +
-      '<span class="rank-no">' + (i + 1) + '</span>' +
-      '<div class="rank-info">' +
-        '<span class="rank-nm">' + esc(e.coffee.name) + '</span>' +
-        '<span class="rank-meta">' + esc(meta) + '</span>' +
-      '</div>' +
-      '<div class="rank-score">' +
-        '<span class="rank-v">' + e.avg.toFixed(1) + '</span>' +
-        '<span class="rank-k">' + esc(t('avg score')) + '</span>' +
-      '</div>' +
-    '</div>';
-  }
-  return '<div class="rank-row">' +
-    '<span class="rank-no">' + (i + 1) + '</span>' +
-    '<div class="rank-info">' +
-      '<span class="rank-nm">' + esc(e.coffee.name) + '</span>' +
-      '<span class="rank-meta">' + esc(meta) + '</span>' +
     '</div>' +
-    '<div class="rank-score">' +
-      stars(Math.round(e.avg)) +
-      '<span class="rank-k">' + e.avg.toFixed(1) + '</span>' +
-    '</div>' +
-  '</div>';
+  '</section>';
 }
 
-/* Day one is an empty board, so it offers the shortest way off it: the
-   recipe you last looked at, with its score control inline. */
-function rankStarterHTML() {
+// Unscored recipes, the one you last opened first, each with beans to
+// score it on the spot.
+function rankWaitingHTML() {
   var seen = lastSeen();
-  var r = seen && seen.recipe;
-  if (!r) return '';
-  return '<div class="section-title" style="padding-top:30px">' +
-      esc(t('Start with the one you just opened')) + '</div>' +
-    '<div class="rank-starter">' +
-      '<div class="rank-starter-top">' +
-        '<span class="tag tag-accent">' + esc(nameOf('method', r.methodId)) + ' · ' +
-          esc(nameOf('style', r.styleId)) + '</span>' +
-        '<a class="rank-starter-nm" href="#/r/' + encodeURIComponent(r.id) + '">' + esc(titleOf(r)) + '</a>' +
-        '<span class="rank-starter-meta">' +
-          (roasterOf(r) ? esc(roasterOf(r)) + ' · ' : '') +
-          num(r.dose, ' g') + ' / ' + num(r.water, ' g') + '</span>' +
-      '</div>' +
-      '<div class="rank-rate">' +
-        '<span class="rank-rate-k">' + esc(t('Cup score')) + '</span>' +
-        '<div class="rate">' +
-          [1, 2, 3, 4, 5].map(function (n) {
-            return '<button type="button" class="' + (n <= (r.rating || 0) ? 'on' : '') + '" ' +
-              'data-action="rate-recipe" data-id="' + esc(r.id) + '" data-v="' + n + '" ' +
-              'aria-label="' + esc(t('Rate') + ' ' + n) + '">' + iconBean(n <= (r.rating || 0)) + '</button>';
-          }).join('') +
-        '</div>' +
-      '</div>' +
-    '</div>';
+  var first = seen && seen.recipe && !(seen.recipe.rating > 0) ? seen.recipe : null;
+  var rest = state.recipes.filter(function (r) { return !(r.rating > 0) && (!first || r.id !== first.id); })
+    .sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+  var list = (first ? [first] : []).concat(rest).slice(0, 6);
+  if (!list.length) return '';
+  return '<div class="home-sec"><span class="home-sec-t">' + esc(t('Waiting for a score')) + '</span></div>' +
+    '<div class="rk-wait">' + list.map(function (r) {
+      return '<div class="rk-wcard">' +
+        '<a class="nm" href="#/r/' + encodeURIComponent(r.id) + '">' + esc(titleOf(r)) + '</a>' +
+        '<span class="mt">' + esc(nameOf('method', r.methodId)) + '</span>' +
+        '<div class="rate">' + [1, 2, 3, 4, 5].map(function (n) {
+          return '<button type="button" data-action="rate-recipe" data-id="' + esc(r.id) + '" data-v="' + n + '" ' +
+            'aria-label="' + esc(t('Rate') + ' ' + titleOf(r) + ' ' + n) + '">' + iconBean(false) + '</button>';
+        }).join('') + '</div>' +
+      '</div>';
+    }).join('') + '</div>';
 }
 
-function renderRanking() {
+function renderRanking(keepScroll) {
   view.classList.remove('view-enter');
-  var ranked = rankedCoffees();
-  var unscored = coll('coffee').length - ranked.length;
+  var tabs = [['coffee', t('Coffees')], ['recipe', t('Recipes')], ['roaster', t('Roasters')]];
+  var entries = rankEntries(rankTab);
 
-  var html = '<div class="ranking">' +
-    '<div class="ranking-head">' +
-      '<h1>' + esc(t('Best in the cup')) + '</h1>' +
-      '<p>' + esc(t('Your coffees ranked by average cup score across every recipe that uses them.')) + '</p>' +
+  var html = '<div class="ranking rk">' +
+    '<div class="ranking-head"><h1>' + esc(t('Best in the cup')) + '</h1></div>' +
+    rankHeroHTML() +
+    '<div class="segs rk-tabs" role="tablist" aria-label="' + esc(t('Rank by')) + '">' +
+      tabs.map(function (tb) {
+        var on = tb[0] === rankTab;
+        return '<button type="button" role="tab" aria-selected="' + on + '" class="seg' + (on ? ' on' : '') + '" ' +
+          'data-action="rank-tab" data-tab="' + tb[0] + '">' + esc(tb[1]) + '</button>';
+      }).join('') +
     '</div>';
 
-  if (!ranked.length) {
-    html += '<div class="empty rank-empty">' +
-        '<div class="rank-empty-beans">' + stars(0) + '</div>' +
-        '<h3>' + esc(t('Nothing scored yet')) + '</h3>' +
-        '<p>' + esc(t('Give a brew a cup score and the coffee joins the ranking. Two or three is enough to see which bags are worth buying again.')) + '</p>' +
-      '</div>' + rankStarterHTML();
+  if (!entries.length) {
+    html += '<div class="empty rank-empty">' + ICON.cup +
+      '<h3>' + esc(t('Nothing scored yet')) + '</h3>' +
+      '<p>' + esc(t('Give a brew a cup score and it joins the ranking. Two or three is enough to see which bags are worth buying again.')) + '</p></div>';
   } else {
-    html += '<div class="rank-podium">' +
-      ranked.slice(0, 3).map(rankRowHTML).join('') + '</div>';
-    if (ranked.length > 3) {
-      html += '<div class="section-title">' + esc(t('The rest')) + '</div>' +
-        '<div class="rank-list">' +
-        ranked.slice(3).map(function (e, i) { return rankRowHTML(e, i + 3); }).join('') +
-        '</div>';
-    }
-    if (unscored) {
-      html += '<p class="rank-foot">' + unscored + ' ' +
-        esc(tPlural(unscored, 'coffee', 'coffees') + ' ' + t('with no score yet. Rate a brew and it joins the ranking.')) + '</p>';
+    html += '<div class="rk-list">' + entries.map(function (e, i) { return rankRowHTML(e, i, rankTab); }).join('') + '</div>';
+    if (rankTab !== 'recipe') {
+      html += '<p class="rk-note">' + esc(t('Scores are weighted by how many ratings stand behind them; the plain average shows when it differs.')) + '</p>';
     }
   }
+  html += rankWaitingHTML();
 
   view.innerHTML = html + '</div>';
-  window.scrollTo(0, 0);
+  tabsLens(view.querySelector('.rk-tabs'));
+  if (!keepScroll) window.scrollTo(0, 0);
 }
 
 /* ---- account ----
@@ -5856,6 +5896,14 @@ document.addEventListener('click', function (ev) {
       mArr[mFrom] = mArr[mTo];
       mArr[mTo] = moved;
       renderModals();
+      return;
+
+    case 'rank-tab':
+      ev.preventDefault();
+      var rkFrom = lensPos(document.querySelector('.rk-tabs'));
+      rankTab = btn.getAttribute('data-tab') || 'coffee';
+      renderRanking(true);
+      tabsLens(document.querySelector('.rk-tabs'), rkFrom);
       return;
 
     case 'rate-recipe':
