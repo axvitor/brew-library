@@ -2995,3 +2995,6 @@ body:has(.gate-screen){padding-bottom:0}
 .btn.btn-primary:active{transform:scale(var(--press-scale))}
 .btn.btn-primary:disabled,.btn.btn-primary[disabled]{opacity:.45;box-shadow:none;pointer-events:none}
 .btn.btn-primary .ico{color:#FFFFFF}
+/* Confirmation dialogs: no red rule across the top — the red Delete /
+   Leave button already says this one bites. */
+.dialog{border-top:var(--border-w-hairline) solid var(--border-hairline)}
