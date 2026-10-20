@@ -2965,3 +2965,16 @@ a.rk-row:hover{color:var(--text-title);background:var(--surface-sunken)}
 [data-theme="light"] .btn.btn-google,
 [data-theme="light"] .login-sheet .btn.btn-google{background:#FFFFFF;border-color:#747775;color:#1F1F1F}
 [data-theme="light"] .btn.btn-google:hover{background:#F2F2F2;border-color:#747775;color:#1F1F1F}
+/* The sign-in screen is exactly one screen: no gap kept for a menu that is
+   not there, and the label area gives way before the page would scroll. */
+body:has(.gate-screen){padding-bottom:0}
+.login-hero{min-height:0;padding:28px 24px 12px}
+@media(max-height:700px){
+  .login-label{padding:20px 18px 16px;width:min(230px,64vw)}
+  .ll-name{font-size:30px}
+  .login-bean{width:28px;height:28px}
+}
+@media(max-height:600px){
+  .ll-grid{display:none}
+  .login-sheet{gap:14px}
+}
