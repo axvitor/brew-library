@@ -2981,3 +2981,17 @@ body:has(.gate-screen){padding-bottom:0}
 /* The G is Google's filled mark: the app's line-icon outline must not
    touch it. */
 .btn-google svg.ico{stroke:none}
+
+/* ---------- primary buttons ----------
+   Every primary action is the orange pill, in both themes — the same
+   fill, sheen and glow as Start brewing and the menu's add button. */
+.btn.btn-primary,
+.btn.btn-primary[data-action="new-recipe"]{
+  background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.26), transparent 65%),var(--accent-timer);
+  border-color:transparent;color:#FFFFFF;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px -8px rgba(200,74,22,.8);
+}
+.btn.btn-primary:hover{background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.26), transparent 65%),var(--roast-700);border-color:transparent;color:#FFFFFF}
+.btn.btn-primary:active{transform:scale(var(--press-scale))}
+.btn.btn-primary:disabled,.btn.btn-primary[disabled]{opacity:.45;box-shadow:none;pointer-events:none}
+.btn.btn-primary .ico{color:#FFFFFF}
