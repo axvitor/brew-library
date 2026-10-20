@@ -2699,3 +2699,137 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .slide-foot{margin-top:auto}
 .slide-name .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .slide-nums b{letter-spacing:-0.03em}
+
+/* ==========================================================
+   Coffee details
+   ========================================================== */
+/* Brewer icons — line drawings in the card's icon tile, the tabs, the
+   carousel and the recipe's method chip. */
+.brewer-ico{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.hc-ico{
+  flex:none;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--surface-sunken);color:var(--text-accent);
+}
+.hc-ico .ico{width:22px;height:22px}
+.hc-top{align-items:center}
+.hc-txt{flex:1}
+.hc-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;align-self:flex-start}
+.ktab{display:inline-flex;align-items:center;gap:6px}
+.ktab .brewer-ico{width:16px;height:16px}
+.slide-method{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.slide-method .brewer-ico{width:15px;height:15px;flex:none;color:var(--text-accent)}
+.slide-method span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-chip{display:inline-flex;align-items:center;gap:6px}
+.rd-chip .brewer-ico{width:14px;height:14px;color:var(--text-accent)}
+
+/* Roast in three beans, shaded light to dark. */
+.roast{display:inline-flex;flex-direction:column;align-items:flex-end;gap:3px;vertical-align:middle}
+.roast-beans{display:inline-flex;gap:3px}
+.rb{display:block;width:8px;height:12px;border-radius:50%;box-sizing:border-box;border:1px solid var(--border-strong);transform:rotate(-20deg)}
+.rb.on.rb-1{background:#C9A27A;border-color:#C9A27A}
+.rb.on.rb-2{background:#8A5A36;border-color:#8A5A36}
+.rb.on.rb-3{background:#4A2B18;border-color:#6B4226}
+.roast-k{font:var(--weight-regular) 11px/1.2 var(--font-text);color:var(--text-muted);white-space:nowrap}
+
+/* The recipe's bag label: paper, the roaster across the top, a degassing
+   valve, the coffee's facts in a ruled grid and its tasting notes. */
+.bag-label{
+  position:relative;margin-top:14px;padding:22px 20px 18px;
+  border-radius:6px 6px 22px 22px;background:#E9DFCF;color:#2A1E14;
+  box-shadow:0 20px 40px -24px rgba(0,0,0,.8);
+}
+.bl-valve{position:absolute;top:14px;right:16px;width:22px;height:22px;border-radius:50%;border:1.5px solid #8B7A66;display:flex;align-items:center;justify-content:center}
+.bl-valve i{width:8px;height:8px;border-radius:50%;background:#8B7A66}
+.bl-roaster{display:block;padding-right:34px;font:var(--weight-semibold) 11px/1.3 var(--font-text);letter-spacing:.08em;text-transform:uppercase;color:#6B5A47}
+.bag-label .rd-name{margin-top:8px;color:#2A1E14;padding-right:10px}
+.bag-label .rd-score{display:inline-flex;margin-top:8px}
+.bag-label .stars svg.on{color:#A63A0D;fill:#A63A0D}
+.bag-label .stars svg.on .crease{stroke:#E9DFCF}
+.bag-label .stars svg.off{color:#BCA98F}
+.bl-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:16px 0 0;border-top:1px solid #C9B9A3}
+.bl-fact{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid #C9B9A3;min-width:0}
+.bl-fact:nth-child(even){padding-left:12px;border-left:1px solid #C9B9A3}
+.bl-fact dt{font:var(--weight-regular) 11px/1.3 var(--font-text);color:#6B5A47}
+.bl-fact dd{margin:0;font:var(--weight-regular) 14px/1.35 var(--font-text);color:#2A1E14;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bl-fact .roast{flex-direction:row}
+.bl-fact .rb{border-color:#BCA98F}
+.bl-notes{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.bl-notes span{padding:4px 10px;border-radius:999px;background:#D9CBB5;font:var(--weight-regular) 12px/1.3 var(--font-text);color:#2A1E14}
+.bl-notes-text{margin:12px 0 0;font:var(--weight-regular) 14px/1.5 var(--font-text);color:#3F3224}
+[data-theme="light"] .bag-label{box-shadow:0 14px 30px -20px rgba(26,24,22,.35),inset 0 0 0 1px rgba(42,30,20,.08)}
+
+/* The dose card's labels carry a bean and a drop. */
+.rd-dose-nums i{display:inline-flex;align-items:center;gap:5px}
+.rd-dose-nums i .ico{width:13px;height:13px;fill:none;stroke-width:1.6}
+.rd-dose-nums i .bean-mark{stroke:#C9A27A}
+.rd-dose-nums i .ico:not(.bean-mark){stroke:#8FB3C9}
+[data-theme="light"] .rd-dose-nums i .bean-mark{stroke:#8A5A36}
+[data-theme="light"] .rd-dose-nums i .ico:not(.bean-mark){stroke:#2F6A8C}
+
+/* Empty state cup and the loading steam. */
+.empty .cup{width:44px;height:44px;fill:none;stroke:var(--text-faint);stroke-width:1.3;stroke-linecap:round;margin-bottom:14px}
+.loading-card .steam{width:56px;height:56px;fill:none;stroke:#C9A27A;stroke-width:1.5;stroke-linecap:round;margin-bottom:16px}
+.loading-card .steam path{animation:steamRise 2.4s ease-in-out infinite}
+.loading-card .steam path:nth-child(2){animation-delay:.4s}
+.loading-card .steam path:nth-child(3){animation-delay:.8s}
+@keyframes steamRise{0%{opacity:0;transform:translateY(4px)}40%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.loading-card .steam path{animation:none}}
+
+/* ---------- timer: the cone fills ---------- */
+.tm-clock.is-split{flex-direction:row;justify-content:space-between;align-items:center;padding:clamp(8px,2vh,18px) 8px 0}
+.tm-time,.tm-water{display:flex;flex-direction:column}
+.tm-water{align-items:flex-end}
+.tm-clock.is-split .timer-elapsed{font-size:clamp(60px,20vw,84px)}
+.tm-water .timer-poured{font:var(--weight-thin) 34px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
+.tm-water .timer-poured small{font-size:14px;color:var(--text-muted);letter-spacing:0}
+.tm-cone{display:flex;justify-content:center;margin-top:clamp(4px,1.5vh,14px)}
+.tm-cone svg{width:auto;height:min(270px,31vh);display:block;overflow:visible}
+.cone-stream{fill:none;stroke:#8FB3C9;stroke-width:3;stroke-linecap:round;opacity:0;transition:opacity .4s}
+.is-pouring .cone-stream{opacity:.9}
+.cone-body{fill:var(--surface-card);stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
+.cone-liquid{fill:#6B4226}
+.cone-crema{fill:none;stroke:#C9A27A;stroke-width:3;stroke-linecap:round}
+.cone-bed{fill:#3A2418}
+.cone-bubbles circle{fill:none;stroke:#C9A27A;stroke-width:1.2;opacity:0;transition:opacity .4s}
+.is-bloom.is-running .cone-bubbles circle{opacity:.75;animation:bubble 1.8s ease-in-out infinite}
+.is-bloom.is-running .cone-bubbles circle:nth-child(2){animation-delay:.6s}
+.is-bloom.is-running .cone-bubbles circle:nth-child(3){animation-delay:1.2s}
+@keyframes bubble{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.cone-target{fill:none;stroke:var(--text-accent);stroke-width:1.5;stroke-dasharray:4 5}
+.cone-target-k{font:var(--weight-medium) 12px var(--font-text);fill:var(--text-accent)}
+.cone-tip{fill:var(--surface-sunken);stroke:var(--border-strong);stroke-width:1.5}
+.cone-drip{fill:none;stroke:#6B4226;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:3 5;opacity:0}
+.is-running .cone-drip{opacity:1;animation:drip .9s linear infinite}
+@keyframes drip{to{stroke-dashoffset:-8}}
+.cone-cup{fill:none;stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
+.cone-cup-fill{fill:#4A2B18}
+[data-theme="light"] .cone-liquid{fill:#8A5A36}
+[data-theme="light"] .cone-bed{fill:#4A2B18}
+[data-theme="light"] .cone-cup-fill{fill:#6B4226}
+[data-theme="light"] .cone-stream{stroke:#5B8FB0}
+@media (prefers-reduced-motion:reduce){
+  .is-running .cone-drip,.is-bloom.is-running .cone-bubbles circle{animation:none}
+}
+
+/* Brew complete: a steaming cup and the cup score in beans. */
+.tm-done-cup,.tm-rate{display:none}
+.sheet-timer.is-done .timer-now{align-items:center;text-align:center}
+.sheet-timer.is-done .tm-done-cup{display:block;width:72px;height:64px}
+.tm-done-cup svg{width:100%;height:100%}
+.dc-steam{stroke:#C9A27A;stroke-width:1.6;opacity:.7}
+.dc-cup{stroke:var(--text-title);stroke-width:1.6}
+.dc-coffee{stroke:#6B4226;stroke-width:3}
+.dc-saucer{stroke:var(--border-strong);stroke-width:1.6}
+.sheet-timer.is-done .tm-rate{display:inline-flex;gap:2px;margin-top:6px}
+.tm-rate button{width:44px;height:44px;display:flex;align-items:center;justify-content:center;padding:0}
+.tm-rate button svg{width:24px;height:24px}
+.tm-rate button.on svg .crease{stroke:var(--bg-app)}
+.sheet-timer.is-done .tm-cone .cone-liquid,.sheet-timer.is-done .tm-cone .cone-crema{opacity:.25}
+/* Done: the cone steps back so the cup and the beans fit. */
+.sheet-timer.is-done .tm-cone svg{height:min(150px,17vh)}
+.sheet-timer.is-done .timer-next,.sheet-timer.is-done .cone-target,.sheet-timer.is-done .cone-target-k{display:none}
+.sheet-timer.is-done .timer-now{gap:4px;padding-top:14px;padding-bottom:12px}
+.sheet-timer.is-done .tm-done-cup{width:60px;height:54px}
+/* A label grid with an odd count: no rule under the last row. */
+.bl-fact:last-child,.bl-fact:nth-last-child(2):nth-child(odd){border-bottom:0}
+.rd-dose-nums b small{font-size:.42em;letter-spacing:0;margin-left:1px;color:var(--text-muted)}
