@@ -2978,3 +2978,6 @@ body:has(.gate-screen){padding-bottom:0}
   .ll-grid{display:none}
   .login-sheet{gap:14px}
 }
+/* The G is Google's filled mark: the app's line-icon outline must not
+   touch it. */
+.btn-google svg.ico{stroke:none}
