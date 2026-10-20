@@ -916,7 +916,7 @@ var TRANSLATIONS = {
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
     'poured': 'despejados',
-    'Your kitchen · every device': 'Sua cozinha · todo dispositivo',
+    'Your coffee · every device': 'Seu café · todo dispositivo',
     'Contents': 'Conteúdo',
     'Pours': 'Despejos',
     'Timed': 'Cronometrados',
@@ -1622,7 +1622,7 @@ function renderSignIn() {
       '<div class="login-label" aria-hidden="true">' +
         '<span class="bl-valve"><i></i></span>' +
         '<svg class="login-bean" viewBox="0 0 24 24">' + BREWER_SVG.bean + '</svg>' +
-        '<span class="ll-kicker">' + esc(t('Your kitchen · every device')) + '</span>' +
+        '<span class="ll-kicker">' + esc(t('Your coffee · every device')) + '</span>' +
         '<span class="ll-name">Brew Library</span>' +
         '<span class="ll-grid">' +
           fact('Contents', 'Recipes') + fact('Pours', 'Timed') + fact('Dose', 'Scales') + fact('Sync', 'Live') +
