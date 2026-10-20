@@ -365,7 +365,7 @@ var ENTITIES = {
       { k: 'origin', l: 'Origin', ph: 'Region, country' },
       { k: 'altitude', l: 'Altitude', ph: '1,200 m' },
       { k: 'process', l: 'Process', ph: 'Washed / Natural / Honey' },
-      { k: 'roast', l: 'Roast level', kind: 'roast' },
+      { k: 'roast', l: 'Roast level', ph: 'Light / Medium / Dark' },
       { k: 'varietal', l: 'Varietal', ph: 'Caturra, Geisha…' },
       { k: 'notes', l: 'Tasting notes', ph: 'Peach, bergamot, jasmine', area: true }
     ],
@@ -911,10 +911,6 @@ var TRANSLATIONS = {
     'Left in this step': 'Restante nesta etapa',
     'Water poured': 'Água despejada',
     'Shot': 'Extração',
-    'Light roast': 'Torra clara',
-    'Medium roast': 'Torra média',
-    'Dark roast': 'Torra escura',
-    'not set': 'não definida',
     'Brewing your library…': 'Preparando sua biblioteca…',
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
@@ -1333,29 +1329,6 @@ function brewerKey(me) {
 
 function brewerIcon(me) {
   return '<svg viewBox="0 0 24 24" class="ico brewer-ico" aria-hidden="true">' + BREWER_SVG[brewerKey(me)] + '</svg>';
-}
-
-/* Roast in three levels. The coffee's roast is free text (typed, or read
-   off the bag in Portuguese or English), so it is read for its level. */
-function roastLevel(c) {
-  var v = c && c.roast ? String(c.roast).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') : '';
-  if (!v) return 0;
-  if (/dark|escur/.test(v)) return 3;
-  if (/light|clar/.test(v)) return 1;
-  if (/medi/.test(v)) return 2;
-  return 0;
-}
-var ROAST_NAMES = ['', 'Light', 'Medium', 'Dark'];
-
-function roastHTML(c, withLabel) {
-  var lv = roastLevel(c);
-  if (!lv) return '';
-  var beans = '';
-  for (var i = 1; i <= 3; i++) beans += '<i class="rb rb-' + i + (i <= lv ? ' on' : '') + '"></i>';
-  return '<span class="roast" role="img" aria-label="' + esc(t(ROAST_NAMES[lv] + ' roast')) + '">' +
-    '<span class="roast-beans">' + beans + '</span>' +
-    (withLabel ? '<span class="roast-k">' + esc(t(ROAST_NAMES[lv] + ' roast')) + '</span>' : '') +
-  '</span>';
 }
 
 /* ---- appearance ----
@@ -1982,16 +1955,12 @@ function homeRowHTML(r) {
   if (r.water !== '' && r.water != null) cells += cell(num(r.water) + 'g', t('Water'));
   else if (r.brewTime) cells += cell(esc(String(r.brewTime).replace('~', '')), t('Shot'));
   if (r.grindSize) cells += cell(esc(r.grindSize), gr ? gr.name : t('Grind'), true);
-  var cof = findIn('coffee', r.coffeeId);
-  var roast = roastHTML(cof, true);
   return '<a class="hcard" href="#/r/' + encodeURIComponent(r.id) + '">' +
     '<span class="hc-top">' +
       '<span class="hc-ico">' + brewerIcon(findIn('method', r.methodId)) + '</span>' +
       '<span class="hc-txt"><span class="nm">' + esc(titleOf(r)) + '</span>' +
         '<span class="mt">' + esc([nameOf('method', r.methodId), roaster].filter(Boolean).join(' · ')) + '</span></span>' +
-      ((r.fav || roast) ? '<span class="hc-side">' +
-        (r.fav ? '<span class="hc-fav" aria-label="' + esc(t('Favourite')) + '">' + iconStar(true) + '</span>' : '') +
-        roast + '</span>' : '') +
+      (r.fav ? '<span class="hc-side"><span class="hc-fav" aria-label="' + esc(t('Favourite')) + '">' + iconStar(true) + '</span></span>' : '') +
     '</span>' +
     (cells ? '<span class="hc-strip">' + cells + '</span>' : '') +
   '</a>';
@@ -2398,7 +2367,7 @@ function stepsF4HTML(steps) {
 
 /* The top of a recipe reads like the label on its bag: the roaster across
    the top, the coffee's name, then the facts the coffee has on record —
-   origin, process, altitude, roast, varietal — and its tasting notes.
+   origin, process, altitude, varietal — and its tasting notes.
    Facts that are not on record are left out, not shown empty. */
 var BEAN_MARK = '<svg viewBox="0 0 24 24" class="ico bean-mark" aria-hidden="true">' + BREWER_SVG.bean + '</svg>';
 
@@ -2411,8 +2380,6 @@ function bagLabelHTML(r, c, roaster) {
     fact(t('Origin'), esc(c.origin));
     fact(t('Process'), esc(c.process));
     fact(t('Altitude'), c.altitude ? esc(String(c.altitude)) : '');
-    var lv = roastLevel(c);
-    fact(t('Roast'), lv ? roastHTML(c) + ' ' + esc(t(ROAST_NAMES[lv] + ' roast')) : esc(c.roast));
     fact(t('Varietal'), esc(c.varietal));
   }
   var notes = c && c.notes ? String(c.notes).split(/\s*[,;\n·]\s*/).filter(Boolean) : [];
@@ -5231,19 +5198,6 @@ function openEntityForm(type, existing, onSaved, prefill) {
           control = '<input class="inp" id="e-' + f.k + '" data-k="' + f.k + '" list="' + dl + '" ' +
             'value="' + val + '" placeholder="' + esc(t(f.ph || '')) + '" autocomplete="off" />' +
             '<datalist id="' + dl + '">' + listOpts + '</datalist>';
-        } else if (f.kind === 'roast') {
-          // Three levels. A roast typed or scanned in other words is read
-          // for its level; one that names none stays as an extra choice so
-          // saving the form never loses it.
-          var lvNow = roastLevel({ roast: d[f.k] });
-          var cur = lvNow ? ROAST_NAMES[lvNow] : (d[f.k] || '');
-          var choices = ['', 'Light', 'Medium', 'Dark'];
-          if (cur && choices.indexOf(cur) < 0) choices.push(cur);
-          control = '<select class="inp" id="e-' + f.k + '" data-k="' + f.k + '">' +
-            choices.map(function (o) {
-              return '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' +
-                esc(o ? (ROAST_NAMES.indexOf(o) > 0 ? t(o + ' roast') : o) : '— ' + t('not set') + ' —') + '</option>';
-            }).join('') + '</select>';
         } else if (f.area) {
           control = '<textarea class="inp" id="e-' + f.k + '" data-k="' + f.k + '" placeholder="' + esc(t(f.ph || '')) + '">' + val + '</textarea>';
         } else {
