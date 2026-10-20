@@ -2945,3 +2945,23 @@ a.rk-row:hover{color:var(--text-title);background:var(--surface-sunken)}
   .login-label{width:300px}
   .login-sheet{margin:0;padding:0}
 }
+
+/* ---------- Google sign-in button ----------
+   Google's own button, to its branding guidelines rather than restyled
+   into the app: Roboto Medium 14px, the four-colour G at 20px, 12px side
+   padding with 10px between mark and label, a pill shape. The dark
+   variant (#131314 fill, #8E918F outline, #E3E3E3 label) on the dark
+   theme, the light one (white fill, #747775 outline, #1F1F1F label) on
+   the light theme. */
+.btn.btn-google,
+.login-sheet .btn.btn-google{
+  gap:10px;min-height:44px;padding:0 12px;border-radius:999px;
+  background:#131314;border:1px solid #8E918F;color:#E3E3E3;
+  font:500 14px/20px 'Roboto',arial,sans-serif;letter-spacing:.25px;
+  box-shadow:none;
+}
+.btn.btn-google:hover{background:#2A2A2C;border-color:#8E918F;color:#E3E3E3}
+.btn.btn-google .ico{width:20px;height:20px}
+[data-theme="light"] .btn.btn-google,
+[data-theme="light"] .login-sheet .btn.btn-google{background:#FFFFFF;border-color:#747775;color:#1F1F1F}
+[data-theme="light"] .btn.btn-google:hover{background:#F2F2F2;border-color:#747775;color:#1F1F1F}
