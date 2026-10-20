@@ -910,6 +910,7 @@ var TRANSLATIONS = {
     'Last step': 'Última etapa',
     'Left in this step': 'Restante nesta etapa',
     'Water poured': 'Água despejada',
+    'Shot': 'Extração',
     'Water in the cone': 'Água no filtro',
     'left': 'restantes',
     'target': 'meta',
@@ -1845,9 +1846,9 @@ function slideHTML(r, kind) {
       '<div class="slide-foot">' +
         '<div class="slide-stats">' +
         '<div class="slide-nums">' +
-          '<span><b>' + num(r.dose) + '</b><i>' + esc(t('g coffee')) + '</i></span>' +
+          '<span><b>' + num(r.dose) + 'g</b><i>' + esc(t('coffee')) + '</i></span>' +
           (hasWater
-            ? '<span><b>' + num(r.water) + '</b><i>' + esc(t('g water')) + '</i></span>'
+            ? '<span><b>' + num(r.water) + 'g</b><i>' + esc(t('water')) + '</i></span>'
             : (r.brewTime ? '<span><b>' + esc(String(r.brewTime).replace('~', '')) + '</b><i>' + esc(t('shot')) + '</i></span>' : '')) +
         '</div>' +
         (grind ? '<div class="slide-grind">' + ICON.grinder + '<span>' + esc(grind) + '</span></div>' : '') +
@@ -1884,21 +1885,28 @@ function grindText(r) {
   return [gr ? gr.name : '', r.grindSize || ''].filter(Boolean).join(' · ');
 }
 
+/* Every recipe as a card: name and where it comes from on top, then a
+   strip of the three numbers you set before brewing — coffee, water (or
+   the shot time) and the grind, under the grinder's name. */
 function homeRowHTML(r) {
   var roaster = roasterOf(r);
-  var specs = [];
-  if (r.dose !== '' && r.dose != null) specs.push('<span class="hspec"><b>' + num(r.dose) + '</b> g</span>');
-  if (r.water !== '' && r.water != null) specs.push('<span class="hspec">' + ICON.drop + '<b>' + num(r.water) + '</b> g</span>');
-  else if (r.brewTime) specs.push('<span class="hspec"><b>' + esc(String(r.brewTime).replace('~', '')) + '</b></span>');
-  if (r.grindSize) specs.push('<span class="hspec hspec-grind">' + ICON.grinder + esc(r.grindSize) + '</span>');
-  return '<a class="hrow" href="#/r/' + encodeURIComponent(r.id) + '">' +
-    '<span class="hrow-mono" aria-hidden="true">' + esc(monogram(r)) + '</span>' +
-    '<span class="hrow-txt">' +
-      '<span class="nm">' + esc(titleOf(r)) + (r.fav ? ' <span class="hrow-fav" aria-label="' + esc(t('Favourite')) + '">' + ICON.star + '</span>' : '') + '</span>' +
-      '<span class="mt">' + esc([nameOf('method', r.methodId), roaster].filter(Boolean).join(' · ')) + '</span>' +
-      (specs.length ? '<span class="hspecs">' + specs.join('') + '</span>' : '') +
+  var gr = findIn('grinder', r.grinderId);
+  function cell(v, k, text) {
+    return '<span class="hc-cell"><span class="v' + (text ? ' is-text' : '') + '">' + v + '</span>' +
+      '<span class="k">' + esc(k) + '</span></span>';
+  }
+  var cells = '';
+  if (r.dose !== '' && r.dose != null) cells += cell(num(r.dose) + 'g', t('Coffee'));
+  if (r.water !== '' && r.water != null) cells += cell(num(r.water) + 'g', t('Water'));
+  else if (r.brewTime) cells += cell(esc(String(r.brewTime).replace('~', '')), t('Shot'));
+  if (r.grindSize) cells += cell(esc(r.grindSize), gr ? gr.name : t('Grind'), true);
+  return '<a class="hcard" href="#/r/' + encodeURIComponent(r.id) + '">' +
+    '<span class="hc-top">' +
+      '<span class="hc-txt"><span class="nm">' + esc(titleOf(r)) + '</span>' +
+        '<span class="mt">' + esc([nameOf('method', r.methodId), roaster].filter(Boolean).join(' · ')) + '</span></span>' +
+      (r.fav ? '<span class="hc-fav" aria-label="' + esc(t('Favourite')) + '">' + iconStar(true) + '</span>' : '') +
     '</span>' +
-    '<span class="hrow-chev" aria-hidden="true">' + ICON.chevRight + '</span>' +
+    (cells ? '<span class="hc-strip">' + cells + '</span>' : '') +
   '</a>';
 }
 
@@ -1964,7 +1972,7 @@ function renderHome(entering) {
         : '<button class="btn btn-primary" data-action="new-recipe">' + ICON.plus + esc(t('Add recipe')) + '</button>') +
       '</div>';
   } else {
-    html += '<div class="hrows">' + list.map(homeRowHTML).join('') + '</div>';
+    html += '<div class="hrows hcards">' + list.map(homeRowHTML).join('') + '</div>';
   }
 
   view.innerHTML = html + '</div>';

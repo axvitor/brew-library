@@ -2668,3 +2668,34 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   [data-theme="light"] .glass,
   [data-theme="light"] .back-to-top{background:#FFFFFF}
 }
+
+/* ---------- recipe cards (All recipes) ---------- */
+.hrows.hcards{gap:10px;margin-top:6px}
+.hcard{
+  display:flex;flex-direction:column;gap:14px;padding:16px 18px;border-radius:22px;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);
+  color:var(--text-title);transition:transform var(--dur-fast) var(--ease-standard);
+}
+.hcard:hover{color:var(--text-title);border-color:var(--border-default)}
+.hcard:active{transform:scale(var(--press-scale-card))}
+.hc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hc-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hc-txt .nm{font:var(--weight-medium) 17px/1.3 var(--font-text)}
+.hc-txt .mt{font:var(--weight-regular) 13px/1.35 var(--font-text);color:var(--text-muted)}
+.hc-fav{flex:none;color:var(--accent-favorite);display:flex}
+.hc-fav svg{width:16px;height:16px}
+.hc-strip{display:flex;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px}
+.hc-cell{flex:1 1 0;display:flex;flex-direction:column;gap:2px;min-width:0}
+.hc-cell + .hc-cell{padding-left:12px;border-left:var(--border-w-hairline) solid var(--border-hairline)}
+.hc-cell .v{font:var(--weight-thin) 22px/1.1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hc-cell .v.is-text{font:var(--weight-regular) 14px/1.25 var(--font-text);letter-spacing:0;white-space:normal;padding-top:3px}
+.hc-cell .k{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[data-theme="light"] .hcard{box-shadow:0 10px 24px -20px rgba(26,24,22,.35)}
+
+/* Carousel cards share a height; the slack goes between the name and the
+   numbers, so a one-line name never leaves a gap under the card's foot. */
+.slide{display:flex}
+.slide-body{flex:1;height:auto}
+.slide-foot{margin-top:auto}
+.slide-name .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.slide-nums b{letter-spacing:-0.03em}
