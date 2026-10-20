@@ -916,6 +916,13 @@ var TRANSLATIONS = {
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
     'poured': 'despejados',
+    'Your kitchen · every device': 'Sua cozinha · todo dispositivo',
+    'Contents': 'Conteúdo',
+    'Pours': 'Despejos',
+    'Timed': 'Cronometrados',
+    'Scales': 'Ajustável',
+    'Sync': 'Sincronia',
+    'Live': 'Ao vivo',
     'Your best cup': 'Seu melhor café',
     'Rank by': 'Classificar por',
     'rating': 'avaliação',
@@ -1353,8 +1360,9 @@ var themeChoice = (function () {
 })();
 var themeQuery = window.matchMedia('(prefers-color-scheme: light)');
 
-function applyTheme() {
-  var mode = themeChoice === 'auto' ? (themeQuery.matches ? 'light' : 'dark') : themeChoice;
+function applyTheme(device) {
+  var choice = device ? 'auto' : themeChoice;
+  var mode = choice === 'auto' ? (themeQuery.matches ? 'light' : 'dark') : choice;
   document.documentElement.setAttribute('data-theme', mode);
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', mode === 'light' ? '#F4F2EE' : '#111010');
@@ -1369,7 +1377,10 @@ function setTheme(choice) {
 }
 
 applyTheme();
-if (themeQuery.addEventListener) themeQuery.addEventListener('change', function () { if (themeChoice === 'auto') applyTheme(); });
+if (themeQuery.addEventListener) themeQuery.addEventListener('change', function () {
+  if (authPhase === 'signedOut') applyTheme(true);
+  else if (themeChoice === 'auto') applyTheme();
+});
 
 /* ---- liquid glass ----
    Floating controls are glass in the iOS sense: the page behind is
@@ -1597,45 +1608,30 @@ var STEAM_SVG = '<svg class="steam" viewBox="0 0 24 24" aria-hidden="true">' +
    reason rather than a bean and a button. Its own layout, not renderGate:
    loading and the connection error are momentary states that want to stay
    small and quiet, and dressing them up would be dressing up a failure. */
+/* The sign-in screen: the app's own bag label — the bean, the name, a
+   ruled grid of what is inside — over the pitch and Google's button.
+   It follows the device's light or dark setting, not the saved
+   appearance, which belongs to an account that is not signed in yet. */
 function renderSignIn() {
-  function point(text) {
-    return '<li class="gate-point">' + ICON.check + '<span>' + esc(t(text)) + '</span></li>';
+  applyTheme(true);
+  function fact(k, v) {
+    return '<span class="ll-fact"><span class="k">' + esc(t(k)) + '</span><span class="v">' + esc(t(v)) + '</span></span>';
   }
-  view.innerHTML = '<div class="gate-screen">' +
-    '<div class="gate-hero">' +
-      // Line art rather than a photograph: v3 is a drawn system, and a
-      // stock photo of coffee is the one thing every coffee app already has.
-      '<svg class="gate-art" viewBox="0 0 120 106" aria-hidden="true">' +
-        '<g class="gate-steam">' +
-          '<path d="M50 20c-3-4-3-7 0-11s3-7 0-11"/>' +
-          '<path d="M60 17c-3-4-3-7 0-11s3-7 0-11"/>' +
-          '<path d="M70 20c-3-4-3-7 0-11s3-7 0-11"/>' +
-        '</g>' +
-        '<path d="M34 34h52l-16 30H50z"/>' +
-        '<path d="M45 41h30" stroke-dasharray="3 4"/>' +
-        '<path d="M60 64v9"/>' +
-        '<path d="M42 75h36v18a8 8 0 0 1-8 8H50a8 8 0 0 1-8-8z"/>' +
-        '<path d="M42 82h36" stroke-dasharray="3 4"/>' +
-        '<path d="M78 79h5a6 6 0 0 1 0 12h-5"/>' +
-      '</svg>' +
-      '<div class="gate-wordmark">' +
-        '<svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">' +
-          '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/>' +
-          '<path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g></svg>' +
-        '<span class="brand-text">Brew<em>Library</em></span>' +
+  view.innerHTML = '<div class="gate-screen login">' +
+    '<div class="login-hero">' +
+      '<div class="login-label" aria-hidden="true">' +
+        '<span class="bl-valve"><i></i></span>' +
+        '<svg class="login-bean" viewBox="0 0 24 24">' + BREWER_SVG.bean + '</svg>' +
+        '<span class="ll-kicker">' + esc(t('Your kitchen · every device')) + '</span>' +
+        '<span class="ll-name">Brew Library</span>' +
+        '<span class="ll-grid">' +
+          fact('Contents', 'Recipes') + fact('Pours', 'Timed') + fact('Dose', 'Scales') + fact('Sync', 'Live') +
+        '</span>' +
       '</div>' +
     '</div>' +
-
-    '<div class="gate-sheet">' +
-      '<div>' +
-        '<h1>' + esc(t('Every recipe you have dialled in, on every device.')) + '</h1>' +
-        '<p class="gate-lede">' + esc(t('Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.')) + '</p>' +
-      '</div>' +
-      '<ul class="gate-points">' +
-        point('Pour steps computed live from the recipe style') +
-        point('Real-time sync, nothing to save by hand') +
-        point('Your library stays private to your account') +
-      '</ul>' +
+    '<div class="login-sheet">' +
+      '<h1>' + esc(t('Every recipe you have dialled in, on every device.')) + '</h1>' +
+      '<p class="gate-lede">' + esc(t('Sign in to open your library — pour schedules scale themselves to whatever dose you brew today.')) + '</p>' +
       '<button class="btn btn-google" data-action="sign-in">' + GOOGLE_G_ICON +
         '<span>' + esc(t('Continue with Google')) + '</span></button>' +
       '<p class="gate-foot">' + esc(t('Open to anyone with a Google account. Your recipes are never shared between accounts.')) + '</p>' +
@@ -1652,6 +1648,8 @@ function render() {
 
   if (authPhase === 'loading') { renderLoading(); return; }
   if (authPhase === 'signedOut') { renderSignIn(); return; }
+  // Signed in: back to the account's own appearance.
+  applyTheme();
   if (authPhase === 'error') { renderFirebaseError(); return; }
 
   var hash = location.hash || '#/';
