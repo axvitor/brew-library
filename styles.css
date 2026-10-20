@@ -2847,3 +2847,10 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   background:linear-gradient(180deg,#FFFFFF,#F5F2EE);
   box-shadow:inset 0 1px 0 #FFFFFF,0 0 0 .5px rgba(26,24,22,.10),0 4px 12px -4px rgba(26,24,22,.22);
 }
+
+/* The whole timer screen scrolls as one page — the header goes with it —
+   while the glass controls stay pinned to the bottom of the screen. */
+.overlay-full .sheet.sheet-timer{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.sheet-timer .sheet-head,.sheet-timer .timer-body{flex:none}
+.sheet-timer .timer-body{overflow:visible;min-height:auto}
+.sheet-timer .timer-foot.glass{position:fixed}
