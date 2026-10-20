@@ -2134,8 +2134,10 @@ function bigstat(label, value, unit, style) {
 
 /* ---- ranking ----
    Which bags, recipes and roasters were actually worth it. Scores live on
-   recipes (one cup score each); a coffee's standing pools the scores of
-   its recipes, a roaster's pools every recipe of every coffee it roasted.
+   recipes (one cup score each). A coffee's standing pools the scores of
+   its recipes, a recipe style's (James Hoffmann V60, Lance Hedrick…)
+   pools every brew made with it, and a roaster's pools every recipe of
+   every coffee it roasted.
 
    Only scored recipes count. An unrated recipe is not a zero — it is a
    brew you never got round to judging.
@@ -2149,7 +2151,7 @@ function bigstat(label, value, unit, style) {
 
    With few ratings the score leans toward the library's average; as
    ratings pile up it converges on the plain average, which is shown
-   beside it. Recipes carry one score each, so they rank on it directly. */
+   beside it. */
 var RANK_PRIOR = 2;
 var rankTab = 'coffee';
 
@@ -2161,29 +2163,28 @@ function rankStats() {
 
 function rankEntries(kind) {
   var st = rankStats();
-  if (kind === 'recipe') {
-    return st.rated.slice().sort(function (a, b) {
-      return b.rating - a.rating || (b.createdAt || 0) - (a.createdAt || 0);
-    }).map(function (r) {
-      var me = findIn('method', r.methodId);
-      return {
-        name: titleOf(r), href: '#/r/' + encodeURIComponent(r.id), icon: brewerIcon(me),
-        sub: [me ? me.name : '', roasterOf(r)].filter(Boolean).join(' · '),
-        n: 1, avg: r.rating, score: r.rating
-      };
-    });
-  }
   var pools = {};
   st.rated.forEach(function (r) {
-    var key = kind === 'roaster' ? roasterIdOf(r) : r.coffeeId;
+    var key = kind === 'roaster' ? roasterIdOf(r) : kind === 'recipe' ? r.styleId : r.coffeeId;
     if (!key) return;
-    var p = pools[key] || (pools[key] = { key: key, sum: 0, n: 0, coffees: {} });
+    var p = pools[key] || (pools[key] = { key: key, sum: 0, n: 0, coffees: {}, methods: {} });
     p.sum += r.rating; p.n++; p.coffees[r.coffeeId] = true;
+    if (r.methodId) p.methods[r.methodId] = (p.methods[r.methodId] || 0) + 1;
   });
   return Object.keys(pools).map(function (key) {
     var p = pools[key], e = { n: p.n, avg: p.sum / p.n,
       score: (p.sum + RANK_PRIOR * st.mean) / (p.n + RANK_PRIOR) };
-    if (kind === 'roaster') {
+    if (kind === 'recipe') {
+      // A recipe style — James Hoffmann V60, Lance Hedrick… — across every
+      // coffee brewed with it, drawn with the brewer it is used on most.
+      var sty = findIn('style', key);
+      var mids = Object.keys(p.methods).sort(function (a, b) { return p.methods[b] - p.methods[a]; });
+      var ncs = Object.keys(p.coffees).length;
+      e.name = sty ? sty.name : '—';
+      e.icon = brewerIcon(findIn('method', mids[0]));
+      e.sub = [sty && sty.author && sty.name.indexOf(sty.author) < 0 ? sty.author : '',
+        ncs + ' ' + tPlural(ncs, 'coffee', 'coffees')].filter(Boolean).join(' · ');
+    } else if (kind === 'roaster') {
       var ro = findIn('roaster', key);
       var nc = Object.keys(p.coffees).length;
       e.name = ro ? ro.name : '—';
@@ -2200,7 +2201,7 @@ function rankEntries(kind) {
 }
 
 function rankRowHTML(e, i, kind) {
-  var pooled = kind !== 'recipe';
+  var pooled = true;
   var inner =
     '<span class="rk-no' + (i < 3 ? ' is-top' : '') + '">' + (i + 1) + '</span>' +
     (e.icon ? '<span class="rk-ico">' + e.icon + '</span>' : '') +
@@ -2286,9 +2287,7 @@ function renderRanking(keepScroll) {
       '<p>' + esc(t('Give a brew a cup score and it joins the ranking. Two or three is enough to see which bags are worth buying again.')) + '</p></div>';
   } else {
     html += '<div class="rk-list">' + entries.map(function (e, i) { return rankRowHTML(e, i, rankTab); }).join('') + '</div>';
-    if (rankTab !== 'recipe') {
-      html += '<p class="rk-note">' + esc(t('Scores are weighted by how many ratings stand behind them; the plain average shows when it differs.')) + '</p>';
-    }
+    html += '<p class="rk-note">' + esc(t('Scores are weighted by how many ratings stand behind them; the plain average shows when it differs.')) + '</p>';
   }
   html += rankWaitingHTML();
 
