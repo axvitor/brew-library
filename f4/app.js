@@ -2789,7 +2789,7 @@ function buildTimerEl(r, plan) {
           '<ol class="timer-steps">' + rowsHTML + '</ol>' +
         '</div>' +
       '</div>' +
-      '<div class="sheet-foot timer-foot">' +
+      '<div class="sheet-foot timer-foot glass" data-glass="6">' +
         '<button class="timer-side glass" data-glass="4" data-action="timer-reset" aria-label="' + esc(t('Restart')) + '" title="' + esc(t('Restart')) + '">' + ICON.replay + '</button>' +
         '<div class="tm-play">' +
           '<svg class="tm-ring" viewBox="0 0 100 100" aria-hidden="true">' +
@@ -2920,7 +2920,11 @@ function timerPaint() {
   if (poured) {
     var tgt = el.querySelector('.cone-target'), tgk = el.querySelector('.cone-target-k');
     if (seg.water) {
-      var ty = coneLevel(seg.upto / plan.water * 0.75 + 0.2), tx = coneX(ty);
+      // Where the coffee will stand the moment this pour is in: the same
+      // fill-and-drain model the liquid uses, read at the end of the pour,
+      // so the rising level meets the line exactly.
+      var endFrac = Math.min(1, (seg.start + (seg.pour ? Math.min(seg.pour, segLen) : segLen)) / plan.total);
+      var ty = coneLevel(Math.min(1, seg.upto / plan.water * (1 - endFrac) * 1.5)), tx = coneX(ty);
       tgt.setAttribute('d', 'M' + (tx[0] + 6).toFixed(1) + ' ' + ty.toFixed(1) + ' L' + (tx[1] - 6).toFixed(1) + ' ' + ty.toFixed(1));
       tgk.setAttribute('x', (tx[1] + 2).toFixed(1));
       tgk.setAttribute('y', (ty + 4).toFixed(1));
