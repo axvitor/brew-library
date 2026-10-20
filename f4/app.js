@@ -536,14 +536,15 @@ function preset(styleId, dose, water, methodName) {
     if (m.indexOf('espresso') > -1 || m.indexOf('moka') > -1) return [];
     // James Hoffmann's V60: five equal pours (each a fifth of the total
     // water) at 0:00, 0:45, 1:10, 1:30 and 1:50, then let it draw down —
-    // no stirring needed.
+    // no stirring needed. Each pour goes in over 10 seconds (`pour`), then
+    // you wait for the next one.
     var fifth = g(water / 5);
     return [
-      { t: '0:00', label: 'Bloom — pour the first fifth of the water.', water: fifth },
-      { t: '0:45', label: 'Pour the second fifth.', water: fifth },
-      { t: '1:10', label: 'Pour the third fifth.', water: fifth },
-      { t: '1:30', label: 'Pour the fourth fifth.', water: fifth },
-      { t: '1:50', label: 'Pour the final fifth, then let it draw down — no stirring needed.', water: g(water) - fifth * 4 }
+      { t: '0:00', label: 'Bloom — pour the first fifth of the water.', water: fifth, pour: 10 },
+      { t: '0:45', label: 'Pour the second fifth.', water: fifth, pour: 10 },
+      { t: '1:10', label: 'Pour the third fifth.', water: fifth, pour: 10 },
+      { t: '1:30', label: 'Pour the fourth fifth.', water: fifth, pour: 10 },
+      { t: '1:50', label: 'Pour the final fifth, then let it draw down — no stirring needed.', water: g(water) - fifth * 4, pour: 10 }
     ];
   }
 
@@ -915,6 +916,8 @@ var TRANSLATIONS = {
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
     'poured': 'despejados',
+    'Wait': 'Aguarde',
+    'next pour in': 'próximo despejo em',
     'Water in the cone': 'Água no filtro',
     'left': 'restantes',
     'target': 'meta',
@@ -2542,7 +2545,7 @@ function secondsOf(v) {
 
 function timerPlan(r) {
   var steps = effectiveSteps(r).map(function (s) {
-    return { at: secondsOf(s.t), label: s.label || '', water: Number(s.water) || 0 };
+    return { at: secondsOf(s.t), label: s.label || '', water: Number(s.water) || 0, pour: Number(s.pour) || 0 };
   }).filter(function (s) { return s.at !== null; });
   steps.sort(function (a, b) { return a.at - b.at; });
 
@@ -2565,7 +2568,8 @@ function timerPlan(r) {
         start: s.at,
         end: i + 1 < steps.length ? steps[i + 1].at : total,
         label: s.label,
-        water: s.water
+        water: s.water,
+        pour: s.pour
       });
     });
   }
@@ -2863,14 +2867,25 @@ function timerPaint() {
   var segLen = seg.end - seg.start;
   var left = mmss(Math.max(0, Math.ceil(seg.end - e)));
   var kick = el.querySelector('.timer-now-kicker');
+  // A step with a pour time pours over its first `pour` seconds, then waits
+  // for the next step; one without spreads the water across the step.
+  var pourFor = seg.pour ? Math.min(seg.pour, segLen) : segLen;
+  var pouringNow = !!seg.water && e - seg.start < pourFor;
   if (!done) {
     // Steps that add no water are not pours — a drawdown or a steep says
     // so rather than announcing a pour of nothing.
-    kick.textContent = (seg.water ? t('Pouring now') : t('Now')) + ' · ' + left + ' ' + t('left');
+    if (seg.water && seg.pour) {
+      kick.textContent = pouringNow
+        ? t('Pouring now') + ' · ' + mmss(Math.max(0, Math.ceil(seg.start + pourFor - e))) + ' ' + t('left')
+        : t('Wait') + ' · ' + t('next pour in') + ' ' + left;
+    } else {
+      kick.textContent = (seg.water ? t('Pouring now') : t('Now')) + ' · ' + left + ' ' + t('left');
+    }
+    timer.sheet.classList.toggle('is-waiting', !!seg.water && !pouringNow);
   }
   var poured = el.querySelector('.timer-poured');
   if (poured) {
-    var pct = segLen > 0 ? Math.min(1, Math.max(0, (e - seg.start) / segLen)) : 1;
+    var pct = pourFor > 0 ? Math.min(1, Math.max(0, (e - seg.start) / pourFor)) : 1;
     var g = seg.from + (seg.upto - seg.from) * pct;
     poured.innerHTML = Math.round(g) + '<small> g</small>';
     // The bed holds water back as it drains, so the cone shows what is
@@ -2888,7 +2903,7 @@ function timerPaint() {
       ? 'M' + (104 - (294 - cupY) * 0.07).toFixed(1) + ' ' + cupY.toFixed(1) + ' L' + (196 + (294 - cupY) * 0.07).toFixed(1) + ' ' + cupY.toFixed(1) +
         ' L196 288 Q196 294 190 294 L110 294 Q104 294 104 288 Z'
       : '');
-    timer.sheet.classList.toggle('is-pouring', !!seg.water && timer.running && !done);
+    timer.sheet.classList.toggle('is-pouring', pouringNow && timer.running && !done);
   }
 
   if (i === timer.seg) return;
@@ -2924,7 +2939,8 @@ function timerPaint() {
   }
   el.querySelector('.timer-now-label').textContent = t(seg.label);
   el.querySelector('.timer-now-sub').textContent = seg.water
-    ? t('Add') + ' ' + seg.water + ' g' + (seg.from ? ' · ' + t('up to') + ' ' + seg.upto + ' g' : '')
+    ? t('Add') + ' ' + seg.water + ' g' + (seg.pour ? ' ' + t('in') + ' ' + seg.pour + ' s' : '') +
+      (seg.from ? ' · ' + t('up to') + ' ' + seg.upto + ' g' : '')
     : '';
   var say = el.querySelector('.timer-announce');
   if (say) say.textContent = t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length + '. ' + t(seg.label);
