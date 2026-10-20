@@ -2833,3 +2833,6 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 /* A label grid with an odd count: no rule under the last row. */
 .bl-fact:last-child,.bl-fact:nth-last-child(2):nth-child(odd){border-bottom:0}
 .rd-dose-nums b small{font-size:.42em;letter-spacing:0;margin-left:1px;color:var(--text-muted)}
+/* With no brew button, the bar's note sits in the capsule on its own:
+   inset it from the rounded edge like the pill's own label. */
+.rd-bar .detail-bar-note{padding:0 10px 0 18px;font:var(--weight-regular) 13px/1.4 var(--font-text);color:var(--text-body)}
