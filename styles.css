@@ -2254,8 +2254,10 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
   align-items:baseline;padding-bottom:18px;
 }
 .rd-step:last-child{padding-bottom:0}
-.rd-step:not(:last-child)::before{content:"";position:absolute;left:4.5px;top:14px;bottom:0;width:1px;background:var(--border-default)}
-.rd-dot{width:10px;height:10px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--text-accent);align-self:center}
+.rd-step:not(:last-child)::before{content:"";position:absolute;left:4.5px;top:19px;bottom:-3px;width:1px;background:var(--border-default)}
+/* The dot sits on the step's first line (16px text at 1.4 = 22.4px), and
+   the rail runs from under it to the next step's dot. */
+.rd-dot{width:10px;height:10px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--text-accent);align-self:start;margin-top:6px}
 .rd-dot.is-first{background:var(--text-accent)}
 .rd-t{font:var(--weight-regular) 13px/1.4 var(--font-text);color:var(--text-muted);font-variant-numeric:tabular-nums}
 .rd-l{font:var(--weight-regular) 16px/1.4 var(--font-text);color:var(--text-title)}
@@ -2825,3 +2827,23 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 /* With no brew button, the bar's note sits in the capsule on its own:
    inset it from the rounded edge like the pill's own label. */
 .rd-bar .detail-bar-note{padding:0 10px 0 18px;font:var(--weight-regular) 13px/1.4 var(--font-text);color:var(--text-body)}
+
+
+/* Timer controls float in a glass capsule over the bottom of the screen,
+   like the menu; the screen's content scrolls clear of it. */
+.sheet-timer{position:relative}
+.sheet-timer .timer-foot.glass{
+  position:absolute;left:50%;bottom:max(18px, env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;
+  padding:8px 10px;gap:14px;border-radius:var(--radius-full);
+}
+.sheet-timer .timer-body{padding-bottom:132px}
+.timer-foot .timer-side.glass{
+  background:radial-gradient(90% 60% at 50% 0%, rgba(255,255,255,.16), transparent 70%),rgba(255,255,255,.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 .5px rgba(255,255,255,.12);
+  -webkit-backdrop-filter:none;backdrop-filter:none!important;
+}
+.timer-foot .timer-side.glass::before{display:none}
+[data-theme="light"] .timer-foot .timer-side.glass{
+  background:linear-gradient(180deg,#FFFFFF,#F5F2EE);
+  box-shadow:inset 0 1px 0 #FFFFFF,0 0 0 .5px rgba(26,24,22,.10),0 4px 12px -4px rgba(26,24,22,.22);
+}
