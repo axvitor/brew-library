@@ -385,7 +385,7 @@ var ENTITIES = {
     coll: 'methods', label: 'Brewing method', plural: 'Methods', ref: 'methodId',
     fields: [
       { k: 'name', l: 'Name', ph: 'Chemex', req: true },
-      { k: 'kind', l: 'Type', kind: 'choice', choices: function () { return METHOD_TYPES; }, read: typeFromText },
+      { k: 'kind', l: 'Type', kind: 'choice', choices: function () { return METHOD_TYPES; }, read: typeFromText, req: true },
       { k: 'ratio', l: 'Typical ratio', ph: '1:16' },
       { k: 'notes', l: 'Notes', ph: 'Filter, kettle, gear…', area: true }
     ],
@@ -916,6 +916,8 @@ var TRANSLATIONS = {
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
     'poured': 'despejados',
+    'Choose a type': 'Escolha um tipo',
+    'Choose a type first.': 'Escolha um tipo primeiro.',
     'Not set': 'Não definido',
     'Moka pot': 'Moka',
     'Drip machine': 'Cafeteira elétrica',
@@ -5969,12 +5971,13 @@ function openEntityForm(type, existing, onSaved, prefill) {
           // meaning; one that names nothing stays as an extra choice, so
           // saving the form never loses it.
           var cur = (f.read && f.read(d[f.k])) || (d[f.k] || '');
-          var opts = [''].concat(typeof f.choices === 'function' ? f.choices() : f.choices);
+          var opts = (typeof f.choices === 'function' ? f.choices() : f.choices).slice();
           if (cur && opts.indexOf(cur) < 0) opts.push(cur);
-          control = '<select class="inp" id="e-' + f.k + '" data-k="' + f.k + '">' +
+          control = '<select class="inp" id="e-' + f.k + '" data-k="' + f.k + '"' + (f.req ? ' required' : '') + '>' +
+            // Mandatory: nothing is picked for you, and nothing saves unpicked.
+            (cur ? '' : '<option value="" disabled selected>' + esc(t('Choose a type')) + '</option>') +
             opts.map(function (o) {
-              return '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' +
-                esc(o ? t(o) : '— ' + t('Not set') + ' —') + '</option>';
+              return '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' + esc(t(o)) + '</option>';
             }).join('') + '</select>';
         } else if (f.area) {
           control = '<textarea class="inp" id="e-' + f.k + '" data-k="' + f.k + '" placeholder="' + esc(t(f.ph || '')) + '">' + val + '</textarea>';
@@ -6025,6 +6028,8 @@ function saveEntity(m) {
   readEntityForm(m, def);
   var d = m.draft;
   if (!d.name) { toast(t('Give it a name first.')); return; }
+  var missing = def.fields.filter(function (f) { return f.req && f.k !== 'name' && !d[f.k]; })[0];
+  if (missing) { toast(t('Choose a type first.')); return; }
   // Drop the blank row the builder always keeps at the end.
   if (d.steps) d.steps = d.steps.filter(function (s) { return s.t || s.label; });
 
