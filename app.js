@@ -3643,7 +3643,7 @@ function buildTimerEl(r, plan) {
     '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true" aria-label="' + esc(titleOf(r)) + '">' +
       '<div class="sheet-head">' +
         '<div class="tm-head">' +
-          '<button class="tm-circ glass" data-glass="4" data-action="close-modal" aria-label="' + esc(t('Close')) + '">' + ICON.close + '</button>' +
+          '<button class="tm-circ glass" data-glass="4" data-action="close-modal" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</button>' +
           '<span class="tm-title"><h2>' + esc(titleOf(r)) + '</h2><span class="timer-eyebrow"></span></span>' +
           '<button class="tm-circ glass timer-mute" data-glass="4" data-action="timer-mute"></button>' +
         '</div>' +
