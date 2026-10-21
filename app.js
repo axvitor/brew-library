@@ -3289,19 +3289,11 @@ function drawImmersionAnim(ctx, tt, M, col, still) {
     ctx.beginPath(); ctx.moveTo(L + 3, meshY); ctx.lineTo(R - 3, meshY); ctx.stroke();
     ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(L + 3, meshY + 3); ctx.lineTo(R - 3, meshY + 3); ctx.stroke(); ctx.setLineDash([]);
   }
-  // Kettle stream while pouring, and steam once pressed.
+  // Kettle stream while pouring.
   if (pour) {
     var into = tt - pour.at, k1 = animEase(into / 0.5) * (1 - animEase((into - pour.dur + 0.5) / 0.5));
     ctx.strokeStyle = col.water; ctx.lineCap = 'round'; ctx.lineWidth = 3.2 * k1;
     ctx.beginPath(); ctx.moveTo(228, 0); ctx.bezierCurveTo(214, 14, 166 + Math.sin(into * 2) * 12, level - 50, 160 + Math.sin(into * 2) * 12, level); ctx.stroke();
-  }
-  var sa = press >= 1 ? 1 : 0;
-  if (sa) {
-    for (var wv = 0; wv < 2; wv++) {
-      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.18 * (still ? 0.5 : 1) + ')'; ctx.lineWidth = 3; ctx.beginPath();
-      for (var k = 0; k <= 10; k++) ctx[k ? 'lineTo' : 'moveTo'](82 + wv * 12 + Math.sin(tt + wv * 2 + k * 0.6) * (1.5 + k * 0.4), top + 20 - k * 2.4);
-      ctx.stroke();
-    }
   }
 }
 
