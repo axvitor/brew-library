@@ -918,6 +918,29 @@ var TRANSLATIONS = {
     'poured': 'despejados',
     'Choose a type': 'Escolha um tipo',
     'Choose a type first.': 'Escolha um tipo primeiro.',
+    'Add your first brew — the coffee, the gear and how you pour it. The cup is waiting.': 'Adicione seu primeiro preparo — o café, o equipamento e como você despeja. A xícara está esperando.',
+    'Import a library': 'Importar uma biblioteca',
+    'Nothing in the cup': 'Nada na xícara',
+    '1 filter': '1 filtro',
+    '{n} filters': '{n} filtros',
+    'and': 'e',
+    'No recipe matches {what}. Clear the filters to see all {n}.': 'Nenhuma receita corresponde a {what}. Limpe os filtros para ver todas as {n}.',
+    'Edit filters': 'Editar filtros',
+    'Give a brew a cup score and it takes its place here. Two or three show which bags to buy again.': 'Dê uma nota a um preparo e ele ganha seu lugar aqui. Duas ou três já mostram quais pacotes vale comprar de novo.',
+    'No roasters yet': 'Nenhuma torrefação ainda',
+    'Add the roasters you buy from. Each coffee points to one, so a roaster’s whole shelf stays together.': 'Adicione as torrefações de onde você compra. Cada café aponta para uma, e a prateleira inteira de cada torrefação fica junta.',
+    'No coffees yet': 'Nenhum café ainda',
+    'Add a bag and every recipe can say which coffee was in the cup.': 'Adicione um pacote e cada receita pode dizer qual café estava na xícara.',
+    'No grinders yet': 'Nenhum moedor ainda',
+    'Add the grinder you use, so each recipe can say where to set it.': 'Adicione o moedor que você usa, para cada receita dizer onde ajustá-lo.',
+    'No methods yet': 'Nenhum método ainda',
+    'Add your dripper, press or pot. Its type picks the drawing the timer brews with.': 'Adicione seu coador, prensa ou cafeteira. O tipo escolhe o desenho que o timer usa no preparo.',
+    'No recipe styles yet': 'Nenhum estilo de receita ainda',
+    'Write a pour schedule once — times and water — and every recipe on it follows.': 'Escreva um cronograma de despejos uma vez — tempos e água — e toda receita nele o segue.',
+    'Scan a bag’s label': 'Escanear o rótulo do pacote',
+    'This recipe isn’t here': 'Esta receita não está aqui',
+    'Only the ring is left. It may have been deleted, or the link came from another library.': 'Só sobrou a marca da xícara. Ela pode ter sido excluída, ou o link veio de outra biblioteca.',
+    'Back to recipes': 'Voltar às receitas',
     'Water added at step': 'Água adicionada na etapa',
     'Every recipe on this style follows these steps, so you only write them once. Give each pour the water it adds — recipes scale the pours to their own water.': 'Toda receita deste estilo segue estas etapas, então você só as escreve uma vez. Informe a água que cada despejo adiciona — as receitas ajustam os despejos à própria água.',
     'Step {n} needs a time, like 0:45.': 'A etapa {n} precisa de um tempo, como 0:45.',
@@ -1798,6 +1821,217 @@ function renderPage(arriving) {
   closeMenu();
 }
 
+/* ---- empty states ----
+   Every page that can come up empty says so with a small drawing that
+   moves — a line sketch in the icon style, a loop a few seconds long —
+   then a headline, one line of copy and the way forward. The drawings
+   move with SVG's own <animate>, which the stylesheet's reduced-motion
+   rule can't reach, so with reduced motion they're drawn at rest. */
+function esMove(markup) { return reduceMotion.matches ? '' : markup; }
+function an(attr, values, keyTimes, dur, begin) {
+  return esMove('<animate attributeName="' + attr + '" values="' + values + '"' +
+    (keyTimes ? ' keyTimes="' + keyTimes + '"' : '') + ' dur="' + dur + 's"' +
+    (begin ? ' begin="' + begin + 's"' : '') + ' repeatCount="indefinite"/>');
+}
+function anT(type, values, keyTimes, dur) {
+  return esMove('<animateTransform attributeName="transform" type="' + type + '" values="' + values + '"' +
+    (keyTimes ? ' keyTimes="' + keyTimes + '"' : '') + ' dur="' + dur + 's" repeatCount="indefinite"/>');
+}
+function esSvg(inner, h) {
+  h = h || 150;
+  return '<svg class="es-art" viewBox="0 0 180 ' + h + '" width="180" height="' + h + '" fill="none" aria-hidden="true">' + inner + '</svg>';
+}
+var ES_DRIPPER = '<path class="es-s" d="M50 30H130" stroke-width="2" stroke-linecap="round"/>' +
+  '<path class="es-s" d="M58 30L80 74H100L122 30" stroke-width="2" stroke-linejoin="round"/>' +
+  '<path class="es-s" d="M84 74V82H96V74" stroke-width="2" stroke-linejoin="round"/>';
+
+var ES_ART = {
+  // Home, no recipes: a drop forms under the dripper and falls into the
+  // empty cup, passing behind its front rim.
+  drip: function () {
+    return esSvg(
+      '<path class="es-l" d="M44 150H136" stroke-width="2" stroke-linecap="round"/>' + ES_DRIPPER +
+      '<path class="es-l" d="M74 40L86 64M106 40L94 64" stroke-width="1.5" stroke-linecap="round"/>' +
+      '<path class="es-s" d="M60 106A30 6 0 0 1 120 106" stroke-width="2"/>' +
+      '<ellipse class="es-a" cx="90" cy="107" rx="0" ry="0" stroke-width="1.5">' +
+        an('rx', '0;0;20;20', '0;0.42;0.8;1', 2.6) + an('ry', '0;0;3;3', '0;0.42;0.8;1', 2.6) +
+        an('opacity', '0;0;0.9;0;0', '0;0.42;0.47;0.8;1', 2.6) + '</ellipse>' +
+      '<path class="es-af" d="M90 84C93 88 94 90 94 92A4 4 0 0 1 86 92C86 90 87 88 90 84Z">' +
+        anT('translate', '0 -6;0 0;0 32;0 32', '0;0.25;0.5;1', 2.6) +
+        an('opacity', '0;1;1;0;0', '0;0.2;0.5;0.52;1', 2.6) + '</path>' +
+      '<path class="es-s es-bg" d="M60 106A30 6 0 0 0 120 106V128Q120 146 102 146H78Q60 146 60 128Z" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-s" d="M120 113Q134 113 134 123Q134 133 120 133" stroke-width="2" stroke-linecap="round"/>');
+  },
+  // Home, nothing matches: the cup under the dripper stays empty, its
+  // outline blinking.
+  sieve: function () {
+    return esSvg(ES_DRIPPER +
+      '<g>' + an('opacity', '1;1;0.15;0.15;1', '0;0.4;0.5;0.9;1', 1.8) +
+        '<path class="es-a" d="M62 100H118V120Q118 138 100 138H80Q62 138 62 120Z" stroke-width="2" stroke-dasharray="4 6" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path class="es-a" d="M118 107Q131 107 131 116Q131 125 118 125" stroke-width="2" stroke-dasharray="4 6" stroke-linecap="round"/>' +
+      '</g>');
+  },
+  // Ranking: a steaming cup lands on the top step of an empty podium.
+  podium: function () {
+    return esSvg(
+      '<g>' + anT('translate', '0 -18;0 2;0 0;0 0;0 0', '0;0.12;0.17;0.85;1', 4.4) +
+        an('opacity', '0;1;1;0;0', '0;0.08;0.8;0.9;1', 4.4) +
+        '<path class="es-a" d="M78 54H102V63Q102 74 92 74H88Q78 74 78 63Z" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path class="es-a" d="M102 58Q109 58 109 63Q109 68 102 68" stroke-width="2" stroke-linecap="round"/>' +
+        '<g>' + an('opacity', '0;0;1;0.35;1;0;0', '0;0.2;0.32;0.5;0.68;0.8;1', 4.4) +
+          '<path class="es-a" d="M86 48q-3-5 0-10q3-5 0-10M95 48q-3-5 0-10q3-5 0-10" stroke-width="1.6" stroke-linecap="round"/></g>' +
+      '</g>' +
+      '<rect class="es-s" x="40" y="92" width="32" height="40" rx="3" stroke-width="2"/>' +
+      '<rect class="es-s" x="74" y="76" width="32" height="56" rx="3" stroke-width="2"/>' +
+      '<rect class="es-s" x="108" y="102" width="32" height="30" rx="3" stroke-width="2"/>' +
+      '<text class="es-num" x="90" y="98" text-anchor="middle">1</text>' +
+      '<text class="es-num" x="56" y="114" text-anchor="middle">2</text>' +
+      '<text class="es-num" x="124" y="121" text-anchor="middle">3</text>' +
+      '<path class="es-l" d="M28 132H152" stroke-width="2" stroke-linecap="round"/>', 140);
+  },
+  // Library tabs, one drawing each. Coffees: a bag with a question mark
+  // that writes itself on the label and shrugs.
+  coffee: function () {
+    var still = reduceMotion.matches;
+    return esSvg(
+      '<path class="es-s" d="M60 50L56 138H124L120 50" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-s" d="M60 50L66 30H114L120 50" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-l" d="M68 38H112" stroke-width="1.6" stroke-dasharray="3 4" stroke-linecap="round"/>' +
+      '<circle class="es-s" cx="106" cy="62" r="4" stroke-width="1.6"/>' +
+      '<rect class="es-l" x="68" y="76" width="44" height="50" rx="5" stroke-width="1.6"/>' +
+      '<g>' + anT('rotate', '0 90 101;0 90 101;-9 90 101;8 90 101;-4 90 101;0 90 101;0 90 101', '0;0.4;0.5;0.6;0.68;0.75;1', 3.4) +
+        an('opacity', '1;1;0;0', '0;0.86;0.94;1', 3.4) +
+        '<path class="es-a" d="M82 92q0-9 8-9q8 0 8 8q0 5-5 7q-3 1.5-3 5v3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"' +
+          (still ? '>' : ' stroke-dasharray="46" stroke-dashoffset="46">') + an('stroke-dashoffset', '46;46;0;0', '0;0.06;0.34;1', 3.4) + '</path>' +
+        '<circle class="es-af" cx="90" cy="114" r="2.2"' + (still ? '>' : ' opacity="0">') +
+          an('opacity', '0;0;1;1', '0;0.36;0.4;1', 3.4) + an('r', '0;0;3.2;2.2;2.2', '0;0.36;0.41;0.46;1', 3.4) + '</circle>' +
+      '</g>');
+  },
+  // Roasters: the drum turns over a flickering flame.
+  roaster: function () {
+    return esSvg(
+      '<path class="es-s" d="M80 40L84 30H96L100 40" stroke-width="2" stroke-linejoin="round"/>' +
+      '<circle class="es-s" cx="90" cy="70" r="30" stroke-width="2"/>' +
+      '<g>' + anT('rotate', '0 90 70;360 90 70', '', 5) +
+        '<path class="es-l" d="M90 46V94M66 70H114" stroke-width="1.6" stroke-linecap="round"/>' +
+        '<ellipse class="es-af" cx="90" cy="54" rx="3.4" ry="4.8"/>' +
+        '<ellipse class="es-af" cx="106" cy="76" rx="3.4" ry="4.8" transform="rotate(60 106 76)"/>' +
+        '<ellipse class="es-af" cx="78" cy="82" rx="3.4" ry="4.8" transform="rotate(-50 78 82)"/>' +
+      '</g>' +
+      '<path class="es-s" d="M68 96L62 128M112 96L118 128M50 128H130" stroke-width="2" stroke-linecap="round"/>' +
+      '<path class="es-flame" d="M80 118c-4-5 0-9 2-12c1 4 4 6 2 12z">' + an('opacity', '1;0.45;1', '', 0.9) + '</path>' +
+      '<path class="es-flame" d="M89 119c-5-6 0-11 2-15c1 5 5 8 2 15z">' + an('opacity', '0.5;1;0.5', '', 1.1) + '</path>' +
+      '<path class="es-flame" d="M98 118c-4-5 0-9 2-12c1 4 4 6 2 12z">' + an('opacity', '1;0.55;1', '', 0.8) + '</path>');
+  },
+  // Grinders: the crank turns and grounds fall.
+  grinder: function () {
+    function ground(cx, r, begin) {
+      return '<circle class="es-af" cx="' + cx + '" cy="124" r="' + r + '">' +
+        an('cy', '122;140', '', 1.2, begin) + an('opacity', '1;0', '', 1.2, begin) + '</circle>';
+    }
+    return esSvg(
+      '<rect class="es-s" x="72" y="62" width="36" height="58" rx="5" stroke-width="2"/>' +
+      '<rect class="es-s" x="68" y="52" width="44" height="10" rx="3" stroke-width="2"/>' +
+      '<path class="es-s" d="M90 52V44" stroke-width="2" stroke-linecap="round"/>' +
+      '<g transform="translate(90 44) scale(1 0.38)"><g>' + anT('rotate', '0;360', '', 2.6) +
+        '<path class="es-s" d="M0 0H34" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<circle class="es-af" cx="36" cy="0" r="6"/></g></g>' +
+      '<path class="es-l" d="M80 76H100M80 84H100" stroke-width="1.6" stroke-linecap="round"/>' +
+      ground(88, 1.8, 0) + ground(92, 1.5, 0.4) + ground(90, 1.6, 0.8) +
+      '<path class="es-s" d="M74 144Q90 136 106 144" stroke-width="1.6" stroke-linecap="round"/>');
+  },
+  // Methods: a kettle pours into a dripper, which drips.
+  method: function () {
+    return esSvg(
+      '<path class="es-s" d="M18 14L40 20" stroke-width="3" stroke-linecap="round"/>' +
+      '<path class="es-water" d="M40 20Q72 22 88 62" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="7 6">' +
+        an('stroke-dashoffset', '0;-26', '', 0.8) + '</path>' +
+      '<path class="es-s" d="M50 50H130" stroke-width="2" stroke-linecap="round"/>' +
+      '<path class="es-s" d="M58 50L80 94H100L122 50" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-s" d="M84 94V102H96V94" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-af" d="M90 104C93 108 94 110 94 112A4 4 0 0 1 86 112C86 110 87 108 90 104Z">' +
+        anT('translate', '0 -4;0 0;0 26;0 26', '0;0.3;0.6;1', 1.8) + an('opacity', '0;1;1;0;0', '0;0.25;0.55;0.6;1', 1.8) + '</path>' +
+      '<path class="es-l" d="M66 140H114" stroke-width="2" stroke-linecap="round"/>');
+  },
+  // Recipe styles: a step schedule fills in, one step at a time.
+  style: function () {
+    function node(cy, at) {
+      return '<circle class="es-s es-bg" cx="60" cy="' + cy + '" r="6" stroke-width="2"/>' +
+        '<circle class="es-a es-bg" cx="60" cy="' + cy + '" r="6" stroke-width="2" opacity="0">' +
+          an('opacity', '0;0;1;1;0', '0;' + at + ';' + (at + 0.02) + ';0.9;1', 4) + '</circle>';
+    }
+    return esSvg(
+      '<path class="es-l" d="M60 30V122" stroke-width="2" stroke-linecap="round"/>' +
+      '<path class="es-a" d="M60 30V122" stroke-width="2" stroke-linecap="round" stroke-dasharray="92" stroke-dashoffset="92">' +
+        an('stroke-dashoffset', '92;0;0;92', '0;0.7;0.9;1', 4) + '</path>' +
+      '<circle class="es-a es-bg" cx="60" cy="30" r="6" stroke-width="2"/>' +
+      node(60, 0.22) + node(90, 0.45) + node(120, 0.68) +
+      '<rect class="es-lf" x="76" y="26" width="58" height="8" rx="4"/>' +
+      '<rect class="es-lf" x="76" y="56" width="44" height="8" rx="4"/>' +
+      '<rect class="es-lf" x="76" y="86" width="52" height="8" rx="4"/>' +
+      '<rect class="es-lf" x="76" y="116" width="38" height="8" rx="4"/>' +
+      '<rect class="es-af" x="140" y="26" width="18" height="8" rx="4" opacity="0.22"/>' +
+      '<rect class="es-af" x="140" y="56" width="18" height="8" rx="4" opacity="0.22"/>' +
+      '<rect class="es-af" x="140" y="86" width="18" height="8" rx="4" opacity="0.22"/>');
+  },
+  // A search that found nothing: a magnifier wanders over empty rows.
+  search: function () {
+    return esSvg(
+      '<rect class="es-d" x="28" y="22" width="124" height="26" rx="13" stroke-width="1.8" stroke-dasharray="4 5"/>' +
+      '<rect class="es-d" x="28" y="58" width="124" height="26" rx="13" stroke-width="1.8" stroke-dasharray="4 5"/>' +
+      '<rect class="es-d" x="28" y="94" width="124" height="26" rx="13" stroke-width="1.8" stroke-dasharray="4 5"/>' +
+      '<g transform="translate(62 62)"><g>' +
+        esMove('<animateMotion dur="5s" repeatCount="indefinite" path="M0 0C18 -26 46 -26 56 0S38 26 18 12S-6 -6 0 0"/>') +
+        '<circle class="es-a es-lens" cx="0" cy="0" r="17" stroke-width="2.2"/>' +
+        '<path class="es-a" d="M12 12L24 24" stroke-width="3.2" stroke-linecap="round"/>' +
+        '<path class="es-a" d="M-7 -6a9 9 0 0 1 8-4" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>' +
+      '</g></g>', 140);
+  },
+  // A recipe that isn't there: the cup lifts away and leaves its ring.
+  ring: function () {
+    return esSvg(
+      '<path class="es-l" d="M28 134H152" stroke-width="2" stroke-linecap="round"/>' +
+      '<ellipse class="es-stain" cx="90" cy="122" rx="30" ry="7" stroke-width="3" stroke-dasharray="120 10 30 8" stroke-linecap="round"/>' +
+      '<circle class="es-stainf" cx="128" cy="127" r="2"/><circle class="es-stainf" cx="54" cy="118" r="1.4"/>' +
+      '<g>' + anT('translate', '0 0;0 0;0 -28;0 -28;0 0', '0;0.25;0.45;0.8;1', 4.6) +
+        an('opacity', '1;1;0;0;1', '0;0.28;0.45;0.82;1', 4.6) +
+        '<path class="es-s es-bg" d="M62 72H118V98Q118 120 96 120H84Q62 120 62 98Z" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path class="es-s" d="M118 80Q132 80 132 90Q132 100 118 100" stroke-width="2" stroke-linecap="round"/>' +
+        '<path class="es-a" d="M80 62q-4-7 0-14q4-7 0-14" stroke-width="1.6" stroke-linecap="round">' + an('opacity', '0.2;0.9;0.2', '', 2.3) + '</path>' +
+        '<path class="es-a" d="M100 62q-4-7 0-14q4-7 0-14" stroke-width="1.6" stroke-linecap="round">' + an('opacity', '0.9;0.2;0.9', '', 2.3) + '</path>' +
+      '</g>');
+  }
+};
+
+function emptyState(o) {
+  return '<div class="es' + (o.cls ? ' ' + o.cls : '') + '">' + o.art +
+    '<h2 class="es-title">' + esc(o.title) + '</h2>' +
+    '<p class="es-copy">' + esc(o.copy) + '</p>' +
+    (o.actions ? '<div class="es-actions">' + o.actions + '</div>' : '') +
+  '</div>';
+}
+
+// "Origami, “geisha” and 2 filters" — whatever is narrowing the list.
+function homeNoMatchCopy(total) {
+  var parts = [];
+  if (filters.kind) parts.push(filters.kind);
+  if (filters.q && filters.q.trim()) parts.push('“' + filters.q.trim() + '”');
+  var n = moreFiltersCount() + (filters.fav ? 1 : 0);
+  if (n) parts.push(n === 1 ? t('1 filter') : tf('{n} filters', { n: n }));
+  var what = parts.length > 1
+    ? parts.slice(0, -1).join(', ') + ' ' + t('and') + ' ' + parts[parts.length - 1]
+    : parts[0] || '';
+  return tf('No recipe matches {what}. Clear the filters to see all {n}.', { what: what, n: total });
+}
+
+var LIBRARY_EMPTY = {
+  roaster: ['No roasters yet', 'Add the roasters you buy from. Each coffee points to one, so a roaster’s whole shelf stays together.'],
+  coffee: ['No coffees yet', 'Add a bag and every recipe can say which coffee was in the cup.'],
+  grinder: ['No grinders yet', 'Add the grinder you use, so each recipe can say where to set it.'],
+  method: ['No methods yet', 'Add your dripper, press or pot. Its type picks the drawing the timer brews with.'],
+  style: ['No recipe styles yet', 'Write a pour schedule once — times and water — and every recipe on it follows.']
+};
+
 /* ---- home ---- */
 
 // Cupform v3.1's Combobox: "Select for a list that outgrew a list. Typing
@@ -2162,15 +2396,14 @@ function renderHome(entering) {
     '</div>';
 
   if (!list.length) {
-    html += '<div class="empty">' + ICON.cup +
-      '<h3>' + esc(t(total ? 'Nothing matches those filters' : 'No recipes yet')) + '</h3>' +
-      '<p>' + esc(t(total
-        ? 'Try clearing a filter or two to see the rest of your library.'
-        : 'Add your first brew — coffee, grinder, method, recipe style and the pour schedule.')) + '</p>' +
-      (total
-        ? '<button class="btn btn-ghost" data-action="clear-filters">' + esc(t('Clear filters')) + '</button>'
-        : '<button class="btn btn-primary" data-action="new-recipe">' + ICON.plus + esc(t('Add recipe')) + '</button>') +
-      '</div>';
+    html += total
+      ? emptyState({ art: ES_ART.sieve(), title: t('Nothing in the cup'), copy: homeNoMatchCopy(total),
+          actions: '<button class="btn es-btn es-btn-quiet" data-action="clear-filters">' + esc(t('Clear filters')) + '</button>' +
+            '<button class="es-link" data-action="filters-open">' + esc(t('Edit filters')) + '</button>' })
+      : emptyState({ art: ES_ART.drip(), title: t('No recipes yet'),
+          copy: t('Add your first brew — the coffee, the gear and how you pour it. The cup is waiting.'),
+          actions: '<button class="btn btn-primary es-btn" data-action="new-recipe">' + ICON.plus + esc(t('Add recipe')) + '</button>' +
+            '<button class="es-link" data-action="import">' + esc(t('Import a library')) + '</button>' });
   } else {
     html += '<div class="hrows hcards">' + list.map(homeRowHTML).join('') + '</div>';
   }
@@ -2455,9 +2688,8 @@ function renderRanking(keepScroll) {
     '</div>';
 
   if (!entries.length) {
-    html += '<div class="empty rank-empty">' + ICON.cup +
-      '<h3>' + esc(t('Nothing scored yet')) + '</h3>' +
-      '<p>' + esc(t('Give a brew a cup score and it joins the ranking. Two or three is enough to see which bags are worth buying again.')) + '</p></div>';
+    html += emptyState({ art: ES_ART.podium(), title: t('Nothing scored yet'), cls: 'es-rank',
+      copy: t('Give a brew a cup score and it takes its place here. Two or three show which bags to buy again.') });
   } else {
     html += '<div class="rk-list">' + entries.map(function (e, i) { return rankRowHTML(e, i, rankTab); }).join('') + '</div>';
     html += '<p class="rk-note">' + esc(t('Scores are weighted by how many ratings stand behind them; the plain average shows when it differs.')) + '</p>';
@@ -2620,7 +2852,9 @@ function renderDetail(id, keepScroll) {
   var saved = recipeById(id);
   if (!saved) {
     view.innerHTML = '<div class="detail rd"><div class="rd-top"><a class="rd-btn glass" data-glass="4" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a></div>' +
-      '<div class="empty">' + ICON.bean + '<h3>' + esc(t('Recipe not found')) + '</h3><p>' + esc(t('It may have been deleted.')) + '</p></div></div>';
+      emptyState({ art: ES_ART.ring(), title: t('This recipe isn’t here'),
+        copy: t('Only the ring is left. It may have been deleted, or the link came from another library.'),
+        actions: '<a class="btn btn-primary es-btn" href="#/">' + ICON.back + esc(t('Back to recipes')) + '</a>' }) + '</div>';
     return;
   }
   if (doseView.id !== id) doseView = { id: id, dose: null };
@@ -6317,15 +6551,15 @@ function libraryListHTML(tab) {
   }) : all;
 
   if (!all.length) {
-    return '<div class="empty" style="padding:44px 20px">' +
-      '<h3 style="font-size:18px">' + esc(t('Nothing here yet')) + '</h3>' +
-      '<p>' + esc(t('Add your first ' + def.label.toLowerCase() + '.')) + '</p></div>';
+    return emptyState({ art: ES_ART[tab](), title: t(LIBRARY_EMPTY[tab][0]), copy: t(LIBRARY_EMPTY[tab][1]),
+      actions: '<button class="btn btn-primary es-btn" data-action="lib-add" data-type="' + tab + '">' + libraryAddHTML() + '</button>' +
+        (tab === 'coffee' ? '<button class="es-link" data-action="lib-scan">' + esc(t('Scan a bag’s label')) + '</button>' : '') });
   }
   if (!list.length) {
-    return '<div class="empty" style="padding:36px 20px">' +
-      '<h3 style="font-size:18px">' + esc(t('Nothing matches') + ' “' + libraryQuery.trim() + '”') + '</h3>' +
-      '<p>' + esc(t('Try a shorter search, or clear it to see all ') +
-        coll(tab).length + ' ' + t(ENTITIES[tab].plural.toLowerCase()) + '.') + '</p></div>';
+    return emptyState({ art: ES_ART.search(), title: t('Nothing matches') + ' “' + libraryQuery.trim() + '”',
+      copy: t('Try a shorter search, or clear it to see all ') + coll(tab).length + ' ' + t(ENTITIES[tab].plural.toLowerCase()) + '.',
+      actions: '<button class="btn es-btn es-btn-quiet" data-action="lib-clear-search">' + esc(t('Clear search')) + '</button>' +
+        '<button class="es-link" data-action="lib-add" data-type="' + tab + '">' + esc(t('Add ' + def.label.toLowerCase())) + '</button>' });
   }
   return list.map(function (e) {
     var used = def.usedBy ? def.usedBy(e.id) : state.recipes.filter(function (r) { return r[def.ref] === e.id; }).length;
@@ -6375,6 +6609,7 @@ function renderLibrary() {
       libraryAddHTML() + '</button>' +
     '<div class="list" id="libList">' + libraryListHTML(libraryTab) + '</div>' +
   '</div>';
+  syncLibraryAdd();
   window.scrollTo(0, 0);
   tabsLens(document.getElementById('libTabs'));
 }
@@ -6385,6 +6620,14 @@ function renderLibrary() {
 function paintLibraryList() {
   var list = document.getElementById('libList');
   if (list) list.innerHTML = libraryListHTML(libraryTab);
+  syncLibraryAdd();
+}
+
+// An empty list carries its own Add, so the one above it steps aside
+// rather than offering the same thing twice.
+function syncLibraryAdd() {
+  var add = document.querySelector('.library-add'), list = document.getElementById('libList');
+  if (add && list) add.style.display = list.querySelector('.es') ? 'none' : '';
 }
 
 function paintLibraryTab() {
@@ -6403,6 +6646,7 @@ function paintLibraryTab() {
     add.innerHTML = libraryAddHTML();
     add.setAttribute('data-type', libraryTab);
   }
+  syncLibraryAdd();
 }
 
 function deleteEntity(type, id) {
@@ -6946,6 +7190,17 @@ document.addEventListener('click', function (ev) {
       tabsLens(document.getElementById('libTabs'), libFrom);
       return;
     case 'lib-add': openEntityForm(type, null, null); return;
+    case 'lib-scan':
+      openEntityForm('coffee', null, null);
+      startLabelScan(stack[stack.length - 1]);
+      return;
+    case 'lib-clear-search':
+      libraryQuery = '';
+      var libQ = document.getElementById('libQ');
+      if (libQ) libQ.value = '';
+      paintLibraryList();
+      if (libQ) libQ.focus();
+      return;
     case 'lib-edit': openEntityForm(type, findIn(type, id), null); return;
     case 'lib-del': deleteEntity(type, id); return;
 

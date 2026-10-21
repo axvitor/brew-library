@@ -3121,3 +3121,38 @@ body:has(.gate-screen){padding-bottom:0}
 .page .crumbs,.page .page-head h2{transition:opacity var(--dur-base) var(--ease-standard)}
 .page.is-scrolled .crumbs,.page.is-scrolled .page-head h2{opacity:0}
 .page.is-scrolled .page-head .crumbs a,.page.is-scrolled .page-head .crumbs button{pointer-events:none}
+
+/* ---------- empty states ----------
+   Open, not boxed: the drawing, a light headline, one line of copy and
+   the way forward, centred in the room the page has left. The drawings
+   are line sketches coloured from the theme through these classes. */
+.es{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  min-height:46vh;padding:40px 16px 32px;box-sizing:border-box;
+  --es-line:var(--border-hairline);--es-dash:#3A3733;--es-flame:#E8743A;--es-water:#8FB3C9;--es-stain:rgba(196,128,80,.45);
+  animation:fadeIn var(--dur-slow) var(--ease-out) both;
+}
+[data-theme="light"] .es{--es-dash:#D6D0C6;--es-flame:#D9662B;--es-water:#5B8FB0;--es-stain:rgba(150,92,52,.38)}
+.list .es,.es-rank{min-height:0}
+.es-art{display:block;width:180px;height:auto;margin-bottom:18px;overflow:visible}
+.es-s{stroke:var(--text-faint)}
+.es-l{stroke:var(--es-line)}
+.es-lf{fill:var(--es-line)}
+.es-d{stroke:var(--es-dash)}
+.es-a{stroke:var(--text-accent)}
+.es-af{fill:var(--text-accent)}
+.es-bg{fill:var(--bg-app)}
+.es-lens{fill:var(--bg-app);fill-opacity:.85}
+.es-flame{fill:var(--es-flame)}
+.es-water{stroke:var(--es-water)}
+.es-stain{stroke:var(--es-stain)}
+.es-stainf{fill:var(--es-stain)}
+.es-num{fill:var(--text-muted);font:500 13px var(--font-text)}
+.es-title{margin:0;font:300 26px/1.2 var(--font-display);letter-spacing:-0.02em;color:var(--text-title);text-wrap:balance}
+.es-copy{margin:10px 0 0;max-width:32ch;font:400 15px/1.5 var(--font-text);color:var(--text-muted);text-wrap:pretty}
+.es-actions{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 8px;margin-top:24px}
+.es-btn{min-height:50px;padding:0 26px;border-radius:var(--radius-full);font-size:16px}
+.es-btn-quiet{background:var(--surface-card);color:var(--text-title);border:var(--border-w-hairline) solid var(--border-hairline)}
+.es-btn-quiet:hover{background:var(--surface-sunken)}
+.es-link{min-height:44px;padding:0 16px;border:0;border-radius:var(--radius-full);background:none;color:var(--text-accent);font:500 14px var(--font-text);cursor:pointer}
+.es-link:hover{text-decoration:underline}
