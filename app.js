@@ -3300,91 +3300,126 @@ function drawImmersionAnim(ctx, tt, M, col, still) {
   }
 }
 
-/* Moka pot: water heats in the base over a small flame; when it is hot
-   enough, coffee rises up the column and spills into the top chamber,
-   which fills as the base empties, ending in the gurgle that says take it
-   off the heat. A moka recipe carries no pours, so the phases come from
-   the brew time: about half heating, then the flow, then the sputter. */
+/* Moka pot: an eight-sided aluminium pot on a burner, lid tipped open on
+   its hinge so the top chamber can be watched. The base stays solid
+   metal — the water in it is never seen, only its effect. About halfway
+   through the brew time coffee wells up out of the column in the middle
+   of the top chamber and its level climbs; near the end it pales and
+   sputters, the gurgle that says take it off the heat. A moka recipe
+   carries no pours, so the phases come from the brew time. */
 function mokaModel(plan) {
   return { kind: 'moka', total: plan.total };
 }
 
 function drawMokaAnim(ctx, tt, M, col, still) {
-  var T = M.total, u = tt / T;
-  var flow = animEase((u - 0.5) / 0.38);          // 0 → 1 across the brew
+  var u = tt / M.total;
+  var flow = animEase((u - 0.5) / 0.38);
   var gurgle = u > 0.84 && u < 1 ? Math.sin((u - 0.84) / 0.16 * Math.PI) : 0;
-  var x, i;
-  // Flame under the base while it heats and brews.
-  if (u < 1) {
-    for (i = 0; i < 7; i++) {
-      var fx = 116 + i * 11, fh = 10 + Math.sin(tt * 9 + i * 1.7) * 3 * (still ? 0 : 1);
-      var gf = ctx.createLinearGradient(0, 300 - fh, 0, 300);
-      gf.addColorStop(0, 'rgba(91,143,176,0)'); gf.addColorStop(1, 'rgba(91,143,176,.85)');
-      ctx.fillStyle = gf; ctx.beginPath(); ctx.moveTo(fx - 4, 300); ctx.quadraticCurveTo(fx, 300 - fh * 1.6, fx + 4, 300); ctx.fill();
-    }
+  var on = u < 1, i, k;
+  var metal = col.dark
+    ? ['#3E3B38', '#8F8B85', '#CFCBC5', '#77736D', '#34312E']
+    : ['#7E7A74', '#C9C5BF', '#F7F5F1', '#A9A49D', '#6B675F'];
+  function metalFill(x0, x1) {
+    var g = ctx.createLinearGradient(x0, 0, x1, 0);
+    g.addColorStop(0, metal[0]); g.addColorStop(0.28, metal[1]); g.addColorStop(0.45, metal[2]);
+    g.addColorStop(0.72, metal[3]); g.addColorStop(1, metal[4]);
+    return g;
   }
-  ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(92, 302); ctx.lineTo(208, 302); ctx.stroke();
+  // Facet edges: the octagon's corners seen side on, as faint verticals.
+  function facets(lt, rt, lb, rb, yt, yb) {
+    ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.lineWidth = 1;
+    [0.18, 0.5, 0.82].forEach(function (f) {
+      ctx.beginPath(); ctx.moveTo(animLerp(lt, rt, f), yt); ctx.lineTo(animLerp(lb, rb, f), yb); ctx.stroke();
+    });
+  }
 
-  // Base (water): an octagonal chamber, emptying as the coffee rises.
-  var bTop = 196, bBot = 290;
-  function base() { ctx.moveTo(110, bTop); ctx.lineTo(190, bTop); ctx.lineTo(200, bTop + 30); ctx.lineTo(194, bBot); ctx.lineTo(106, bBot); ctx.lineTo(100, bTop + 30); ctx.closePath(); }
-  ctx.save(); ctx.beginPath(); base(); ctx.clip();
-  var wLevel = animLerp(bTop + 26, bBot - 10, flow);
-  ctx.fillStyle = col.dark ? 'rgba(143,179,201,.30)' : 'rgba(91,143,176,.28)'; ctx.fillRect(100, wLevel, 100, bBot - wLevel);
-  if (!still && u < 0.95) {        // bubbles as it heats
-    var heat = animEase(u / 0.45);
-    for (i = 0; i < 10; i++) {
-      var life = 1 + animRnd(i) * 1.2, ph = ((tt + animRnd(i + 2) * life) % life) / life;
-      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.5 * heat * (1 - ph) + ')'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(animLerp(110, 190, animRnd(i + 13)), animLerp(bBot - 6, wLevel + 4, ph), 1.2 + ph * 1.5, 0, Math.PI * 2); ctx.stroke();
+  // Burner: a grate, and a ring of blue flames while it brews.
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(78, 296); ctx.lineTo(222, 296); ctx.stroke();
+  if (on) {
+    for (i = 0; i < 9; i++) {
+      var fx = 106 + i * 11, fh = 9 + (still ? 0 : Math.sin(tt * 11 + i * 1.9) * 2.5) + (i % 2 ? 2 : 0);
+      var gf = ctx.createLinearGradient(0, 296 - fh * 1.7, 0, 296);
+      gf.addColorStop(0, 'rgba(110,170,220,0)'); gf.addColorStop(0.55, 'rgba(110,170,220,.75)'); gf.addColorStop(1, 'rgba(70,120,210,.95)');
+      ctx.fillStyle = gf; ctx.beginPath(); ctx.moveTo(fx - 4, 296); ctx.quadraticCurveTo(fx - 1, 296 - fh, fx, 296 - fh * 1.7);
+      ctx.quadraticCurveTo(fx + 1, 296 - fh, fx + 4, 296); ctx.closePath(); ctx.fill();
     }
   }
-  ctx.restore();
-  ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-  ctx.beginPath(); base(); ctx.stroke();
-  // Waist and the top chamber with its spout and lid.
-  ctx.fillStyle = col.sunken; ctx.beginPath(); animRoundRect(ctx, 104, 186, 92, 10, 3); ctx.fill(); ctx.stroke();
-  var tTop = 86, tBot = 186;
-  function topCh() { ctx.moveTo(104, tBot); ctx.lineTo(96, tTop + 30); ctx.lineTo(104, tTop); ctx.lineTo(196, tTop); ctx.lineTo(204, tTop + 30); ctx.lineTo(196, tBot); ctx.closePath(); }
-  ctx.save(); ctx.beginPath(); topCh(); ctx.clip();
-  var cLevel = animLerp(tBot - 2, tBot - 64, flow);
-  if (flow > 0.01) {
-    var gc = ctx.createLinearGradient(0, cLevel, 0, tBot); gc.addColorStop(0, '#7A4A2A'); gc.addColorStop(1, '#24150C');
-    ctx.fillStyle = gc; ctx.beginPath(); ctx.moveTo(96, cLevel);
-    for (x = 96; x <= 204; x += 3) ctx.lineTo(x, cLevel + Math.sin(x * 0.12 + tt * 5) * (0.6 + gurgle * 2.4));
-    ctx.lineTo(204, tBot); ctx.lineTo(96, tBot); ctx.closePath(); ctx.fill();
+
+  // Base: solid, flaring towards the burner, with the safety valve.
+  var bT = 206, bB = 288;
+  ctx.fillStyle = metalFill(96, 204); ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(110, bT); ctx.lineTo(190, bT); ctx.lineTo(204, bB - 6); ctx.lineTo(200, bB); ctx.lineTo(100, bB); ctx.lineTo(96, bB - 6); ctx.closePath();
+  ctx.fill(); ctx.stroke(); facets(110, 190, 96, 204, bT, bB - 4);
+  ctx.fillStyle = metal[1]; ctx.beginPath(); ctx.arc(122, 240, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = metal[4]; ctx.beginPath(); ctx.arc(122, 240, 2, 0, Math.PI * 2); ctx.fill();
+
+  // Waist: the threaded joint between the two halves.
+  ctx.fillStyle = metalFill(108, 192); ctx.beginPath(); animRoundRect(ctx, 108, 192, 84, 15, 3); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,0,0,.22)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(110, 197); ctx.lineTo(190, 197); ctx.moveTo(110, 202); ctx.lineTo(190, 202); ctx.stroke();
+
+  // Handle: black, bolted to the top chamber on its right.
+  ctx.strokeStyle = col.dark ? '#0E0D0C' : '#1F1D1B'; ctx.lineWidth = 11; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(198, 122); ctx.lineTo(236, 128); ctx.quadraticCurveTo(244, 130, 242, 140); ctx.lineTo(234, 176); ctx.quadraticCurveTo(232, 184, 222, 182); ctx.lineTo(188, 178); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(206, 121); ctx.lineTo(234, 126); ctx.stroke();
+
+  // Top chamber: one piece with its pouring spout, flaring to the rim.
+  var rY = 106, tB = 192;
+  ctx.fillStyle = metalFill(84, 206); ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(114, tB); ctx.lineTo(98, rY + 8); ctx.lineTo(80, rY - 4); ctx.quadraticCurveTo(88, rY - 4, 98, rY);
+  ctx.lineTo(204, rY); ctx.lineTo(186, tB); ctx.closePath(); ctx.fill(); ctx.stroke();
+  facets(102, 204, 114, 186, rY + 2, tB);
+
+  // Looking in through the open top: the dark interior, the column's
+  // mouth in the middle, and the coffee's surface climbing towards the rim.
+  var oX = 151, oRx = 50, oRy = 13;
+  ctx.save(); ctx.beginPath(); ctx.ellipse(oX, rY, oRx, oRy, 0, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = col.dark ? '#0B0908' : '#2A2420'; ctx.fillRect(oX - oRx, rY - oRy, oRx * 2, oRy * 2);
+  ctx.strokeStyle = metal[3]; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(oX, rY - 1, oRx - 1, oRy - 1, 0, Math.PI, Math.PI * 2); ctx.stroke();
+  var depth = (1 - flow) * 22;
+  if (flow < 0.95) {        // the column's top, until the coffee covers it
+    ctx.fillStyle = metal[1]; ctx.beginPath(); ctx.ellipse(oX, rY + 6 + Math.min(depth, 10) * 0.2, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#120D09'; ctx.beginPath(); ctx.ellipse(oX, rY + 6 + Math.min(depth, 10) * 0.2, 5, 1.8, 0, 0, Math.PI * 2); ctx.fill();
   }
-  // The column, and the coffee welling out of its top.
-  ctx.fillStyle = col.card; ctx.fillRect(144, tBot - 74, 12, 74);
-  ctx.strokeStyle = col.strong; ctx.lineWidth = 1.5; ctx.strokeRect(144, tBot - 74, 12, 74);
-  if (flow > 0.01 && u < 1) {
-    var rise = gurgle > 0 ? 0.6 + 0.4 * Math.abs(Math.sin(tt * 7)) : 1;
-    ctx.fillStyle = gurgle > 0 ? 'rgba(201,162,122,.95)' : '#5A3520';
-    ctx.beginPath(); ctx.moveTo(144, tBot - 74);
-    ctx.quadraticCurveTo(136, tBot - 74 - 6 * rise, 130, Math.min(cLevel, tBot - 70));
-    ctx.lineTo(140, Math.min(cLevel, tBot - 70)); ctx.lineTo(150, tBot - 74 - 4 * rise); ctx.lineTo(160, Math.min(cLevel, tBot - 70));
-    ctx.lineTo(170, Math.min(cLevel, tBot - 70)); ctx.quadraticCurveTo(164, tBot - 74 - 6 * rise, 156, tBot - 74); ctx.closePath(); ctx.fill();
-    if (gurgle > 0 && !still) {
-      for (i = 0; i < 6; i++) {
-        var gp = ((tt * 2.5 + animRnd(i) * 2) % 1);
-        ctx.fillStyle = 'rgba(232,210,180,' + 0.7 * (1 - gp) * gurgle + ')';
-        ctx.beginPath(); ctx.arc(150 + (animRnd(i + 3) - 0.5) * 20, tBot - 78 - gp * 10, 1.4, 0, Math.PI * 2); ctx.fill();
+  if (flow > 0.01) {
+    var sy = rY + 2 + depth * 0.45;
+    var cg = ctx.createRadialGradient(oX, sy, 2, oX, sy, oRx);
+    cg.addColorStop(0, gurgle > 0.3 ? '#C9A27A' : '#8A5A36'); cg.addColorStop(1, '#3A2418');
+    ctx.fillStyle = cg; ctx.beginPath(); ctx.ellipse(oX, sy, oRx * (0.82 + flow * 0.16), oRy * (0.8 + flow * 0.18), 0, 0, Math.PI * 2); ctx.fill();
+    // Fresh coffee welling from the column, ringed with foam.
+    if (on && !still) {
+      var pulse = 0.6 + 0.4 * Math.sin(tt * (gurgle > 0 ? 14 : 5));
+      ctx.fillStyle = 'rgba(201,162,122,' + (0.55 + gurgle * 0.35) + ')';
+      ctx.beginPath(); ctx.ellipse(oX, sy, 9 + pulse * 3, 3 + pulse, 0, 0, Math.PI * 2); ctx.fill();
+      for (i = 0; i < 7; i++) {
+        var ph = ((tt * (1.2 + gurgle * 2) + animRnd(i) * 3) % 1), ang = animRnd(i + 4) * Math.PI * 2;
+        ctx.fillStyle = 'rgba(232,210,180,' + 0.6 * (1 - ph) + ')';
+        ctx.beginPath(); ctx.arc(oX + Math.cos(ang) * (8 + ph * 26), sy + Math.sin(ang) * (2 + ph * 6), 1 + ph, 0, Math.PI * 2); ctx.fill();
       }
     }
   }
   ctx.restore();
-  ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.beginPath(); topCh(); ctx.stroke();
-  ctx.fillStyle = col.card; ctx.beginPath(); ctx.moveTo(100, tTop); ctx.lineTo(200, tTop); ctx.lineTo(194, tTop - 12); ctx.lineTo(106, tTop - 12); ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.beginPath(); ctx.arc(150, tTop - 16, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(196, tTop + 4); ctx.lineTo(218, tTop - 6); ctx.lineTo(206, tTop + 18); ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.lineWidth = 7; ctx.strokeStyle = col.dark ? '#3A3633' : '#2A2723';
-  ctx.beginPath(); ctx.moveTo(98, tTop + 16); ctx.bezierCurveTo(66, tTop + 18, 64, tBot - 30, 98, tBot - 26); ctx.stroke();
-  // Steam from the spout once there is coffee up top.
-  if (flow > 0.3) {
-    for (var wv = 0; wv < 2; wv++) {
-      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.2 * Math.min(1, (flow - 0.3) * 2) * (still ? 0.5 : 1) + ')'; ctx.lineWidth = 2.5; ctx.beginPath();
-      for (var k = 0; k <= 10; k++) ctx[k ? 'lineTo' : 'moveTo'](216 + wv * 10 + Math.sin(tt * 1.2 + wv * 2 + k * 0.6) * (1.5 + k * 0.4), tTop - 10 - k * 2.6);
+  ctx.strokeStyle = metal[2]; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(oX, rY, oRx, oRy, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 1; ctx.stroke();
+
+  // Lid: tipped back on its hinge beside the handle, knob on top.
+  ctx.save(); ctx.translate(204, rY - 2); ctx.rotate(1.25);
+  ctx.fillStyle = metalFill(-110, 0); ctx.strokeStyle = col.strong; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-108, 0); ctx.lineTo(0, 0); ctx.lineTo(-6, -10); ctx.quadraticCurveTo(-54, -24, -102, -10); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col.dark ? '#0E0D0C' : '#1F1D1B'; ctx.beginPath(); animRoundRect(ctx, -62, -28, 16, 9, 4); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = metal[1]; ctx.strokeStyle = col.strong; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(204, rY - 2, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  // Steam off the open top once coffee is in.
+  if (flow > 0.25) {
+    for (var wv = 0; wv < 3; wv++) {
+      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.2 * Math.min(1, (flow - 0.25) * 2) * (still ? 0.5 : 1) + ')';
+      ctx.lineWidth = 2.5; ctx.beginPath();
+      for (k = 0; k <= 12; k++) ctx[k ? 'lineTo' : 'moveTo'](128 + wv * 22 + Math.sin(tt * 1.2 + wv * 2 + k * 0.6) * (1.5 + k * 0.45), rY - 8 - k * 2.8);
       ctx.stroke();
     }
   }
