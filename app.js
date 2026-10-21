@@ -2691,6 +2691,9 @@ function renderDetail(id, keepScroll) {
       '</div>' +
     '</div>' +
 
+    // Two columns on a wide screen: what you brew with on the left, how to
+    // brew it on the right. On a phone they simply stack.
+    '<div class="rd-cols"><div class="rd-main">' +
     '<div class="rd-chips">' +
       (me ? '<span class="rd-chip">' + brewerIcon(me) + esc(me.name) + '</span>' : '') +
       (st ? '<span class="rd-chip">' + esc(st.name) + '</span>' : '') +
@@ -2699,6 +2702,7 @@ function renderDetail(id, keepScroll) {
 
     doseCard +
     (tiles ? '<div class="rd-tiles">' + tiles + '</div>' : '') +
+    '</div><div class="rd-side">' +
 
     '<h2 class="rd-h2">' + esc(t(steps.length ? 'Pouring steps' : 'How to brew it')) + '</h2>' +
     (steps.length
@@ -2711,7 +2715,7 @@ function renderDetail(id, keepScroll) {
     (st && st.notes ? '<div class="rd-note"><span class="k">' + esc(t('About this style')) + '</span><p>' + esc(t(st.notes)) + '</p></div>' : '') +
     (r.notes ? '<div class="rd-note"><span class="k">' + esc(t('Personal notes')) + '</span><p>' + esc(r.notes) + '</p></div>' : '') +
     (specs ? '<h2 class="rd-h2">' + esc(t('Details')) + '</h2><dl class="rd-specs">' + specs + '</dl>' : '') +
-  '</div>' +
+  '</div></div></div>' +
     // A sibling of .detail, not a child: .detail animates on entry, and an
     // element with a transform is a containing block for fixed descendants.
     '<div class="detail-bar rd-bar glass" data-glass="6">' +
@@ -3717,6 +3721,11 @@ function openTimer(id) {
     cueSeg: null, warned: false, tick: 0
   };
   timer.sheet = timer.el.querySelector('.sheet-timer');
+  // Close and sound float over the page as it scrolls; the title between
+  // them steps out of the way once there's content passing under it.
+  timer.sheet.addEventListener('scroll', function () {
+    timer && timer.sheet.classList.toggle('is-scrolled', timer.sheet.scrollTop > 8);
+  }, { passive: true });
 
   openModal({
     render: function () { return timer.el; },

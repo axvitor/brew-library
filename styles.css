@@ -3032,3 +3032,48 @@ body:has(.gate-screen){padding-bottom:0}
 .sheet-timer.is-done .timer-next{display:none}
 .is-shot .timer-next{display:none}
 .is-single .timer-next{display:none}
+
+/* ---------- desktop: the full width ----------
+   The app is phone first; on a wide screen nothing is capped to a phone's
+   column any more. Each page spreads into the room instead: home's
+   recipes and the library's lists flow into as many columns as fit, a
+   recipe splits into what-you-brew-with beside how-to-brew-it, the
+   ranking sets its podium beside the list, and the account settings sit
+   two by two. */
+@media(min-width:861px){
+  .wrap{max-width:none;padding:0 40px}
+  .home,.rk,.rd,.account{max-width:none}
+
+  .hrows.hcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+
+  .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px 12px}
+
+  .rd-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:0 56px;align-items:start}
+  .rd-side > .rd-h2:first-child{margin-top:18px}
+  /* The brew bar sits under the left column it belongs to. */
+  .detail-bar.rd-bar{max-width:none;width:calc((100% - 56px) * 1 / 2.15);margin:30px 0 0}
+
+  .rk{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);column-gap:40px;align-items:start;
+    grid-template-areas:"head head" "hero tabs" "hero list" "hero note" "sec sec" "wait wait"}
+  .rk > .ranking-head{grid-area:head}
+  .rk > .rk-hero{grid-area:hero}
+  .rk > .rk-tabs{grid-area:tabs;margin-top:0}
+  .rk > .rk-list{grid-area:list}
+  .rk > .rk-note{grid-area:note}
+  .rk > .home-sec{grid-area:sec}
+  .rk > .rk-wait{grid-area:wait;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));overflow:visible;margin:8px 0 0;padding:0}
+  .rk > .rk-wait > *{width:auto;min-width:0}
+
+  .account{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 32px;align-items:start}
+  .account > .account-head,.account > .acc-card{grid-column:1 / -1}
+}
+
+/* ---------- timer: floating controls ----------
+   The timer scrolls inside its own sheet, so its head sticks to the top
+   of it: close and sound stay under your thumb however far down you are,
+   as glass buttons over the page. The head itself lets touches through
+   to what's beneath; only the buttons catch them. */
+.sheet-timer .sheet-head{position:sticky;top:0;z-index:6;pointer-events:none}
+.sheet-timer .sheet-head .tm-circ{pointer-events:auto}
+.sheet-timer .tm-title{transition:opacity var(--dur-base) var(--ease-standard)}
+.sheet-timer.is-scrolled .tm-title{opacity:0}
