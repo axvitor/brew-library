@@ -967,7 +967,7 @@ svg.ico-fill{fill:currentColor;stroke:none}
    Two surfaces: an inverse masthead carrying the recipe's identity, and a
    paper sheet carrying every number you read off it. The sheet overlaps
    the masthead so the page reads as one object rather than two bands. */
-.detail{padding:0 0 60px;animation:rise var(--dur-base) var(--ease-out) both}
+.detail{padding:0 0 60px}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 .detail-head{
@@ -1455,7 +1455,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
    Which bags were worth it. The top three carry the page on the inverse
    surface; everything below is a compact row, because a leaderboard whose
    every entry shouts has no leader. */
-.ranking{padding:26px 0 40px;display:flex;flex-direction:column;animation:cardIn var(--dur-slow) var(--ease-out) both}
+.ranking{padding:26px 0 40px;display:flex;flex-direction:column}
 .ranking-head{margin-bottom:24px}
 .ranking-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
 .ranking-head p{margin-top:10px;color:var(--text-muted);font:var(--type-body-sm);max-width:44ch}
@@ -1530,7 +1530,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 /* ---------- library view ----------
    A destination reached from the nav, so it sits in the page like home
    and account do rather than covering them. */
-.library{padding:26px 0 40px;display:flex;flex-direction:column;animation:cardIn var(--dur-slow) var(--ease-out) both}
+.library{padding:26px 0 40px;display:flex;flex-direction:column}
 .library-head{margin-bottom:22px}
 .library-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
 .library-head p{margin-top:10px;color:var(--text-muted);font:var(--type-body-sm);max-width:52ch}
@@ -1865,6 +1865,59 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .gate-card .bean{width:40px;height:40px;stroke:var(--action-primary);fill:none;stroke-width:1.5;margin-bottom:18px}
 .gate-card h1{font:var(--weight-regular) var(--text-display-3)/var(--leading-snug) var(--font-display);letter-spacing:var(--tracking-display)}
 .gate-msg{color:var(--text-muted);margin:10px auto 24px;font:var(--type-body-sm);max-width:34ch}
+
+/* ---------- page transitions ----------
+   app.js sets html[data-nav] to the kind of move and runs a view
+   transition; these are its animations. Phone first: a recipe is pushed
+   in full width from the right like a native screen, the page under it
+   easing left and dimming, and popped back out the same way. Tabs don't
+   push — they drift 24px in from the side of the tab you picked while the
+   old page fades. The tab bar and a recipe's Start brewing bar are
+   snapshotted on their own so they hold still instead of sliding with
+   the page. Reduced motion skips all of this in app.js. */
+.appnav{view-transition-name:appnav}
+@media(max-width:860px){ .detail-bar{view-transition-name:detailbar} }
+
+::view-transition-old(root),
+::view-transition-new(root){mix-blend-mode:normal;animation-duration:380ms;animation-timing-function:cubic-bezier(.22,.8,.24,1);animation-fill-mode:both}
+
+html[data-nav="push"]::view-transition-old(root){animation-name:navBehind}
+html[data-nav="push"]::view-transition-new(root){animation-name:navFromRight;box-shadow:-12px 0 32px rgba(0,0,0,.18)}
+html[data-nav="pop"]::view-transition-old(root){z-index:1;animation-name:navToRight;box-shadow:-12px 0 32px rgba(0,0,0,.18)}
+html[data-nav="pop"]::view-transition-new(root){animation-name:navFromBehind}
+
+html[data-nav^="tab"]::view-transition-old(root){animation-duration:180ms;animation-timing-function:ease-out;animation-name:navFadeOut}
+html[data-nav^="tab"]::view-transition-new(root){animation-duration:320ms}
+html[data-nav="tab-fwd"]::view-transition-new(root){animation-name:navDriftFromRight}
+html[data-nav="tab-back"]::view-transition-new(root){animation-name:navDriftFromLeft}
+
+html[data-nav="fade"]::view-transition-old(root){animation-duration:200ms;animation-name:navFadeOut}
+html[data-nav="fade"]::view-transition-new(root){animation-duration:300ms;animation-name:fadeIn}
+
+/* The Start brewing bar travels with its recipe, in and out. */
+html[data-nav="push"]::view-transition-new(detailbar){animation:navFromRight 380ms cubic-bezier(.22,.8,.24,1) both}
+html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms cubic-bezier(.22,.8,.24,1) both}
+
+@keyframes navFromRight{from{transform:translateX(100%)}}
+@keyframes navToRight{to{transform:translateX(100%)}}
+@keyframes navBehind{to{transform:translateX(-28%);opacity:.55}}
+@keyframes navFromBehind{from{transform:translateX(-28%);opacity:.55}}
+@keyframes navDriftFromRight{from{opacity:0;transform:translateX(24px)}}
+@keyframes navDriftFromLeft{from{opacity:0;transform:translateX(-24px)}}
+@keyframes navFadeOut{to{opacity:0}}
+
+/* On a wide screen a full-width push is a lot of moving glass; recipes
+   drift in like tabs do. */
+@media(min-width:861px){
+  html[data-nav="push"]::view-transition-old(root),
+  html[data-nav="pop"]::view-transition-old(root){animation-duration:180ms;animation-timing-function:ease-out;animation-name:navFadeOut;box-shadow:none}
+  html[data-nav="push"]::view-transition-new(root){animation-duration:320ms;animation-name:navDriftFromRight;box-shadow:none}
+  html[data-nav="pop"]::view-transition-new(root){animation-duration:320ms;animation-name:navDriftFromLeft}
+}
+
+/* Fallback where view transitions aren't supported. Opacity only: a
+   transform here would unpin the fixed and sticky bars inside the view. */
+.view-fade{animation:fadeIn var(--dur-slow) var(--ease-out) both}
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce){

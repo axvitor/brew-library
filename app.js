@@ -1700,7 +1700,63 @@ function renderFirebaseError() {
   renderGate(t('Can’t connect'), 'The sync service didn’t load — check your connection and reload the page.', '');
 }
 
+/* ---- page transitions ----
+   Arriving somewhere new plays a transition, phone first: a recipe slides
+   in from the right over the page you came from and slides back out to
+   the right when you leave it; switching tabs drifts the new page in from
+   the side of the tab you picked. Re-renders of the page already shown
+   (a keystroke, a data refresh) stay instant.
+
+   It runs on the View Transitions API, which animates snapshots rather
+   than the live page, so the pinned bars (the tab bar, a recipe's Start
+   brewing bar, sticky filters) are never moved by a transform. Browsers
+   without it get a plain fade. */
+var NAV_TABS = ['home', 'library', 'ranking', 'account'];
+var shownRoute = null, navPending = false, navToken = 0, uaSwipeAt = 0;
+var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+// Safari's edge swipe back already slides the page; don't slide it twice.
+window.addEventListener('popstate', function (ev) { if (ev.hasUAVisualTransition) uaSwipeAt = Date.now(); });
+
+function routeKey() {
+  if (authPhase !== 'ready') return 'gate';
+  var hash = location.hash || '#/';
+  if (hash.indexOf('#/r/') === 0) return hash;
+  return { '#/account': 'account', '#/library': 'library', '#/ranking': 'ranking' }[hash] || 'home';
+}
+
+function navKind(from, to) {
+  if (from === 'gate' || to === 'gate') return 'fade';
+  if (to.indexOf('#/r/') === 0) return 'push';
+  if (from.indexOf('#/r/') === 0) return 'pop';
+  return NAV_TABS.indexOf(to) > NAV_TABS.indexOf(from) ? 'tab-fwd' : 'tab-back';
+}
+
 function render() {
+  var from = shownRoute, to = routeKey();
+  if (from === to) {
+    // A transition about to paint will render the latest state anyway.
+    if (!navPending) renderPage(false);
+    return;
+  }
+  shownRoute = to;
+  var kind = from ? navKind(from, to) : '';
+  var update = function () { navPending = false; renderPage(kind !== 'pop'); };
+  if (!kind || reduceMotion.matches || document.hidden || Date.now() - uaSwipeAt < 1000) { update(); return; }
+  if (!document.startViewTransition) {
+    update();
+    view.classList.remove('view-fade'); void view.offsetWidth; view.classList.add('view-fade');
+    return;
+  }
+  var root = document.documentElement, token = ++navToken;
+  root.setAttribute('data-nav', kind);
+  navPending = true;
+  var vt = document.startViewTransition(update);
+  vt.finished.finally(function () { if (token === navToken) root.removeAttribute('data-nav'); });
+}
+
+// arriving: the page is new on screen, so home plays its entrance.
+function renderPage(arriving) {
   updateNav();
 
   if (authPhase === 'loading') { renderLoading(); return; }
@@ -1716,7 +1772,7 @@ function render() {
   else if (hash === '#/account') renderAccount();
   else if (hash === '#/library') renderLibrary();
   else if (hash === '#/ranking') renderRanking();
-  else renderHome(true);
+  else renderHome(arriving);
   closeMenu();
 }
 
