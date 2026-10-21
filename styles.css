@@ -2766,41 +2766,13 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 @keyframes steamRise{0%{opacity:0;transform:translateY(4px)}40%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){.loading-card .steam path{animation:none}}
 
-/* ---------- timer: the cone fills ---------- */
+/* ---------- timer: clock beside the water or dose ---------- */
 .tm-clock.is-split{flex-direction:row;justify-content:space-between;align-items:center;padding:clamp(8px,2vh,18px) 8px 0}
 .tm-time,.tm-water{display:flex;flex-direction:column}
 .tm-water{align-items:flex-end}
 .tm-clock.is-split .timer-elapsed{font-size:clamp(60px,20vw,84px)}
 .tm-water .timer-poured{font:var(--weight-thin) 34px/1 var(--font-text);letter-spacing:-0.03em;color:var(--text-title);font-variant-numeric:tabular-nums}
 .tm-water .timer-poured small{font-size:14px;color:var(--text-muted);letter-spacing:0}
-.tm-cone{display:flex;justify-content:center;margin-top:clamp(4px,1.5vh,14px)}
-.tm-cone svg{width:auto;height:min(270px,31vh);display:block;overflow:visible}
-.cone-stream{fill:none;stroke:#8FB3C9;stroke-width:3;stroke-linecap:round;opacity:0;transition:opacity .4s}
-.is-pouring .cone-stream{opacity:.9}
-.cone-body{fill:var(--surface-card);stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
-.cone-liquid{fill:#6B4226}
-.cone-crema{fill:none;stroke:#C9A27A;stroke-width:3;stroke-linecap:round}
-.cone-bed{fill:#3A2418}
-.cone-bubbles circle{fill:none;stroke:#C9A27A;stroke-width:1.2;opacity:0;transition:opacity .4s}
-.is-bloom.is-running .cone-bubbles circle{opacity:.75;animation:bubble 1.8s ease-in-out infinite}
-.is-bloom.is-running .cone-bubbles circle:nth-child(2){animation-delay:.6s}
-.is-bloom.is-running .cone-bubbles circle:nth-child(3){animation-delay:1.2s}
-@keyframes bubble{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-.cone-target{fill:none;stroke:var(--text-accent);stroke-width:1.5;stroke-dasharray:4 5}
-.cone-target-k{font:var(--weight-medium) 12px var(--font-text);fill:var(--text-accent)}
-.cone-tip{fill:var(--surface-sunken);stroke:var(--border-strong);stroke-width:1.5}
-.cone-drip{fill:none;stroke:#6B4226;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:3 5;opacity:0}
-.is-running .cone-drip{opacity:1;animation:drip .9s linear infinite}
-@keyframes drip{to{stroke-dashoffset:-8}}
-.cone-cup{fill:none;stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
-.cone-cup-fill{fill:#4A2B18}
-[data-theme="light"] .cone-liquid{fill:#8A5A36}
-[data-theme="light"] .cone-bed{fill:#4A2B18}
-[data-theme="light"] .cone-cup-fill{fill:#6B4226}
-[data-theme="light"] .cone-stream{stroke:#5B8FB0}
-@media (prefers-reduced-motion:reduce){
-  .is-running .cone-drip,.is-bloom.is-running .cone-bubbles circle{animation:none}
-}
 
 /* Brew complete: a steaming cup and the cup score in beans. */
 .tm-done-cup,.tm-rate{display:none}
@@ -2815,10 +2787,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .tm-rate button{width:44px;height:44px;display:flex;align-items:center;justify-content:center;padding:0}
 .tm-rate button svg{width:24px;height:24px}
 .tm-rate button.on svg .crease{stroke:var(--bg-app)}
-.sheet-timer.is-done .tm-cone .cone-liquid,.sheet-timer.is-done .tm-cone .cone-crema{opacity:.25}
 /* Done: the cone steps back so the cup and the beans fit. */
-.sheet-timer.is-done .tm-cone svg{height:min(150px,17vh)}
-.sheet-timer.is-done .timer-next,.sheet-timer.is-done .cone-target,.sheet-timer.is-done .cone-target-k{display:none}
 .sheet-timer.is-done .timer-now{gap:4px;padding-top:14px;padding-bottom:12px}
 .sheet-timer.is-done .tm-done-cup{width:60px;height:54px}
 /* A label grid with an odd count: no rule under the last row. */
@@ -2999,21 +2968,12 @@ body:has(.gate-screen){padding-bottom:0}
    Leave button already says this one bites. */
 .dialog{border-top:var(--border-w-hairline) solid var(--border-hairline)}
 
-/* ---------- timer: espresso shot ---------- */
-.tm-shot{display:flex;justify-content:center;margin-top:clamp(4px,1.5vh,14px)}
-.tm-shot svg{width:auto;height:min(270px,31vh);display:block;overflow:visible}
-.shot-head{fill:var(--surface-sunken);stroke:var(--border-strong);stroke-width:2}
-.shot-pf{fill:var(--surface-card);stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
-.shot-spout{fill:var(--surface-sunken);stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
-.shot-stream{fill:none;stroke:#6B4226;stroke-width:3.5;stroke-linecap:round;opacity:0;transition:opacity .35s}
-.is-pouring .shot-stream{opacity:1;stroke-dasharray:6 4;animation:shotFlow .5s linear infinite}
-@keyframes shotFlow{to{stroke-dashoffset:-10}}
-.shot-liquid{fill:#4A2B18;transition:y .25s linear}
-.shot-crema{fill:#C9A27A;opacity:0;transition:opacity .4s,y .25s linear}
-.shot-cup{fill:none;stroke:var(--text-title);stroke-width:2}
-.shot-saucer{stroke:var(--border-strong);stroke-width:2;stroke-linecap:round}
-[data-theme="light"] .shot-liquid{fill:#6B4226}
-@media (prefers-reduced-motion:reduce){.is-pouring .shot-stream{animation:none;stroke-dasharray:none}}
-/* One continuous pull: no "next step" line. */
+
+/* ---------- timer: the brew drawing ----------
+   One canvas, drawn by app.js from the brew model; it keeps the cone's
+   proportions and steps back when the brew is done. */
+.tm-anim{display:flex;justify-content:center;margin-top:clamp(4px,1.5vh,14px)}
+.tm-anim canvas{display:block;height:min(280px,32vh);aspect-ratio:300/310;width:auto;max-width:100%}
+.sheet-timer.is-done .tm-anim canvas{height:min(160px,18vh)}
+.sheet-timer.is-done .timer-next{display:none}
 .is-shot .timer-next{display:none}
-.is-shot .sheet-timer.is-done .tm-shot svg{height:min(170px,20vh)}

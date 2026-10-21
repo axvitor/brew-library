@@ -2755,51 +2755,305 @@ var DONE_CUP = '<svg viewBox="0 0 72 64" fill="none" stroke-linecap="round">' +
   '<path class="dc-coffee" d="M17 28h34"/><path class="dc-saucer" d="M8 60h56"/></svg>';
 var TM_PAUSE = '<svg viewBox="0 0 24 24" class="ico ico-fill"><rect x="6.5" y="5" width="3.5" height="14" rx="1"/><rect x="14" y="5" width="3.5" height="14" rx="1"/></svg>';
 
-/* The pour-over cone, side on. The coffee in it rises with the water
-   poured, a dashed line marks where this pour should top out, and the cup
-   underneath fills as the brew draws down. Geometry in a 300×300 box:
-   the cone's walls run from (58,70)–(242,70) down to (128,196)–(172,196). */
-var CONE = { top: 70, bot: 196, full: 84, empty: 192 };
-function coneX(y) { var k = (y - CONE.top) * (70 / 126); return [58 + k, 242 - k]; }
-function coneLevel(frac) { return CONE.empty - Math.max(0, Math.min(1, frac)) * (CONE.empty - CONE.full); }
+/* ---- brew animation ----
+   The timer's illustration, drawn on a canvas from a small model of the
+   brew, and always as a pure function of the elapsed time — so pause,
+   skip and restart show exactly the right moment.
 
-function coneSVG() {
-  return '<div class="tm-cone"><svg viewBox="0 0 300 300" role="img" aria-label="' + esc(t('Water in the cone')) + '">' +
-    '<path class="cone-stream" d="M150 0 C150 30 152 50 150 66"/>' +
-    '<path class="cone-body" d="M58 70 L242 70 L172 196 L128 196 Z"/>' +
-    '<path class="cone-liquid" d=""/>' +
-    '<path class="cone-crema" d=""/>' +
-    '<path class="cone-bed" d="M118 178 L182 178 L172 196 L128 196 Z"/>' +
-    '<g class="cone-bubbles"><circle cx="132" cy="170" r="3"/><circle cx="158" cy="174" r="2.2"/><circle cx="172" cy="168" r="2.6"/></g>' +
-    '<path class="cone-target" d=""/>' +
-    '<text class="cone-target-k" x="0" y="0"></text>' +
-    '<path class="cone-tip" d="M140 200 L160 200 L156 212 L144 212 Z"/>' +
-    '<path class="cone-drip" d="M150 214 L150 226"/>' +
-    '<path class="cone-cup" d="M100 230 L200 230 L196 288 Q196 294 190 294 L110 294 Q104 294 104 288 Z"/>' +
-    '<path class="cone-cup-fill" d=""/>' +
-  '</svg></div>';
+   Pour-over: each pour adds water at its own rate (over its `pour`
+   seconds, or across the whole step); the dry bed soaks up about twice
+   the dose first; what stands in the cone drains through the bed at
+   k·√held, so a full cone runs fast and the end trickles. Drops fall from
+   the tip into a glass server that fills, and steams once warm.
+
+   Espresso: pre-infusion with nothing coming out, drops swelling at the
+   spouts, two tiger-striped streams, then thinning and paling as the shot
+   blondes. The app keeps no yield, so the cup fills towards a 1:2 shot. */
+var ANIM_W = 300, ANIM_H = 310;
+
+function animEase(k) { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); }
+function animLerp(a, b, k) { return a + (b - a) * k; }
+function animRnd(i) { var x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+function animMix(c1, c2, k) {
+  var a = parseInt(c1.slice(1), 16), b = parseInt(c2.slice(1), 16);
+  return 'rgb(' + Math.round(animLerp(a >> 16, b >> 16, k)) + ',' + Math.round(animLerp((a >> 8) & 255, (b >> 8) & 255, k)) + ',' +
+    Math.round(animLerp(a & 255, b & 255, k)) + ')';
+}
+function animRoundRect(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
 }
 
-/* Espresso, side on: the group head and portafilter, two streams, and the
-   cup filling with espresso under a band of crema as the shot runs. A
-   shot is one continuous pull, so there are no steps — just the clock
-   and the cup. The cup's insides are a clip path the fill is drawn
-   through, so the level can be a plain rectangle. */
-function shotSVG() {
-  return '<div class="tm-shot"><svg viewBox="0 0 300 290" role="img" aria-label="' + esc(t('Espresso pouring into the cup')) + '">' +
-    '<defs><clipPath id="shotCupClip"><path d="M102 198 H198 V236 A26 26 0 0 1 172 262 H128 A26 26 0 0 1 102 236 Z"/></clipPath></defs>' +
-    '<rect class="shot-head" x="70" y="0" width="160" height="34" rx="6"/>' +
-    '<path class="shot-pf" d="M84 34 H216 L208 66 Q206 74 198 74 H102 Q94 74 92 66 Z"/>' +
-    '<path class="shot-pf" d="M216 46 H286 Q292 46 292 52 V58 Q292 64 286 64 H212"/>' +
-    '<path class="shot-spout" d="M128 74 V86 H140 V74 M160 74 V86 H172 V74"/>' +
-    '<path class="shot-stream" d="M134 88 Q133 150 140 216"/>' +
-    '<path class="shot-stream" d="M166 88 Q167 150 160 216"/>' +
-    '<g clip-path="url(#shotCupClip)"><rect class="shot-liquid" x="100" y="264" width="100" height="70"/>' +
-      '<rect class="shot-crema" x="100" y="264" width="100" height="7"/></g>' +
-    '<path class="shot-cup" d="M100 196 H200 V236 A28 28 0 0 1 172 264 H128 A28 28 0 0 1 100 236 Z"/>' +
-    '<path class="shot-cup" d="M200 206 H210 A12 12 0 0 1 210 230 H200"/>' +
-    '<path class="shot-saucer" d="M78 276 H222"/>' +
-  '</svg></div>';
+function animHTML(label) {
+  return '<div class="tm-anim"><canvas role="img" aria-label="' + esc(label) + '"></canvas></div>';
+}
+
+function pourModel(plan, dose) {
+  var pours = [];
+  plan.segs.forEach(function (sg) {
+    if (!sg.water) return;
+    var len = sg.end - sg.start;
+    pours.push({ at: sg.start, g: sg.water, dur: sg.pour ? Math.min(sg.pour, len) : len, upto: sg.upto });
+  });
+  var water = plan.water, absorb = Math.min((Number(dose) || water / 16) * 2, pours.length ? pours[0].g * 0.8 : 0);
+  var k = 0.29 * Math.sqrt(water / 250);
+  var dt = 0.05, n = Math.ceil(plan.total / dt) + 1, held = [], out = [], soaked = [], rate = [], drops = [];
+  var h = 0, o = 0, s = 0, next = 1.4;
+  for (var i = 0; i < n; i++) {
+    var tt = i * dt, inflow = 0;
+    pours.forEach(function (q) { if (tt >= q.at && tt < q.at + q.dur) inflow += q.g / q.dur; });
+    var add = inflow * dt, soak = Math.min(add, absorb - s);
+    s += soak; h += add - soak;
+    var r = h > 0 ? Math.min(h / dt, k * Math.sqrt(h)) : 0;
+    h -= r * dt; o += r * dt;
+    while (o >= next) { drops.push(tt); next += 1.4; }
+    held.push(h); out.push(o); soaked.push(s); rate.push(r);
+  }
+  return { kind: 'pour', dt: dt, pours: pours, water: water, absorb: absorb, held: held, out: out, soaked: soaked, rate: rate, drops: drops,
+    bloomEnd: pours.length > 1 ? pours[1].at : plan.total };
+}
+
+function shotProfile(u) {       // flow over a 28 s shot, by its own clock
+  if (u < 6) return 0;
+  if (u < 9) return animLerp(0.15, 1.2, animEase((u - 6) / 3));
+  if (u < 24) return animLerp(1.2, 1.75, animEase((u - 9) / 5));
+  return animLerp(1.75, 0.9, animEase((u - 24) / 4));
+}
+function shotModel(plan, dose) {
+  var T = plan.total, dt = 0.02, n = Math.ceil(T / dt) + 1, cum = [], y = 0;
+  for (var i = 0; i < n; i++) { cum.push(y); y += shotProfile(i * dt / T * 28) * dt; }
+  var yieldG = (Number(dose) || 18) * 2, scale = y ? yieldG / y : 0;
+  return { kind: 'shot', dt: dt, total: T, yieldG: yieldG, cum: cum.map(function (v) { return v * scale; }) };
+}
+
+function animAt(arr, dt, tt) { return arr[Math.max(0, Math.min(arr.length - 1, Math.round(tt / dt)))]; }
+
+function animColors() {
+  var cs = getComputedStyle(document.documentElement);
+  var dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  return {
+    card: cs.getPropertyValue('--surface-card').trim(), sunken: cs.getPropertyValue('--surface-sunken').trim(),
+    strong: cs.getPropertyValue('--border-strong').trim(), accent: cs.getPropertyValue('--text-accent').trim(),
+    paper: dark ? 'rgba(237,235,231,.07)' : 'rgba(26,24,22,.04)', rib: dark ? 'rgba(237,235,231,.05)' : 'rgba(26,24,22,.06)',
+    water: dark ? 'rgba(143,179,201,.9)' : 'rgba(91,143,176,.9)', glass: dark ? 'rgba(237,235,231,.75)' : 'rgba(26,24,22,.7)',
+    steam: dark ? '237,235,231' : '107,103,95', wood: dark ? '#6B4A33' : '#8A6A4E'
+  };
+}
+
+function animDraw(e) {
+  if (!timer || !timer.anim) return;
+  var cv = timer.el.querySelector('.tm-anim canvas');
+  if (!cv) return;
+  var dpr = window.devicePixelRatio || 1, w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
+  if (!w || !h) return;
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  var ctx = cv.getContext('2d');
+  ctx.setTransform(w / ANIM_W, 0, 0, h / ANIM_H, 0, 0);
+  ctx.clearRect(0, 0, ANIM_W, ANIM_H);
+  var theme = document.documentElement.getAttribute('data-theme');
+  if (!timer.animCol || timer.animTheme !== theme) { timer.animCol = animColors(); timer.animTheme = theme; }
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (timer.anim.kind === 'pour') drawPourAnim(ctx, e, timer.anim, timer.animCol, still);
+  else drawShotAnim(ctx, e, timer.anim, timer.animCol, still);
+}
+
+function drawPourAnim(ctx, tt, M, col, still) {
+  var C = { top: 70, bot: 190, l0: 58, r0: 242, l1: 128, r1: 172 };
+  function cx(y) { var k = (y - C.top) / (C.bot - C.top); return [animLerp(C.l0, C.l1, k), animLerp(C.r0, C.r1, k)]; }
+  // Grams standing in the cone → surface height: a cone's volume grows
+  // with the cube of its depth, so height goes with the cube root.
+  function levelY(g) { var f = Math.cbrt(Math.max(0, Math.min(1, g / (M.water * 1.2)))); return C.bot - 14 - f * (C.bot - 14 - 80); }
+  var pour = null; M.pours.forEach(function (q) { if (tt >= q.at && tt < q.at + q.dur) pour = q; });
+  var held = animAt(M.held, M.dt, tt), wet = M.absorb ? animAt(M.soaked, M.dt, tt) / M.absorb : 1;
+  var out = animAt(M.out, M.dt, tt), rate = animAt(M.rate, M.dt, tt), x, k;
+
+  // Server, behind the cone's tip.
+  var sx0 = 92, sx1 = 208, sTop = 222, sBot = 300;
+  var sf = Math.max(0, Math.min(1, out / Math.max(1, M.water - M.absorb))), sy = sBot - 6 - sf * 58;
+  var wav = function (xx) { return sy + Math.sin(xx * 0.12 + tt * 3) * (rate > 0.5 ? 1.2 : 0.4); };
+  ctx.save(); ctx.beginPath(); animRoundRect(ctx, sx0, sTop, sx1 - sx0, sBot - sTop, 16); ctx.clip();
+  if (out > 0.5) {
+    var g1 = ctx.createLinearGradient(0, sy, 0, sBot); g1.addColorStop(0, '#7A4A2A'); g1.addColorStop(1, '#2E1A0F');
+    ctx.fillStyle = g1; ctx.beginPath(); ctx.moveTo(sx0, sy);
+    for (x = sx0; x <= sx1; x += 4) ctx.lineTo(x, wav(x));
+    ctx.lineTo(sx1, sBot); ctx.lineTo(sx0, sBot); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(201,162,122,.55)'; ctx.lineWidth = 1.5; ctx.beginPath();
+    for (x = sx0; x <= sx1; x += 4) ctx[x === sx0 ? 'moveTo' : 'lineTo'](x, wav(x));
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.beginPath(); animRoundRect(ctx, sx0, sTop, sx1 - sx0, sBot - sTop, 16); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(sx0 + 8, sTop + 10, 5, sBot - sTop - 30);
+
+  var steamA = Math.max(0, Math.min(1, (out - 40) / 60)) * (still ? 0.5 : 1);
+  if (steamA > 0) {
+    ctx.lineCap = 'round';
+    for (var wv = 0; wv < 3; wv++) {
+      ctx.strokeStyle = 'rgba(' + col.steam + ',' + (0.22 * steamA) + ')'; ctx.lineWidth = 3; ctx.beginPath();
+      for (k = 0; k <= 12; k++) ctx[k ? 'lineTo' : 'moveTo'](130 + wv * 20 + Math.sin(tt * 0.9 + wv * 2.1 + k * 0.5) * (2 + k * 0.5), sTop - 4 - k * 2.6);
+      ctx.stroke();
+    }
+  }
+
+  // Drops from the tip, or a thin stream when it runs fast.
+  ctx.fillStyle = '#5A3520';
+  if (rate > 2.2) {
+    ctx.strokeStyle = '#5A3520'; ctx.lineWidth = Math.max(1.5, Math.min(3.2, rate * 0.6));
+    ctx.beginPath(); ctx.moveTo(150, 204); ctx.lineTo(150, sy); ctx.stroke();
+  } else {
+    M.drops.forEach(function (bt) {
+      var age = tt - bt; if (age < 0 || age > 0.6) return;
+      var y = 206 + 350 * age * age; if (y > sy) return;
+      ctx.beginPath(); ctx.ellipse(150, y, 2.2, 3.2, 0, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  // Cone and filter paper with faint spiral ribs.
+  ctx.lineJoin = 'round'; ctx.fillStyle = col.card; ctx.strokeStyle = col.strong; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(C.l0 - 8, C.top - 4); ctx.lineTo(C.r0 + 8, C.top - 4); ctx.lineTo(C.r1 + 4, C.bot + 4);
+  ctx.lineTo(C.r1 - 8, 204); ctx.lineTo(C.l1 + 8, 204); ctx.lineTo(C.l1 - 4, C.bot + 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col.paper; ctx.beginPath();
+  ctx.moveTo(C.l0, C.top); ctx.lineTo(C.r0, C.top); ctx.lineTo(C.r1, C.bot); ctx.lineTo(C.l1, C.bot); ctx.closePath(); ctx.fill();
+  ctx.save(); ctx.clip(); ctx.strokeStyle = col.rib; ctx.lineWidth = 1;
+  for (var rb = -6; rb <= 6; rb++) { ctx.beginPath(); ctx.moveTo(150 + rb * 16, C.top); ctx.quadraticCurveTo(150 + rb * 9, 130, 150 + rb * 3.5, C.bot); ctx.stroke(); }
+
+  // The bed darkens as it wets, and domes while it blooms.
+  var B = M.bloomEnd, bloomK = tt < B ? animEase(tt / 6) * (1 - animEase((tt - (B - 15)) / 15)) : 0;
+  var bedTop = C.bot - 18, b0 = cx(bedTop)[0], b1 = cx(bedTop)[1];
+  ctx.fillStyle = animMix('#9C7A5A', '#3A2418', animEase(wet)); ctx.beginPath();
+  ctx.moveTo(b0, bedTop); ctx.quadraticCurveTo(150, bedTop - 14 * bloomK, b1, bedTop);
+  ctx.lineTo(C.r1, C.bot); ctx.lineTo(C.l1, C.bot); ctx.closePath(); ctx.fill();
+  for (var gi = 0; gi < 70; gi++) {
+    ctx.fillStyle = 'rgba(0,0,0,' + (0.18 + animRnd(gi + 7) * 0.2) + ')';
+    ctx.fillRect(animLerp(b0 + 4, b1 - 4, animRnd(gi)), animLerp(bedTop + 2, C.bot - 1, animRnd(gi + 99)), 1.4, 1.4);
+  }
+
+  // Standing coffee under a moving surface, rippled where the pour lands.
+  if (held > 0.4) {
+    var ly = Math.min(levelY(held), bedTop - 2), lx = cx(ly), calm = pour ? 1.6 : 0.5;
+    var surf = function (xx) { return ly + Math.sin(xx * 0.09 + tt * 4) * calm + Math.sin(xx * 0.23 - tt * 2.5) * calm * 0.5; };
+    var g2 = ctx.createLinearGradient(0, ly, 0, bedTop); g2.addColorStop(0, 'rgba(154,107,69,.82)'); g2.addColorStop(1, 'rgba(74,43,24,.95)');
+    ctx.fillStyle = g2; ctx.beginPath(); ctx.moveTo(lx[0], ly);
+    for (x = lx[0]; x <= lx[1]; x += 3) ctx.lineTo(x, surf(x));
+    ctx.lineTo(cx(bedTop)[1], bedTop); ctx.quadraticCurveTo(150, bedTop - 14 * bloomK, cx(bedTop)[0], bedTop); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(217,185,143,.9)'; ctx.lineWidth = 2; ctx.beginPath();
+    for (x = lx[0] + 2; x <= lx[1] - 2; x += 3) ctx[x === lx[0] + 2 ? 'moveTo' : 'lineTo'](x, surf(x));
+    ctx.stroke();
+    if (pour && !still) {
+      var land = 150 + Math.sin((tt - pour.at) * 2.2) * 26 * animEase((tt - pour.at) / 1.5);
+      for (var ri = 0; ri < 4; ri++) {
+        var age = ((tt * 4 + ri) % 4) / 4;
+        ctx.strokeStyle = 'rgba(232,210,180,' + (0.55 * (1 - age)) + ')'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.ellipse(land, ly + 1, 4 + age * 26, (4 + age * 26) * 0.22, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+  }
+  // Bloom bubbles: gas leaving the fresh grounds.
+  if (bloomK > 0.05 && !still) {
+    for (var bi = 0; bi < 14; bi++) {
+      var life = 1.6 + animRnd(bi) * 1.4, ph = ((tt + animRnd(bi + 3) * life) % life) / life;
+      ctx.strokeStyle = 'rgba(217,185,143,' + (0.8 * bloomK * (1 - ph)) + ')'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(animLerp(b0 + 10, b1 - 10, animRnd(bi + 11)), bedTop - 4 - 12 * bloomK - ph * 6, 1.5 + ph * 2.5, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(C.l0 - 8, C.top - 4); ctx.lineTo(C.r0 + 8, C.top - 4); ctx.stroke();
+
+  // This pour's target: where the coffee will stand when it is in — read
+  // from the same model as the liquid, so the level meets the line.
+  if (pour) {
+    var ty = Math.min(levelY(animAt(M.held, M.dt, pour.at + pour.dur)), bedTop - 2), tx = cx(ty);
+    ctx.setLineDash([4, 5]); ctx.strokeStyle = col.accent; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(tx[0] + 6, ty); ctx.lineTo(tx[1] - 6, ty); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = col.accent; ctx.font = '500 12px "Albert Sans", sans-serif'; ctx.fillText(pour.upto + ' g', tx[1] + 2, ty + 4);
+    // The kettle stream eases in and out, and circles as it pours.
+    var into = tt - pour.at, k1 = animEase(into / 0.5) * (1 - animEase((into - pour.dur + 0.5) / 0.5));
+    var lyNow = held > 0.4 ? Math.min(levelY(held), bedTop - 2) : bedTop - 10 * bloomK;
+    var land2 = 150 + Math.sin(into * 2.2) * 26 * animEase(into / 1.5);
+    ctx.strokeStyle = col.water; ctx.lineCap = 'round'; ctx.lineWidth = 3.2 * k1;
+    ctx.beginPath(); ctx.moveTo(214, 0); ctx.bezierCurveTo(200, 20, land2 + 8, lyNow - 70, land2, lyNow); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = k1;
+    ctx.beginPath(); ctx.moveTo(213, 2); ctx.bezierCurveTo(199, 22, land2 + 7, lyNow - 70, land2 - 0.6, lyNow - 2); ctx.stroke();
+  }
+}
+
+function drawShotAnim(ctx, tt, M, col, still) {
+  var u = tt / M.total * 28, flow = shotProfile(u), vol = animAt(M.cum, M.dt, tt), blond = animEase((u - 23) / 5);
+  // Group head and portafilter.
+  ctx.fillStyle = col.sunken; ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.beginPath(); animRoundRect(ctx, 70, 0, 160, 30, 6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col.card; ctx.beginPath();
+  ctx.moveTo(82, 30); ctx.lineTo(218, 30); ctx.lineTo(210, 62); ctx.quadraticCurveTo(208, 70, 200, 70);
+  ctx.lineTo(100, 70); ctx.quadraticCurveTo(92, 70, 90, 62); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(214, 42); ctx.lineTo(290, 46); ctx.quadraticCurveTo(298, 48, 296, 56); ctx.lineTo(212, 58); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col.wood; ctx.beginPath(); animRoundRect(ctx, 248, 45, 46, 11, 5); ctx.fill();
+  ctx.fillStyle = col.sunken;
+  [128, 160].forEach(function (sx) { ctx.beginPath(); animRoundRect(ctx, sx, 70, 12, 12, 3); ctx.fill(); ctx.stroke(); });
+
+  var spouts = [134, 166], cupTop = 196, cupBot = 262, cupL = 104, cupR = 196;
+  var level = cupBot - 4 - Math.max(0, Math.min(1, vol / (M.yieldG * 1.2))) * (cupBot - cupTop - 14);
+  var crema = vol > 1 ? Math.max(4, Math.min(11, 4 + vol / M.yieldG * 9)) : 0;
+  var stream = flow > 0.9;
+  spouts.forEach(function (sx, si) {
+    var dir = si ? -1 : 1;
+    if (!stream && flow > 0.05) {
+      var period = 1 / (flow * 1.4), ph = ((u + si * 0.37) % period) / period, r = 1.5 + ph * 3;
+      ctx.fillStyle = animMix('#4A2B18', '#8A5A36', 0.3); ctx.beginPath();
+      if (ph < 0.75) ctx.ellipse(sx, 84 + r, r * 0.9, r, 0, 0, Math.PI * 2);
+      else ctx.ellipse(sx, 90 + (ph - 0.75) / 0.25 * (level - 90), 2.6, 3.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (stream) {
+      var w = Math.max(1.4, Math.min(3.4, flow * 1.8)) * (1 - blond * 0.35), top = 84, bot = level - crema * 0.3;
+      ctx.strokeStyle = animMix('#4A2B18', '#C9A27A', blond * 0.8); ctx.lineWidth = w; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(sx, top);
+      for (var y = top; y <= bot; y += 4) ctx.lineTo(sx + dir * (y - top) * 0.04 + Math.sin(y * 0.15 - tt * 9) * 0.5, y);
+      ctx.stroke();
+      if (!still && blond < 0.9) {      // tiger striping
+        ctx.strokeStyle = 'rgba(217,185,143,' + (0.55 * (1 - blond)) + ')'; ctx.lineWidth = w * 0.7;
+        for (var b = 0; b < 8; b++) {
+          var yy = top + ((tt * 90 + b * 22) % (bot - top));
+          ctx.beginPath(); ctx.moveTo(sx + dir * (yy - top) * 0.04, yy); ctx.lineTo(sx + dir * (yy + 6 - top) * 0.04, Math.min(yy + 6, bot)); ctx.stroke();
+        }
+      }
+    }
+  });
+
+  // A glass cup: dark body, crema on top, a speckle of foam.
+  function cup() {
+    ctx.moveTo(cupL, cupTop); ctx.lineTo(cupR, cupTop); ctx.lineTo(cupR - 4, cupBot - 22); ctx.quadraticCurveTo(cupR - 8, cupBot, 170, cupBot);
+    ctx.lineTo(130, cupBot); ctx.quadraticCurveTo(cupL + 8, cupBot, cupL + 4, cupBot - 22); ctx.closePath();
+  }
+  ctx.save(); ctx.beginPath(); cup(); ctx.clip();
+  if (vol > 0.3) {
+    var g = ctx.createLinearGradient(0, level, 0, cupBot); g.addColorStop(0, '#3A2418'); g.addColorStop(1, '#1E120B');
+    ctx.fillStyle = g; ctx.fillRect(cupL, level, cupR - cupL, cupBot - level);
+    var cg = ctx.createLinearGradient(0, level - crema, 0, level + 2);
+    cg.addColorStop(0, animMix('#D9B98F', '#E8D2B4', blond)); cg.addColorStop(1, '#9A6B45');
+    ctx.fillStyle = cg; ctx.fillRect(cupL, level - crema, cupR - cupL, crema + 2);
+    for (var i = 0; i < 40; i++) {
+      ctx.fillStyle = 'rgba(122,74,42,' + (0.25 + animRnd(i) * 0.3) + ')'; ctx.beginPath();
+      ctx.arc(animLerp(cupL + 3, cupR - 3, animRnd(i + 5)), level - crema + animRnd(i + 50) * crema, 0.6 + animRnd(i + 9) * 1.1, 0, Math.PI * 2); ctx.fill();
+    }
+    if (stream) spouts.forEach(function (sx) {
+      ctx.strokeStyle = 'rgba(232,210,180,.5)'; ctx.lineWidth = 1; ctx.beginPath();
+      ctx.ellipse(sx, level - crema + 1, 5 + Math.sin(tt * 8) * 1.5, 1.5, 0, 0, Math.PI * 2); ctx.stroke();
+    });
+  }
+  ctx.restore();
+  ctx.strokeStyle = col.glass; ctx.lineWidth = 2; ctx.beginPath(); cup(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cupR, 206); ctx.bezierCurveTo(cupR + 22, 206, cupR + 22, 236, cupR - 2, 236); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(cupL + 8, cupTop + 6, 5, cupBot - cupTop - 22);
+  ctx.strokeStyle = col.strong; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(78, 276); ctx.lineTo(222, 276); ctx.stroke();
+  var sa = Math.max(0, Math.min(1, (vol / M.yieldG - 0.25) * 2)) * (still ? 0.4 : 1);
+  if (sa > 0) {
+    for (var wv = 0; wv < 2; wv++) {
+      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.2 * sa + ')'; ctx.lineWidth = 2.5; ctx.beginPath();
+      for (var k = 0; k <= 10; k++) ctx[k ? 'lineTo' : 'moveTo'](140 + wv * 22 + Math.sin(tt * 1.1 + wv * 2 + k * 0.6) * (1.5 + k * 0.4), cupTop - 6 - k * 2.4);
+      ctx.stroke();
+    }
+  }
 }
 
 function buildTimerEl(r, plan) {
@@ -2839,7 +3093,7 @@ function buildTimerEl(r, plan) {
                     '<span class="timer-total">' + esc(t('in the basket')) + '</span></span>'
                 : '') +
           '</div>' +
-          (plan.water ? coneSVG() : shot ? shotSVG() : '') +
+          (plan.water ? animHTML(t('Water in the cone')) : shot ? animHTML(t('Espresso pouring into the cup')) : '') +
           '<div class="timer-now glass" data-glass="8">' +
             '<span class="tm-done-cup" aria-hidden="true">' + DONE_CUP + '</span>' +
             '<span class="timer-now-kicker"></span>' +
@@ -2887,6 +3141,8 @@ function openTimer(id) {
   stopTimer();
   timer = {
     shot: !plan.water && brewerKey(findIn('method', r.methodId)) === 'espresso',
+    anim: plan.water ? pourModel(plan, r.dose)
+      : brewerKey(findIn('method', r.methodId)) === 'espresso' ? shotModel(plan, r.dose) : null,
     id: id, ratio: (Number(r.dose) > 0 && Number(r.water) > 0) ? ratio(r.dose, r.water) : '',
     plan: plan, el: buildTimerEl(r, plan), sheet: null,
     elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null,
@@ -2956,34 +3212,12 @@ function timerPaint() {
     }
     timer.sheet.classList.toggle('is-waiting', !!seg.water && !pouringNow);
   }
-  if (timer.shot) {
-    // The cup fills with the shot, crema riding on top of it.
-    var cupY = 262 - Math.min(1, frac) * 46;
-    el.querySelector('.shot-liquid').setAttribute('y', cupY.toFixed(1));
-    el.querySelector('.shot-crema').setAttribute('y', (cupY - 2).toFixed(1));
-    el.querySelector('.shot-crema').style.opacity = frac > 0.12 ? 1 : 0;
-    timer.sheet.classList.toggle('is-pouring', timer.running && !done && e > 2);
-  }
+  animDraw(e);
   var poured = el.querySelector('.timer-poured:not(.is-dose)');
   if (poured) {
     var pct = pourFor > 0 ? Math.min(1, Math.max(0, (e - seg.start) / pourFor)) : 1;
     var g = seg.from + (seg.upto - seg.from) * pct;
     poured.innerHTML = Math.round(g) + '<small> g</small>';
-    // The bed holds water back as it drains, so the cone shows what is
-    // poured but not yet through: the water poured, draining away as the
-    // brew runs, never below a thin layer until the end.
-    var held = Math.min(1, g / plan.water * (1 - frac) * 1.5);
-    if (g > 0 && !done) held = Math.max(held, 0.06);
-    var ly = coneLevel(held), xs = coneX(ly);
-    el.querySelector('.cone-liquid').setAttribute('d',
-      'M' + xs[0].toFixed(1) + ' ' + ly.toFixed(1) + ' L' + xs[1].toFixed(1) + ' ' + ly.toFixed(1) + ' L172 196 L128 196 Z');
-    el.querySelector('.cone-crema').setAttribute('d',
-      'M' + (xs[0] + 3).toFixed(1) + ' ' + ly.toFixed(1) + ' L' + (xs[1] - 3).toFixed(1) + ' ' + ly.toFixed(1));
-    var cupY = 294 - Math.min(1, frac * 1.1) * 40;
-    el.querySelector('.cone-cup-fill').setAttribute('d', frac > 0.02
-      ? 'M' + (104 - (294 - cupY) * 0.07).toFixed(1) + ' ' + cupY.toFixed(1) + ' L' + (196 + (294 - cupY) * 0.07).toFixed(1) + ' ' + cupY.toFixed(1) +
-        ' L196 288 Q196 294 190 294 L110 294 Q104 294 104 288 Z'
-      : '');
     timer.sheet.classList.toggle('is-pouring', pouringNow && timer.running && !done);
   }
 
@@ -2996,27 +3230,6 @@ function timerPaint() {
   var nxt = plan.segs[i + 1];
   el.querySelector('.timer-next .nt').textContent = nxt ? t('Next') + ' · ' + mmss(nxt.start) : t('Last step');
   el.querySelector('.timer-next .nx').textContent = nxt ? t(nxt.label) : '';
-
-  // This pour's target: a dashed line across the cone at the level the
-  // pour should reach, with its weight beside it.
-  if (poured) {
-    var tgt = el.querySelector('.cone-target'), tgk = el.querySelector('.cone-target-k');
-    if (seg.water) {
-      // Where the coffee will stand the moment this pour is in: the same
-      // fill-and-drain model the liquid uses, read at the end of the pour,
-      // so the rising level meets the line exactly.
-      var endFrac = Math.min(1, (seg.start + (seg.pour ? Math.min(seg.pour, segLen) : segLen)) / plan.total);
-      var ty = coneLevel(Math.min(1, seg.upto / plan.water * (1 - endFrac) * 1.5)), tx = coneX(ty);
-      tgt.setAttribute('d', 'M' + (tx[0] + 6).toFixed(1) + ' ' + ty.toFixed(1) + ' L' + (tx[1] - 6).toFixed(1) + ' ' + ty.toFixed(1));
-      tgk.setAttribute('x', (tx[1] + 2).toFixed(1));
-      tgk.setAttribute('y', (ty + 4).toFixed(1));
-      tgk.textContent = seg.upto + ' g';
-    } else {
-      tgt.setAttribute('d', '');
-      tgk.textContent = '';
-    }
-    timer.sheet.classList.toggle('is-bloom', i === 0 || /bloom|pré-infus/i.test(seg.label || ''));
-  }
 
   var rows = el.querySelectorAll('.timer-step');
   for (k = 0; k < rows.length; k++) {
