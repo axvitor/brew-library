@@ -2977,3 +2977,4 @@ body:has(.gate-screen){padding-bottom:0}
 .sheet-timer.is-done .tm-anim canvas{height:min(160px,18vh)}
 .sheet-timer.is-done .timer-next{display:none}
 .is-shot .timer-next{display:none}
+.is-single .timer-next{display:none}

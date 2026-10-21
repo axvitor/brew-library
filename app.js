@@ -385,7 +385,7 @@ var ENTITIES = {
     coll: 'methods', label: 'Brewing method', plural: 'Methods', ref: 'methodId',
     fields: [
       { k: 'name', l: 'Name', ph: 'Chemex', req: true },
-      { k: 'kind', l: 'Type', ph: 'Pour over / Immersion / Pressure' },
+      { k: 'kind', l: 'Type', kind: 'choice', choices: function () { return METHOD_TYPES; }, read: typeFromText },
       { k: 'ratio', l: 'Typical ratio', ph: '1:16' },
       { k: 'notes', l: 'Notes', ph: 'Filter, kettle, gear…', area: true }
     ],
@@ -916,6 +916,15 @@ var TRANSLATIONS = {
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
     'poured': 'despejados',
+    'Not set': 'Não definido',
+    'Moka pot': 'Moka',
+    'Drip machine': 'Cafeteira elétrica',
+    'Cold brew': 'Cold brew',
+    'Coffee steeping in the press': 'Café em infusão na prensa',
+    'Moka pot brewing on the stove': 'Moka preparando no fogão',
+    'Brew on the stove; take it off at the first gurgle.': 'Prepare no fogão; tire ao primeiro borbulhar.',
+    'Let it steep.': 'Deixe em infusão.',
+    'Brew.': 'Prepare.',
     'AeroPress brewing into the mug': 'AeroPress preparando na caneca',
     'in the basket': 'no porta-filtro',
     'Stop the shot': 'Parar a extração',
@@ -1329,25 +1338,65 @@ var BREWER_SVG = {
   bean: '<g transform="rotate(-28 12 12)"><ellipse cx="12" cy="12" rx="6.4" ry="9.4"/><path d="M12 4.4c-2 2.5-2 5 0 7.6s2 5.1 0 7.6"/></g>'
 };
 
-function brewerKey(me) {
-  if (!me) return 'bean';
-  var n = (me.name || '').toLowerCase();
-  var k = (me.kind || '').toLowerCase();
+/* Method types. The method form picks one of these; older libraries carry
+   free text ("Pressure", "Imersão"…), which is read for its meaning. The
+   type decides the timer's drawing and backs up the icon when the name
+   says nothing. */
+var METHOD_TYPES = ['Pour over', 'Immersion', 'Espresso', 'AeroPress', 'Moka pot', 'Drip machine', 'Cold brew'];
+
+function typeFromText(text) {
+  var k = String(text || '').toLowerCase();
+  if (!k) return '';
+  if (/aeropress/.test(k)) return 'AeroPress';
+  if (/cold/.test(k)) return 'Cold brew';
+  if (/immers|imers|french|prensa/.test(k)) return 'Immersion';
+  if (/espresso|pressure|press[aã]o/.test(k)) return 'Espresso';
+  if (/moka|stovetop|fog[aã]o/.test(k)) return 'Moka pot';
+  if (/drip|cafeteira|machine|m[aá]quina|gotej/.test(k)) return 'Drip machine';
+  if (/pour|coado|filtro/.test(k)) return 'Pour over';
+  return '';
+}
+
+// The brewer a name points at, or '' when the name says nothing.
+function brewerFromName(me) {
+  var n = (me && me.name || '').toLowerCase();
   if (/origami/.test(n)) return 'origami';
   if (/v60|hario|cone|cono/.test(n)) return 'v60';
+  if (/aeropress/.test(n)) return 'aeropress';
   if (/espresso|portafilter/.test(n)) return 'espresso';
   if (/moka|bialetti|stovetop|italiana/.test(n)) return 'moka';
   if (/b75|kalita|wave|flat|april|orea/.test(n)) return 'flat';
   if (/chemex/.test(n)) return 'chemex';
-  if (/aeropress/.test(n)) return 'aeropress';
-  if (/french|prensa|press|clever|immers/.test(n)) return 'press';
+  if (/french|prensa|press|clever|immers|cold/.test(n)) return 'press';
   if (/drip|cafeteira|machine|m[aá]quina/.test(n)) return 'drip';
-  if (/pressure|press[aã]o/.test(k)) return 'espresso';
-  if (/immersion|imers/.test(k)) return 'press';
-  if (/drip|cafeteira/.test(k)) return 'drip';
-  if (/stovetop|fog[aã]o/.test(k)) return 'moka';
-  if (/pour|coado/.test(k)) return 'v60';
-  return 'bean';
+  return '';
+}
+
+var TYPE_BREWER = { 'Pour over': 'v60', 'Immersion': 'press', 'Espresso': 'espresso', 'AeroPress': 'aeropress',
+  'Moka pot': 'moka', 'Drip machine': 'drip', 'Cold brew': 'press' };
+var BREWER_TYPE = { v60: 'Pour over', origami: 'Pour over', flat: 'Pour over', chemex: 'Pour over', aeropress: 'AeroPress',
+  espresso: 'Espresso', moka: 'Moka pot', press: 'Immersion', drip: 'Drip machine' };
+
+// The method's type: what the form chose, else what its name implies.
+function methodType(me) {
+  if (!me) return '';
+  if (/aeropress/i.test(me.name || '')) return 'AeroPress';
+  return typeFromText(me.kind) || BREWER_TYPE[brewerFromName(me)] || '';
+}
+
+function brewerKey(me) {
+  if (!me) return 'bean';
+  return brewerFromName(me) || TYPE_BREWER[methodType(me)] || 'bean';
+}
+
+// Which drawing the timer shows for a recipe's method and plan.
+function animKindFor(me, plan) {
+  var ty = methodType(me);
+  if (ty === 'AeroPress') return 'aero';
+  if (ty === 'Espresso') return 'shot';
+  if (ty === 'Immersion' || ty === 'Cold brew') return 'immersion';
+  if (ty === 'Moka pot') return 'moka';
+  return plan.water ? 'pour' : '';
 }
 
 function brewerIcon(me) {
@@ -2604,7 +2653,11 @@ function timerPlan(r) {
   var segs = [];
   if (!steps.length) {
     // Espresso and the like: no pour schedule, so the ring is the shot.
-    segs.push({ start: 0, end: total, label: 'Pull the shot.', water: 0 });
+    var ty0 = methodType(findIn('method', r.methodId));
+    segs.push({ start: 0, end: total, water: 0,
+      label: ty0 === 'Moka pot' ? 'Brew on the stove; take it off at the first gurgle.'
+        : ty0 === 'Immersion' || ty0 === 'Cold brew' ? 'Let it steep.'
+        : ty0 === 'Espresso' || !ty0 ? 'Pull the shot.' : 'Brew.' });
   } else {
     if (steps[0].at > 0) segs.push({ start: 0, end: steps[0].at, label: 'Get set up.', water: 0 });
     steps.forEach(function (s, i) {
@@ -2857,6 +2910,8 @@ function animDraw(e) {
   var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (timer.anim.kind === 'pour') drawPourAnim(ctx, e, timer.anim, timer.animCol, still);
   else if (timer.anim.kind === 'aero') drawAeroAnim(ctx, e, timer.anim, timer.animCol, still);
+  else if (timer.anim.kind === 'immersion') drawImmersionAnim(ctx, e, timer.anim, timer.animCol, still);
+  else if (timer.anim.kind === 'moka') drawMokaAnim(ctx, e, timer.anim, timer.animCol, still);
   else drawShotAnim(ctx, e, timer.anim, timer.animCol, still);
 }
 
@@ -3136,6 +3191,205 @@ function drawAeroAnim(ctx, tt, M, col, still) {
   }
 }
 
+/* French press (and any immersion brewer): a glass carafe in a frame.
+   The water goes in and lifts the grounds into a crust; the brew steeps
+   with the odd bubble; a stir or "break the crust" step sinks them; the
+   press drives the mesh down, packing the grounds at the bottom and
+   leaving clear coffee above it. Steps are read for those moments; with
+   none named, the press is the last 20 s of the brew. */
+function immersionModel(plan, dose, water) {
+  var W = plan.water || Number(water) || 300;
+  var pours = [];
+  plan.segs.forEach(function (sg) {
+    if (!sg.water) return;
+    var len = sg.end - sg.start;
+    pours.push({ at: sg.start, g: sg.water, dur: sg.pour ? Math.min(sg.pour, len) : Math.min(15, len) });
+  });
+  if (!pours.length) pours.push({ at: 0, g: W, dur: 15 });
+  function find(re) {
+    for (var i = 0; i < plan.segs.length; i++) if (re.test(plan.segs[i].label || '')) return plan.segs[i];
+    return null;
+  }
+  var st = find(/stir|break|crust|skim|mex|quebr|crosta/i), pr = find(/plunge|press|pression|empurr|desç|release|drain|liber/i);
+  var pressStart = pr ? pr.start : Math.max(0, plan.total - 20), pressEnd = pr ? Math.min(pr.end, pr.start + 25) : plan.total;
+  if (pressEnd - pressStart < 4) pressEnd = Math.min(plan.total, pressStart + 15);
+  return { kind: 'immersion', water: W, dose: Number(dose) || W / 15, pours: pours,
+    stirAt: st ? st.start : -1, pressStart: pressStart, pressEnd: pressEnd };
+}
+
+function drawImmersionAnim(ctx, tt, M, col, still) {
+  var L = 100, R = 200, top = 66, bot = 286, x, i;
+  var poured = 0, pour = null;
+  M.pours.forEach(function (q) {
+    if (tt >= q.at + q.dur) poured += q.g;
+    else if (tt >= q.at) { poured += q.g * (tt - q.at) / q.dur; pour = q; }
+  });
+  var fill = Math.min(1, poured / (M.water * 1.12));
+  var level = bot - 8 - fill * (bot - top - 26);
+  var press = M.pressEnd > M.pressStart ? animEase((tt - M.pressStart) / (M.pressEnd - M.pressStart)) : 0;
+  var stirred = M.stirAt >= 0 && tt >= M.stirAt;
+  var sinceStir = stirred ? tt - M.stirAt : 0;
+  var meshY = animLerp(top + 6, bot - 22, press);
+  var steep = Math.max(0, tt - (M.pours[0].at + M.pours[0].dur));
+
+  // Glass carafe: coffee body, grounds, then the frame around it.
+  ctx.save(); ctx.beginPath(); animRoundRect(ctx, L, top, R - L, bot - top, 12); ctx.clip();
+  if (poured > 0.5) {
+    var body = animMix('#8A5A36', '#3A2418', Math.min(1, steep / 120));
+    var g = ctx.createLinearGradient(0, level, 0, bot); g.addColorStop(0, body); g.addColorStop(1, '#24150C');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(L, level);
+    var amp = pour ? 1.6 : 0.5;
+    for (x = L; x <= R; x += 3) ctx.lineTo(x, level + Math.sin(x * 0.1 + tt * 4) * amp);
+    ctx.lineTo(R, bot); ctx.lineTo(L, bot); ctx.closePath(); ctx.fill();
+    // Grounds: a floating crust until stirred or pressed, then sinking;
+    // under the press, everything below the mesh packs into a bed.
+    var crust = stirred ? Math.max(0, 1 - sinceStir / 3) : 1;
+    for (i = 0; i < 90; i++) {
+      var gx = animLerp(L + 4, R - 4, animRnd(i)), depth = animRnd(i + 40);
+      var floatY = level + 2 + depth * 12;
+      var sunkY = bot - 6 - animRnd(i + 80) * 14;
+      var drift = stirred ? Math.min(1, sinceStir / (12 + animRnd(i + 3) * 30)) : Math.min(1, steep / 400) * 0.3;
+      var gy = animLerp(floatY, sunkY, Math.max(drift, 1 - crust * (1 - drift)));
+      if (press > 0) gy = Math.max(gy, Math.min(meshY + 3 + depth * 6, bot - 4));
+      if (press >= 0.98) gy = bot - 4 - animRnd(i + 80) * 12;
+      ctx.fillStyle = 'rgba(30,18,10,' + (0.55 + animRnd(i + 7) * 0.35) + ')';
+      ctx.fillRect(gx, gy, 2, 2);
+    }
+    if (crust > 0.1 && !stirred && press === 0) {
+      ctx.fillStyle = 'rgba(60,38,22,' + 0.75 * crust + ')'; ctx.fillRect(L, level - 1, R - L, 10);
+      if (!still) {
+        for (i = 0; i < 8; i++) {
+          var life = 2 + animRnd(i) * 2, ph = ((tt + animRnd(i + 5) * life) % life) / life;
+          ctx.strokeStyle = 'rgba(217,185,143,' + 0.7 * (1 - ph) + ')'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(animLerp(L + 10, R - 10, animRnd(i + 9)), level - 1 - ph * 3, 1.3 + ph * 2, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+    }
+  }
+  ctx.restore();
+  ctx.strokeStyle = col.glass; ctx.lineWidth = 2; ctx.beginPath(); animRoundRect(ctx, L, top, R - L, bot - top, 12); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fillRect(L + 7, top + 8, 5, bot - top - 26);
+  // Metal frame: bands top and bottom, and the handle.
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(L - 4, top + 34); ctx.lineTo(R + 4, top + 34); ctx.moveTo(L - 4, bot - 16); ctx.lineTo(R + 4, bot - 16); ctx.stroke();
+  ctx.lineWidth = 6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(R + 4, top + 40); ctx.bezierCurveTo(R + 42, top + 44, R + 42, bot - 60, R + 4, bot - 50); ctx.stroke();
+  // Lid, rod and the mesh plate.
+  ctx.fillStyle = col.card; ctx.strokeStyle = col.strong; ctx.lineWidth = 2;
+  ctx.beginPath(); animRoundRect(ctx, L - 6, top - 14, R - L + 12, 14, 5); ctx.fill(); ctx.stroke();
+  ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(150, meshY); ctx.lineTo(150, top - 50 + (meshY - top - 6)); ctx.stroke();
+  ctx.fillStyle = col.sunken; ctx.beginPath(); ctx.arc(150, top - 54 + (meshY - top - 6), 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  if (poured > 0.5 || press > 0) {
+    ctx.strokeStyle = col.strong; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(L + 3, meshY); ctx.lineTo(R - 3, meshY); ctx.stroke();
+    ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(L + 3, meshY + 3); ctx.lineTo(R - 3, meshY + 3); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // Kettle stream while pouring, and steam once pressed.
+  if (pour) {
+    var into = tt - pour.at, k1 = animEase(into / 0.5) * (1 - animEase((into - pour.dur + 0.5) / 0.5));
+    ctx.strokeStyle = col.water; ctx.lineCap = 'round'; ctx.lineWidth = 3.2 * k1;
+    ctx.beginPath(); ctx.moveTo(228, 0); ctx.bezierCurveTo(214, 14, 166 + Math.sin(into * 2) * 12, level - 50, 160 + Math.sin(into * 2) * 12, level); ctx.stroke();
+  }
+  var sa = press >= 1 ? 1 : 0;
+  if (sa) {
+    for (var wv = 0; wv < 2; wv++) {
+      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.18 * (still ? 0.5 : 1) + ')'; ctx.lineWidth = 3; ctx.beginPath();
+      for (var k = 0; k <= 10; k++) ctx[k ? 'lineTo' : 'moveTo'](82 + wv * 12 + Math.sin(tt + wv * 2 + k * 0.6) * (1.5 + k * 0.4), top + 20 - k * 2.4);
+      ctx.stroke();
+    }
+  }
+}
+
+/* Moka pot: water heats in the base over a small flame; when it is hot
+   enough, coffee rises up the column and spills into the top chamber,
+   which fills as the base empties, ending in the gurgle that says take it
+   off the heat. A moka recipe carries no pours, so the phases come from
+   the brew time: about half heating, then the flow, then the sputter. */
+function mokaModel(plan) {
+  return { kind: 'moka', total: plan.total };
+}
+
+function drawMokaAnim(ctx, tt, M, col, still) {
+  var T = M.total, u = tt / T;
+  var flow = animEase((u - 0.5) / 0.38);          // 0 → 1 across the brew
+  var gurgle = u > 0.84 && u < 1 ? Math.sin((u - 0.84) / 0.16 * Math.PI) : 0;
+  var x, i;
+  // Flame under the base while it heats and brews.
+  if (u < 1) {
+    for (i = 0; i < 7; i++) {
+      var fx = 116 + i * 11, fh = 10 + Math.sin(tt * 9 + i * 1.7) * 3 * (still ? 0 : 1);
+      var gf = ctx.createLinearGradient(0, 300 - fh, 0, 300);
+      gf.addColorStop(0, 'rgba(91,143,176,0)'); gf.addColorStop(1, 'rgba(91,143,176,.85)');
+      ctx.fillStyle = gf; ctx.beginPath(); ctx.moveTo(fx - 4, 300); ctx.quadraticCurveTo(fx, 300 - fh * 1.6, fx + 4, 300); ctx.fill();
+    }
+  }
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(92, 302); ctx.lineTo(208, 302); ctx.stroke();
+
+  // Base (water): an octagonal chamber, emptying as the coffee rises.
+  var bTop = 196, bBot = 290;
+  function base() { ctx.moveTo(110, bTop); ctx.lineTo(190, bTop); ctx.lineTo(200, bTop + 30); ctx.lineTo(194, bBot); ctx.lineTo(106, bBot); ctx.lineTo(100, bTop + 30); ctx.closePath(); }
+  ctx.save(); ctx.beginPath(); base(); ctx.clip();
+  var wLevel = animLerp(bTop + 26, bBot - 10, flow);
+  ctx.fillStyle = col.dark ? 'rgba(143,179,201,.30)' : 'rgba(91,143,176,.28)'; ctx.fillRect(100, wLevel, 100, bBot - wLevel);
+  if (!still && u < 0.95) {        // bubbles as it heats
+    var heat = animEase(u / 0.45);
+    for (i = 0; i < 10; i++) {
+      var life = 1 + animRnd(i) * 1.2, ph = ((tt + animRnd(i + 2) * life) % life) / life;
+      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.5 * heat * (1 - ph) + ')'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(animLerp(110, 190, animRnd(i + 13)), animLerp(bBot - 6, wLevel + 4, ph), 1.2 + ph * 1.5, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.beginPath(); base(); ctx.stroke();
+  // Waist and the top chamber with its spout and lid.
+  ctx.fillStyle = col.sunken; ctx.beginPath(); animRoundRect(ctx, 104, 186, 92, 10, 3); ctx.fill(); ctx.stroke();
+  var tTop = 86, tBot = 186;
+  function topCh() { ctx.moveTo(104, tBot); ctx.lineTo(96, tTop + 30); ctx.lineTo(104, tTop); ctx.lineTo(196, tTop); ctx.lineTo(204, tTop + 30); ctx.lineTo(196, tBot); ctx.closePath(); }
+  ctx.save(); ctx.beginPath(); topCh(); ctx.clip();
+  var cLevel = animLerp(tBot - 2, tBot - 64, flow);
+  if (flow > 0.01) {
+    var gc = ctx.createLinearGradient(0, cLevel, 0, tBot); gc.addColorStop(0, '#7A4A2A'); gc.addColorStop(1, '#24150C');
+    ctx.fillStyle = gc; ctx.beginPath(); ctx.moveTo(96, cLevel);
+    for (x = 96; x <= 204; x += 3) ctx.lineTo(x, cLevel + Math.sin(x * 0.12 + tt * 5) * (0.6 + gurgle * 2.4));
+    ctx.lineTo(204, tBot); ctx.lineTo(96, tBot); ctx.closePath(); ctx.fill();
+  }
+  // The column, and the coffee welling out of its top.
+  ctx.fillStyle = col.card; ctx.fillRect(144, tBot - 74, 12, 74);
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 1.5; ctx.strokeRect(144, tBot - 74, 12, 74);
+  if (flow > 0.01 && u < 1) {
+    var rise = gurgle > 0 ? 0.6 + 0.4 * Math.abs(Math.sin(tt * 7)) : 1;
+    ctx.fillStyle = gurgle > 0 ? 'rgba(201,162,122,.95)' : '#5A3520';
+    ctx.beginPath(); ctx.moveTo(144, tBot - 74);
+    ctx.quadraticCurveTo(136, tBot - 74 - 6 * rise, 130, Math.min(cLevel, tBot - 70));
+    ctx.lineTo(140, Math.min(cLevel, tBot - 70)); ctx.lineTo(150, tBot - 74 - 4 * rise); ctx.lineTo(160, Math.min(cLevel, tBot - 70));
+    ctx.lineTo(170, Math.min(cLevel, tBot - 70)); ctx.quadraticCurveTo(164, tBot - 74 - 6 * rise, 156, tBot - 74); ctx.closePath(); ctx.fill();
+    if (gurgle > 0 && !still) {
+      for (i = 0; i < 6; i++) {
+        var gp = ((tt * 2.5 + animRnd(i) * 2) % 1);
+        ctx.fillStyle = 'rgba(232,210,180,' + 0.7 * (1 - gp) * gurgle + ')';
+        ctx.beginPath(); ctx.arc(150 + (animRnd(i + 3) - 0.5) * 20, tBot - 78 - gp * 10, 1.4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.beginPath(); topCh(); ctx.stroke();
+  ctx.fillStyle = col.card; ctx.beginPath(); ctx.moveTo(100, tTop); ctx.lineTo(200, tTop); ctx.lineTo(194, tTop - 12); ctx.lineTo(106, tTop - 12); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(150, tTop - 16, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(196, tTop + 4); ctx.lineTo(218, tTop - 6); ctx.lineTo(206, tTop + 18); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.lineWidth = 7; ctx.strokeStyle = col.dark ? '#3A3633' : '#2A2723';
+  ctx.beginPath(); ctx.moveTo(98, tTop + 16); ctx.bezierCurveTo(66, tTop + 18, 64, tBot - 30, 98, tBot - 26); ctx.stroke();
+  // Steam from the spout once there is coffee up top.
+  if (flow > 0.3) {
+    for (var wv = 0; wv < 2; wv++) {
+      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.2 * Math.min(1, (flow - 0.3) * 2) * (still ? 0.5 : 1) + ')'; ctx.lineWidth = 2.5; ctx.beginPath();
+      for (var k = 0; k <= 10; k++) ctx[k ? 'lineTo' : 'moveTo'](216 + wv * 10 + Math.sin(tt * 1.2 + wv * 2 + k * 0.6) * (1.5 + k * 0.4), tTop - 10 - k * 2.6);
+      ctx.stroke();
+    }
+  }
+}
+
 function drawShotAnim(ctx, tt, M, col, still) {
   var u = tt / M.total * 28, flow = shotProfile(u), vol = animAt(M.cum, M.dt, tt), blond = animEase((u - 23) / 5);
   // Group head and portafilter.
@@ -3216,8 +3470,8 @@ function drawShotAnim(ctx, tt, M, col, still) {
 
 function buildTimerEl(r, plan) {
   var me = findIn('method', r.methodId);
-  var shot = !plan.water && brewerKey(me) === 'espresso';
-  var aero = brewerKey(me) === 'aeropress';
+  var kind = animKindFor(me, plan);
+  var shot = kind === 'shot';
   var rowsHTML = plan.segs.map(function (s, i) {
     return '<li class="timer-step" data-i="' + i + '">' +
       '<span class="ts-t">' + esc(mmss(s.start)) + '</span>' +
@@ -3229,7 +3483,7 @@ function buildTimerEl(r, plan) {
   var wrap = document.createElement('div');
   // Fullscreen, not a floating dialog — brewing wants undivided attention,
   // not a card sharing space with the library behind it. See .overlay-full.
-  wrap.className = 'overlay overlay-full' + (shot ? ' is-shot' : '');
+  wrap.className = 'overlay overlay-full' + (shot ? ' is-shot' : '') + (plan.segs.length === 1 ? ' is-single' : '');
   wrap.innerHTML =
     '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true" aria-label="' + esc(titleOf(r)) + '">' +
       '<div class="sheet-head">' +
@@ -3252,8 +3506,8 @@ function buildTimerEl(r, plan) {
                     '<span class="timer-total">' + esc(t('in the basket')) + '</span></span>'
                 : '') +
           '</div>' +
-          (aero ? animHTML(t('AeroPress brewing into the mug'))
-            : plan.water ? animHTML(t('Water in the cone')) : shot ? animHTML(t('Espresso pouring into the cup')) : '') +
+          (kind ? animHTML(t({ aero: 'AeroPress brewing into the mug', pour: 'Water in the cone', shot: 'Espresso pouring into the cup',
+            immersion: 'Coffee steeping in the press', moka: 'Moka pot brewing on the stove' }[kind])) : '') +
           '<div class="timer-now glass" data-glass="8">' +
             '<span class="tm-done-cup" aria-hidden="true">' + DONE_CUP + '</span>' +
             '<span class="timer-now-kicker"></span>' +
@@ -3300,10 +3554,14 @@ function openTimer(id) {
 
   stopTimer();
   timer = {
-    shot: !plan.water && brewerKey(findIn('method', r.methodId)) === 'espresso',
-    anim: brewerKey(findIn('method', r.methodId)) === 'aeropress' ? aeroModel(plan, r.dose, r.water)
-      : plan.water ? pourModel(plan, r.dose)
-      : brewerKey(findIn('method', r.methodId)) === 'espresso' ? shotModel(plan, r.dose) : null,
+    shot: animKindFor(findIn('method', r.methodId), plan) === 'shot',
+    anim: (function (kind) {
+      return kind === 'aero' ? aeroModel(plan, r.dose, r.water)
+        : kind === 'immersion' ? immersionModel(plan, r.dose, r.water)
+        : kind === 'moka' ? mokaModel(plan)
+        : kind === 'shot' ? shotModel(plan, r.dose)
+        : kind === 'pour' ? pourModel(plan, r.dose) : null;
+    })(animKindFor(findIn('method', r.methodId), plan)),
     id: id, ratio: (Number(r.dose) > 0 && Number(r.water) > 0) ? ratio(r.dose, r.water) : '',
     plan: plan, el: buildTimerEl(r, plan), sheet: null,
     elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null,
@@ -5674,6 +5932,18 @@ function openEntityForm(type, existing, onSaved, prefill) {
           control = '<input class="inp" id="e-' + f.k + '" data-k="' + f.k + '" list="' + dl + '" ' +
             'value="' + val + '" placeholder="' + esc(t(f.ph || '')) + '" autocomplete="off" />' +
             '<datalist id="' + dl + '">' + listOpts + '</datalist>';
+        } else if (f.kind === 'choice') {
+          // A fixed list. A value typed in other words is read for its
+          // meaning; one that names nothing stays as an extra choice, so
+          // saving the form never loses it.
+          var cur = (f.read && f.read(d[f.k])) || (d[f.k] || '');
+          var opts = [''].concat(typeof f.choices === 'function' ? f.choices() : f.choices);
+          if (cur && opts.indexOf(cur) < 0) opts.push(cur);
+          control = '<select class="inp" id="e-' + f.k + '" data-k="' + f.k + '">' +
+            opts.map(function (o) {
+              return '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' +
+                esc(o ? t(o) : '— ' + t('Not set') + ' —') + '</option>';
+            }).join('') + '</select>';
         } else if (f.area) {
           control = '<textarea class="inp" id="e-' + f.k + '" data-k="' + f.k + '" placeholder="' + esc(t(f.ph || '')) + '">' + val + '</textarea>';
         } else {
