@@ -3134,6 +3134,8 @@ body:has(.gate-screen){padding-bottom:0}
 }
 [data-theme="light"] .es{--es-dash:#D6D0C6;--es-flame:#D9662B;--es-water:#5B8FB0;--es-stain:rgba(150,92,52,.38)}
 .list .es,.es-rank{min-height:0}
+/* On a wide screen the library list is a grid; its empty state spans it. */
+.list > .es{grid-column:1 / -1}
 .es-art{display:block;width:180px;height:auto;margin-bottom:18px;overflow:visible}
 .es-s{stroke:var(--text-faint)}
 .es-l{stroke:var(--es-line)}

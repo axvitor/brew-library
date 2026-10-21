@@ -1889,21 +1889,29 @@ var ES_ART = {
       '<text class="es-num" x="124" y="121" text-anchor="middle">3</text>' +
       '<path class="es-l" d="M28 132H152" stroke-width="2" stroke-linecap="round"/>', 140);
   },
-  // Library tabs, one drawing each. Coffees: a bag with a question mark
-  // that writes itself on the label and shrugs.
+  // Library tabs, one drawing each. Coffees: a block-bottom bag in three
+  // quarters — folded top with its tin tie, one-way valve, the side gusset
+  // and its V-fold — with a question mark that writes itself on the label
+  // and shrugs.
   coffee: function () {
     var still = reduceMotion.matches;
     return esSvg(
-      '<path class="es-s" d="M60 50L56 138H124L120 50" stroke-width="2" stroke-linejoin="round"/>' +
-      '<path class="es-s" d="M60 50L66 30H114L120 50" stroke-width="2" stroke-linejoin="round"/>' +
-      '<path class="es-l" d="M68 38H112" stroke-width="1.6" stroke-dasharray="3 4" stroke-linecap="round"/>' +
-      '<circle class="es-s" cx="106" cy="62" r="4" stroke-width="1.6"/>' +
-      '<rect class="es-l" x="68" y="76" width="44" height="50" rx="5" stroke-width="1.6"/>' +
-      '<g>' + anT('rotate', '0 90 101;0 90 101;-9 90 101;8 90 101;-4 90 101;0 90 101;0 90 101', '0;0.4;0.5;0.6;0.68;0.75;1', 3.4) +
+      '<path class="es-l" d="M40 140H140" stroke-width="2" stroke-linecap="round"/>' +
+      '<path class="es-s es-lf" d="M106 46L126 42V132L106 136Z" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-s" d="M106 46L116 58L126 42" stroke-width="1.6" stroke-linejoin="round"/>' +
+      '<path class="es-s" d="M116 58V134" stroke-width="1.4" stroke-linecap="round" opacity="0.45"/>' +
+      '<path class="es-s" d="M52 46H106V136H56Q52 136 52 132Z" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-s es-lf" d="M106 32L126 28V42L106 46Z" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-s es-bg" d="M52 32H106V46H52Z" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path class="es-s" d="M44 43L47 39H106L126 35L132 33.8L134 37.5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle class="es-s" cx="98" cy="56" r="4.5" stroke-width="1.6"/>' +
+      '<circle class="es-s" cx="98" cy="56" r="1.6" stroke-width="1.4"/>' +
+      '<rect class="es-l" x="59" y="66" width="40" height="54" rx="4" stroke-width="1.6"/>' +
+      '<g>' + anT('rotate', '0 79 95;0 79 95;-9 79 95;8 79 95;-4 79 95;0 79 95;0 79 95', '0;0.4;0.5;0.6;0.68;0.75;1', 3.4) +
         an('opacity', '1;1;0;0', '0;0.86;0.94;1', 3.4) +
-        '<path class="es-a" d="M82 92q0-9 8-9q8 0 8 8q0 5-5 7q-3 1.5-3 5v3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"' +
+        '<path class="es-a" d="M71 86q0-9 8-9q8 0 8 8q0 5-5 7q-3 1.5-3 5v3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"' +
           (still ? '>' : ' stroke-dasharray="46" stroke-dashoffset="46">') + an('stroke-dashoffset', '46;46;0;0', '0;0.06;0.34;1', 3.4) + '</path>' +
-        '<circle class="es-af" cx="90" cy="114" r="2.2"' + (still ? '>' : ' opacity="0">') +
+        '<circle class="es-af" cx="79" cy="108" r="2.2"' + (still ? '>' : ' opacity="0">') +
           an('opacity', '0;0;1;1', '0;0.36;0.4;1', 3.4) + an('r', '0;0;3.2;2.2;2.2', '0;0.36;0.41;0.46;1', 3.4) + '</circle>' +
       '</g>');
   },
