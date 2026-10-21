@@ -1411,8 +1411,8 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .stepbuild{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px}
 .stepbuild-row{
   position:relative;display:grid;gap:8px 10px;align-items:start;
-  grid-template-columns:26px minmax(0,1fr) auto;
-  grid-template-areas:"mark time tools" ". label label";
+  grid-template-columns:26px minmax(0,1fr) 84px auto;
+  grid-template-areas:"mark time water tools" ". label label label";
 }
 /* Connector between bullets, stopping at the last one. */
 .stepbuild-row::before{content:"";position:absolute;left:13px;top:38px;bottom:-20px;width:1px;background:var(--border-default)}
@@ -1427,6 +1427,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 }
 .stepbuild-t{grid-area:time}
 .stepbuild-l{grid-area:label}
+.stepbuild-w{grid-area:water;text-align:right}
 .stepbuild .inp{min-height:40px;font-size:14px;padding:0 12px}
 .stepbuild-tools{grid-area:tools;display:flex;align-items:center;gap:2px;margin-top:5px}
 .stepbuild-tools .iconbtn{width:30px;height:30px}
@@ -1436,8 +1437,8 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 /* One line once there's room for the instruction beside the time. */
 @media(min-width:561px){
   .stepbuild-row{
-    grid-template-columns:26px 112px minmax(0,1fr) auto;
-    grid-template-areas:"mark time label tools";
+    grid-template-columns:26px 96px minmax(0,1fr) 84px auto;
+    grid-template-areas:"mark time label water tools";
   }
 }
 

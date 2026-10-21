@@ -918,6 +918,26 @@ var TRANSLATIONS = {
     'poured': 'despejados',
     'Choose a type': 'Escolha um tipo',
     'Choose a type first.': 'Escolha um tipo primeiro.',
+    'Water added at step': 'Água adicionada na etapa',
+    'Every recipe on this style follows these steps, so you only write them once. Give each pour the water it adds — recipes scale the pours to their own water.': 'Toda receita deste estilo segue estas etapas, então você só as escreve uma vez. Informe a água que cada despejo adiciona — as receitas ajustam os despejos à própria água.',
+    'Step {n} needs a time, like 0:45.': 'A etapa {n} precisa de um tempo, como 0:45.',
+    'Step times have to run forward — check step {n}.': 'Os tempos das etapas precisam avançar — confira a etapa {n}.',
+    'Step {n} needs a description.': 'A etapa {n} precisa de uma descrição.',
+    'Step {n}: water has to be grams, like 50.': 'Etapa {n}: a água precisa ser em gramas, como 50.',
+    'Add the water each pour adds (g), so the timer can follow along.': 'Informe a água de cada despejo (g), para o timer acompanhar.',
+    'Dose, water and temperature have to be numbers.': 'Dose, água e temperatura precisam ser números.',
+    'Write the brew time as minutes:seconds, like 3:30.': 'Escreva o tempo como minutos:segundos, como 3:30.',
+    'Add the coffee dose.': 'Informe a dose de café.',
+    'Add the water.': 'Informe a água.',
+    'The pours add up to {a} g, but the water is {b} g — make them match.': 'Os despejos somam {a} g, mas a água é {b} g — deixe os dois iguais.',
+    'Add the shot time.': 'Informe o tempo de extração.',
+    'Add the total brew time, or steps with times.': 'Informe o tempo total de preparo, ou etapas com tempos.',
+    'You already have one called “{name}”.': 'Você já tem um chamado “{name}”.',
+    '1 recipe uses “{name}” — move it to another one first.': '1 receita usa “{name}” — mude-a para outro primeiro.',
+    '{n} recipes use “{name}” — move them to another one first.': '{n} receitas usam “{name}” — mude-as para outro primeiro.',
+    'They keep their steps as their own.': 'Elas mantêm as etapas como próprias.',
+    'They keep their grind size, with no grinder set.': 'Elas mantêm a moagem, sem moedor definido.',
+    'They stay, with no roaster set.': 'Eles continuam, sem torrefação definida.',
     'Not set': 'Não definido',
     'Moka pot': 'Moka',
     'Cold brew': 'Cold brew',
@@ -2206,7 +2226,47 @@ function stepsCaption(r) {
 function styleSteps(styleId) {
   var st = findIn('style', styleId);
   if (!st || !st.steps) return [];
-  return st.steps.filter(function (s) { return s.t || s.label; });
+  return withStepWater(st.steps.filter(function (s) { return s.t || s.label; }));
+}
+
+// Older steps carry their amounts only in words: "Bloom to 60 g", "Pour to
+// 200 g total". Those are running targets, so each step adds the difference
+// from the one before. Steps that already say how much they add keep it.
+function withStepWater(steps) {
+  var run = 0;
+  return steps.map(function (s) {
+    var w = Number(s.water) || 0;
+    if (!w) {
+      var m = String(s.label || '').match(/\b(?:to|at[eé])\s+(\d+(?:[.,]\d+)?)\s*g\b/i);
+      var to = m ? Number(m[1].replace(',', '.')) : 0;
+      if (to > run) {
+        w = to - run;
+        run = to;
+        return Object.assign({}, s, { water: w });
+      }
+    }
+    run += w;
+    return s;
+  });
+}
+
+// A style's amounts are written for one brew size, and a recipe on it may be
+// bigger or smaller — so the pours scale to the recipe's water, the same way
+// the built-in formulas do. Rounded on the running total, so the last pour
+// lands exactly on the recipe's water.
+function scaleSteps(steps, water) {
+  var total = steps.reduce(function (a, s) { return a + (Number(s.water) || 0); }, 0);
+  water = Number(water) || 0;
+  if (!total || !water || total === water) return steps;
+  var k = water / total, run = 0, done = 0;
+  return steps.map(function (s) {
+    var w = Number(s.water) || 0;
+    if (!w) return s;
+    run += w;
+    var to = Math.round(run * k), add = to - done;
+    done = to;
+    return Object.assign({}, s, { water: add });
+  });
 }
 
 // True when the style itself owns the schedule — either a built-in formula or
@@ -2226,8 +2286,8 @@ function effectiveSteps(r) {
     return preset(r.styleId, r.dose, r.water, me ? me.name : '');
   }
   var own = styleSteps(r.styleId);
-  if (own.length) return own;
-  return (r.steps || []).filter(function (s) { return s.label || s.water || s.t; });
+  if (own.length) return scaleSteps(own, r.water);
+  return withStepWater((r.steps || []).filter(function (s) { return s.label || s.water || s.t; }));
 }
 
 /* One stat tile, or nothing at all. An espresso recipe has no water, ratio,
@@ -4545,7 +4605,9 @@ function styleStepsSectionHTML(d) {
       'rescale to each recipe\'s dose and water automatically — there\'s nothing to write by hand.</p>';
   }
 
-  if (!d.steps || !d.steps.length) d.steps = [{ t: '', label: '' }];
+  if (!d.steps || !d.steps.length) d.steps = [{ t: '', label: '', water: '' }];
+  // Older styles kept their amounts in the wording; show them as numbers.
+  d.steps = withStepWater(d.steps);
   var last = d.steps.length - 1;
 
   var rows = d.steps.map(function (s, i) {
@@ -4555,6 +4617,8 @@ function styleStepsSectionHTML(d) {
         'placeholder="0:45" inputmode="numeric" aria-label="Step ' + (i + 1) + ' time" />' +
       '<input class="inp stepbuild-l" data-s="label" value="' + esc(s.label || '') + '" ' +
         'placeholder="' + esc(t('What to do at this point')) + '" aria-label="' + esc(t('Step')) + ' ' + (i + 1) + '" />' +
+      '<input class="inp stepbuild-w" data-s="water" value="' + esc(s.water ? s.water : '') + '" ' +
+        'placeholder="+ g" inputmode="decimal" aria-label="' + esc(t('Water added at step')) + ' ' + (i + 1) + ' (g)" />' +
       '<span class="stepbuild-tools">' +
         '<button type="button" class="iconbtn" data-action="style-step-move" data-i="' + i + '" data-dir="-1" ' +
           'aria-label="Move step ' + (i + 1) + ' earlier"' + (i === 0 ? ' disabled' : '') + '>' + ICON.chevUp + '</button>' +
@@ -4567,7 +4631,7 @@ function styleStepsSectionHTML(d) {
   }).join('');
 
   return head +
-    '<p class="hint" style="margin:0 0 14px">Every recipe on this style follows these steps, so you only write them once.</p>' +
+    '<p class="hint" style="margin:0 0 14px">' + esc(t('Every recipe on this style follows these steps, so you only write them once. Give each pour the water it adds — recipes scale the pours to their own water.')) + '</p>' +
     '<ol class="stepbuild">' + rows + '</ol>' +
     (stepsOutOfOrder(d.steps)
       ? '<p class="hint stepbuild-warn">' + ICON.arrowDown + 'Some times run backwards — reorder the steps so the brew reads start to finish.</p>'
@@ -4575,6 +4639,40 @@ function styleStepsSectionHTML(d) {
     '<div class="steps-tools">' +
       '<button type="button" class="btn btn-ghost btn-sm" data-action="style-step-add">' + ICON.plus + esc(t('Add step')) + '</button>' +
     '</div>';
+}
+
+// Numbers as they're typed: "15,5" is fifteen and a half here, not an error.
+// Blank stays blank; anything else that isn't a number comes back NaN.
+function numIn(v) {
+  v = String(v == null ? '' : v).trim().replace(',', '.');
+  if (!v) return '';
+  var n = Number(v);
+  return isFinite(n) ? n : NaN;
+}
+
+function tf(s, vars) {
+  var out = t(s);
+  for (var k in vars) out = out.split('{' + k + '}').join(vars[k]);
+  return out;
+}
+
+// What's wrong with a written schedule, or ''. Steps arrive with blank rows
+// already dropped and water already read by numIn. needWater: the brew
+// starts by pouring, so at least one step has to say how much.
+function stepsProblem(steps, needWater) {
+  var prev = -1;
+  for (var i = 0; i < steps.length; i++) {
+    var st = steps[i], at = secondsOf(st.t), n = i + 1;
+    if (at === null) return tf('Step {n} needs a time, like 0:45.', { n: n });
+    if (at <= prev) return tf('Step times have to run forward — check step {n}.', { n: n });
+    prev = at;
+    if (!st.label) return tf('Step {n} needs a description.', { n: n });
+    if (st.water !== '' && !(st.water >= 0)) return tf('Step {n}: water has to be grams, like 50.', { n: n });
+  }
+  if (needWater && steps.length && !steps.some(function (st) { return st.water > 0; })) {
+    return t('Add the water each pour adds (g), so the timer can follow along.');
+  }
+  return '';
 }
 
 // True when any filled-in time is not later than the filled-in time before it.
@@ -4626,9 +4724,9 @@ function stepsSectionHTML(m) {
   var own = styleSteps(d.styleId);
   if (own.length) {
     var st = findIn('style', d.styleId);
-    return '<ol class="timeline">' + timelineHTML(own) + '</ol>' +
+    return '<ol class="timeline">' + timelineHTML(scaleSteps(own, numIn(d.water))) + '</ol>' +
       '<p class="hint" style="margin-top:12px">These steps come from the ' +
-      esc(st ? st.name : 'selected') + ' style — edit the style to change them for every recipe using it.</p>';
+      esc(st ? st.name : 'selected') + ' style, with the pours scaled to this recipe\'s water — edit the style to change them for every recipe using it.</p>';
   }
 
   if (!d.steps || !d.steps.length) d.steps = [{ t: '', label: '', water: '' }];
@@ -4707,7 +4805,7 @@ function buildRecipeForm(m) {
   function syncSteps() {
     d.dose = dose.value.trim();
     d.water = water.value.trim();
-    if (!hasFormula(d.styleId)) return;
+    if (!styleProvidesSteps(d.styleId)) return;
     var wrap = el.querySelector('#stepsSection');
     if (wrap) wrap.innerHTML = stepsSectionHTML(m);
   }
@@ -4750,11 +4848,39 @@ function readRecipeForm(m) {
   });
 }
 
+/* What a recipe has to carry for its page, its timer and the timer's
+   drawing to all agree, by the kind of brew. Checked on save, so nothing
+   turns up missing halfway through a pour. Returns a message, or ''. */
+function recipeProblem(d) {
+  if (!d.coffeeId) return t('Pick a coffee first.');
+  if (!d.methodId) return t('Pick a brewing method.');
+  var ty = methodType(findIn('method', d.methodId));
+  var noPours = ty === 'Espresso' || ty === 'Moka pot';
+  if (isNaN(d.dose) || isNaN(d.water) || isNaN(d.temp)) return t('Dose, water and temperature have to be numbers.');
+  if (d.brewTime && secondsOf(d.brewTime) === null) return t('Write the brew time as minutes:seconds, like 3:30.');
+  if (!(d.dose > 0)) return t('Add the coffee dose.');
+  if (!noPours && !(d.water > 0)) return t('Add the water.');
+  if (!styleProvidesSteps(d.styleId)) {
+    var bad = stepsProblem(d.steps, !noPours);
+    if (bad) return bad;
+    var poured = d.steps.reduce(function (a, s) { return a + (Number(s.water) || 0); }, 0);
+    if (poured && d.water > 0 && Math.round(poured) !== Math.round(d.water)) {
+      return tf('The pours add up to {a} g, but the water is {b} g — make them match.', { a: poured, b: d.water });
+    }
+  }
+  if (!timerPlan(d)) {
+    return t(ty === 'Espresso' ? 'Add the shot time.' : 'Add the total brew time, or steps with times.');
+  }
+  if (ty === 'Pour over' && !effectiveSteps(d).some(function (s) { return Number(s.water) > 0; })) {
+    return t('Add the water each pour adds (g), so the timer can follow along.');
+  }
+  return '';
+}
+
 function saveRecipe(m) {
   readRecipeForm(m);
   var d = m.draft;
-  if (!d.coffeeId) { toast(t('Pick a coffee first.')); return; }
-  if (!d.methodId) { toast(t('Pick a brewing method.')); return; }
+  ['dose', 'water', 'temp'].forEach(function (k) { d[k] = numIn(d[k]); });
 
   if (styleProvidesSteps(d.styleId)) {
     // The style owns the schedule — computed live from a formula, or written
@@ -4762,9 +4888,11 @@ function saveRecipe(m) {
     d.steps = [];
   } else {
     d.steps = d.steps.filter(function (s) { return s.label || s.water || s.t; });
-    d.steps.forEach(function (s) { s.water = s.water === '' ? 0 : Number(s.water); });
+    d.steps.forEach(function (s) { s.water = numIn(s.water); });
   }
-  ['dose', 'water', 'temp'].forEach(function (k) { d[k] = d[k] === '' ? '' : Number(d[k]); });
+  var problem = recipeProblem(d);
+  if (problem) { toast(problem); return; }
+  d.steps.forEach(function (s) { if (s.water === '') s.water = 0; });
 
   var now = Date.now();
   if (d.id) {
@@ -6068,7 +6196,8 @@ function readEntityForm(m, def) {
     m.draft.steps = [].map.call(rows, function (row) {
       return {
         t: normTime(row.querySelector('[data-s="t"]').value),
-        label: row.querySelector('[data-s="label"]').value.trim()
+        label: row.querySelector('[data-s="label"]').value.trim(),
+        water: row.querySelector('[data-s="water"]').value.trim()
       };
     });
   }
@@ -6085,8 +6214,22 @@ function saveEntity(m) {
   if (!d.name) { toast(t('Give it a name first.')); return; }
   var missing = def.fields.filter(function (f) { return f.req && f.k !== 'name' && !d[f.k]; })[0];
   if (missing) { toast(t('Choose a type first.')); return; }
+  // Two of the same name can't be told apart in a picker. Coffees may share
+  // a name across roasters ("Bourbon" from two of them), not within one.
+  var key = function (v) { return String(v || '').trim().toLowerCase(); };
+  var clash = coll(m.type).filter(function (e) {
+    return e.id !== d.id && key(e.name) === key(d.name) &&
+      (m.type !== 'coffee' || key(roasterNameOf(e)) === key(d.roasterName));
+  })[0];
+  if (clash) { toast(tf('You already have one called “{name}”.', { name: clash.name })); return; }
   // Drop the blank row the builder always keeps at the end.
-  if (d.steps) d.steps = d.steps.filter(function (s) { return s.t || s.label; });
+  if (d.steps) {
+    d.steps = d.steps.filter(function (s) { return s.t || s.label || s.water; });
+    d.steps.forEach(function (s) { s.water = numIn(s.water); });
+    var bad = stepsProblem(d.steps, true);
+    if (bad) { toast(bad); return; }
+    d.steps.forEach(function (s) { if (s.water === '') s.water = 0; });
+  }
 
   // Resolve the typed roaster name to a record: reuse an existing one when
   // the name matches (case- and space-insensitively, so "Moka Clube" and
@@ -6247,15 +6390,41 @@ function deleteEntity(type, id) {
   if (!e) return;
   var used = def.usedBy ? def.usedBy(id) : state.recipes.filter(function (r) { return r[def.ref] === id; }).length;
   var noun = def.usedLabel || 'recipe';
+  // A recipe can't be without its coffee or its method — its title, its
+  // timer and its drawing hang off them — so those stay until nothing uses
+  // them. Everything else lets go cleanly instead of leaving a dangling id.
+  if (used && (type === 'coffee' || type === 'method')) {
+    toast(tf(used === 1 ? '1 recipe uses “{name}” — move it to another one first.'
+      : '{n} recipes use “{name}” — move them to another one first.', { n: used, name: e.name }));
+    return;
+  }
+  var after = {
+    style: 'They keep their steps as their own.',
+    grinder: 'They keep their grind size, with no grinder set.',
+    roaster: 'They stay, with no roaster set.'
+  }[type];
   var body = '<p>Delete “' + esc(e.name) + '”?</p>' +
-    (used ? '<p>It is used by ' + used + ' ' + (used === 1 ? noun : noun + 's') +
-      ', which will show “—” for this field until you edit them.</p>' : '');
+    (used ? '<p>It is used by ' + used + ' ' + (used === 1 ? noun : noun + 's') + '. ' + esc(t(after)) + '</p>' : '');
   confirmDanger({
     title: t('Delete ' + def.label.toLowerCase()),
     body: body,
     confirmLabel: t('Delete'),
     onConfirm: function () {
       closeModal();
+      state.recipes.forEach(function (r) {
+        if (r[def.ref] !== id) return;
+        // Copy the schedule over before the style goes, so the timer and
+        // its pours carry on exactly as they were.
+        if (type === 'style') r.steps = effectiveSteps(r).map(function (st) {
+          return { t: st.t || '', label: st.label || '', water: Number(st.water) || 0 };
+        });
+        r[def.ref] = '';
+      });
+      // The legacy name string too: left behind, the next load would read it
+      // and bring the roaster straight back.
+      if (type === 'roaster') state.coffees.forEach(function (c) {
+        if (c.roasterId === id) { c.roasterId = ''; c.roaster = ''; }
+      });
       state[def.coll] = coll(type).filter(function (x) { return x.id !== id; });
       save();
       renderModals();
@@ -6652,7 +6821,7 @@ document.addEventListener('click', function (ev) {
     case 'style-step-add':
       top.capture();
       if (!top.draft.steps) top.draft.steps = [];
-      top.draft.steps.push({ t: '', label: '' });
+      top.draft.steps.push({ t: '', label: '', water: '' });
       renderModals();
       focusLastStep(top, '.stepbuild-row');
       return;
@@ -6660,7 +6829,7 @@ document.addEventListener('click', function (ev) {
     case 'style-step-del':
       top.capture();
       top.draft.steps.splice(Number(btn.getAttribute('data-i')), 1);
-      if (!top.draft.steps.length) top.draft.steps.push({ t: '', label: '' });
+      if (!top.draft.steps.length) top.draft.steps.push({ t: '', label: '', water: '' });
       renderModals();
       return;
 
