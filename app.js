@@ -3218,7 +3218,11 @@ function immersionModel(plan, dose, water) {
 }
 
 function drawImmersionAnim(ctx, tt, M, col, still) {
-  var L = 100, R = 200, top = 66, bot = 286, x, i;
+  // The carafe sits low enough that the plunger's full rod fits above it:
+  // the knob starts near the top of the frame and, fully pressed, still
+  // rests above the lid.
+  var L = 104, R = 196, top = 142, bot = 284, x, i;
+  var ROD = bot - top - 2;
   var poured = 0, pour = null;
   M.pours.forEach(function (q) {
     if (tt >= q.at + q.dur) poured += q.g;
@@ -3271,14 +3275,15 @@ function drawImmersionAnim(ctx, tt, M, col, still) {
   ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fillRect(L + 7, top + 8, 5, bot - top - 26);
   // Metal frame: bands top and bottom, and the handle.
   ctx.strokeStyle = col.strong; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(L - 4, top + 34); ctx.lineTo(R + 4, top + 34); ctx.moveTo(L - 4, bot - 16); ctx.lineTo(R + 4, bot - 16); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(L - 4, top + 18); ctx.lineTo(R + 4, top + 18); ctx.moveTo(L - 4, bot - 14); ctx.lineTo(R + 4, bot - 14); ctx.stroke();
   ctx.lineWidth = 6; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(R + 4, top + 40); ctx.bezierCurveTo(R + 42, top + 44, R + 42, bot - 60, R + 4, bot - 50); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(R + 4, top + 22); ctx.bezierCurveTo(R + 38, top + 24, R + 38, bot - 40, R + 4, bot - 34); ctx.stroke();
   // Lid, rod and the mesh plate.
   ctx.fillStyle = col.card; ctx.strokeStyle = col.strong; ctx.lineWidth = 2;
   ctx.beginPath(); animRoundRect(ctx, L - 6, top - 14, R - L + 12, 14, 5); ctx.fill(); ctx.stroke();
-  ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(150, meshY); ctx.lineTo(150, top - 50 + (meshY - top - 6)); ctx.stroke();
-  ctx.fillStyle = col.sunken; ctx.beginPath(); ctx.arc(150, top - 54 + (meshY - top - 6), 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  var knobY = meshY - ROD;
+  ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(150, meshY); ctx.lineTo(150, knobY + 6); ctx.stroke();
+  ctx.fillStyle = col.sunken; ctx.beginPath(); ctx.arc(150, knobY, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   if (poured > 0.5 || press > 0) {
     ctx.strokeStyle = col.strong; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(L + 3, meshY); ctx.lineTo(R - 3, meshY); ctx.stroke();
