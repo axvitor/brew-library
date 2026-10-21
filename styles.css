@@ -3077,3 +3077,47 @@ body:has(.gate-screen){padding-bottom:0}
 .sheet-timer .sheet-head .tm-circ{pointer-events:auto}
 .sheet-timer .tm-title{transition:opacity var(--dur-base) var(--ease-standard)}
 .sheet-timer.is-scrolled .tm-title{opacity:0}
+
+/* ---------- floating close & back everywhere ----------
+   The timer's rule, applied to every screen with a way out: the controls
+   stay put as glass circles and the page scrolls beneath them.
+
+   Recipe: its top row sticks under the top edge. The row itself lets
+   touches through; only the buttons and the open menu catch them. */
+.rd-top{position:sticky;top:max(10px, env(safe-area-inset-top));z-index:20;pointer-events:none}
+.rd-top .rd-btn,.rd-top .menu{pointer-events:auto}
+.rd-btn.glass{position:relative;color:var(--text-title)}
+.rd-btn.glass:hover{background:radial-gradient(120% 70% at 30% -20%, rgba(255,255,255,.2), transparent 60%),var(--glass-tint)}
+.rd-btn.glass.fav.on{color:var(--accent-favorite)}
+
+/* Form pages: the head sits at the top of the scrolling body (pulled out
+   to its edges), sticks there, and goes clear; the trail and title fade
+   once the form scrolls under them, leaving Close floating. Focused fields
+   are scrolled to below it, not behind it. */
+.page .sheet-body{scroll-padding-top:68px}
+.page .page-head{
+  /* Sticky offsets count from inside the body's padding, so the top edge
+     is one padding up. */
+  position:sticky;top:calc(var(--pad-sheet) * -1);z-index:4;
+  margin:calc(var(--pad-sheet) * -1) calc(var(--pad-sheet) * -1) var(--pad-sheet);
+  background:none;pointer-events:none;
+}
+.page .page-head .crumbs a,.page .page-head .crumbs button,.page .page-title-row .iconbtn{pointer-events:auto}
+/* Frosted like the timer's circles, in both themes: the clear pill it was
+   can't be read over a form passing beneath it. */
+/* Close sits in the top corner beside the trail rather than down on the
+   title row, so it floats up by the top edge once the title has gone. */
+.page .page-head{padding-top:10px}
+.page .crumbs{min-height:40px;padding-right:52px;margin-bottom:4px}
+.page .page-title-row .iconbtn.glass{
+  position:absolute;top:10px;right:var(--pad-sheet);
+  background:radial-gradient(120% 70% at 30% -20%, rgba(255,255,255,.14), transparent 60%),var(--glass-tint);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.20),inset 0 -1px 0 rgba(255,255,255,.05),0 14px 34px -14px rgba(0,0,0,.7);
+}
+.page .page-title-row .iconbtn.glass:hover{background:radial-gradient(120% 70% at 30% -20%, rgba(255,255,255,.2), transparent 60%),var(--glass-tint);color:var(--text-accent)}
+[data-theme="light"] .page .page-title-row .iconbtn.glass{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(26,24,22,.04),inset 0 0 0 1px rgba(26,24,22,.07),0 18px 36px -14px rgba(26,24,22,.30);
+}
+.page .crumbs,.page .page-head h2{transition:opacity var(--dur-base) var(--ease-standard)}
+.page.is-scrolled .crumbs,.page.is-scrolled .page-head h2{opacity:0}
+.page.is-scrolled .page-head .crumbs a,.page.is-scrolled .page-head .crumbs button{pointer-events:none}

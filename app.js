@@ -1788,10 +1788,12 @@ function renderPage(arriving) {
   var hash = location.hash || '#/';
   var m = hash.match(/^#\/r\/(.+)$/);
   if (!m) doseView = { id: null, dose: null };
-  if (m) renderDetail(decodeURIComponent(m[1]));
+  // A repaint of the page already shown (a favourite tapped, data synced)
+  // keeps your place; arriving starts at the top.
+  if (m) renderDetail(decodeURIComponent(m[1]), !arriving);
   else if (hash === '#/account') renderAccount();
   else if (hash === '#/library') renderLibrary();
-  else if (hash === '#/ranking') renderRanking();
+  else if (hash === '#/ranking') renderRanking(!arriving);
   else renderHome(arriving);
   closeMenu();
 }
@@ -2617,7 +2619,7 @@ function renderDetail(id, keepScroll) {
   view.classList.remove('view-enter');
   var saved = recipeById(id);
   if (!saved) {
-    view.innerHTML = '<div class="detail rd"><div class="rd-top"><a class="rd-btn" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a></div>' +
+    view.innerHTML = '<div class="detail rd"><div class="rd-top"><a class="rd-btn glass" data-glass="4" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a></div>' +
       '<div class="empty">' + ICON.bean + '<h3>' + esc(t('Recipe not found')) + '</h3><p>' + esc(t('It may have been deleted.')) + '</p></div></div>';
     return;
   }
@@ -2677,11 +2679,11 @@ function renderDetail(id, keepScroll) {
 
   var html = '<div class="detail rd">' +
     '<div class="rd-top">' +
-      '<a class="rd-btn" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a>' +
+      '<a class="rd-btn glass" data-glass="4" href="#/" aria-label="' + esc(t('Back')) + '">' + ICON.back + '</a>' +
       '<span class="rd-gap"></span>' +
-      '<button class="rd-btn fav' + (r.fav ? ' on' : '') + '" data-action="fav" data-id="' + esc(r.id) + '" aria-label="' + esc(t('Toggle favourite')) + '">' + iconStar(r.fav) + '</button>' +
+      '<button class="rd-btn glass fav' + (r.fav ? ' on' : '') + '" data-glass="4" data-action="fav" data-id="' + esc(r.id) + '" aria-label="' + esc(t('Toggle favourite')) + '">' + iconStar(r.fav) + '</button>' +
       '<div class="menu-holder detail-more">' +
-        '<button class="rd-btn" data-action="toggle-detail-menu" aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
+        '<button class="rd-btn glass" data-glass="4" data-action="toggle-detail-menu" aria-haspopup="true" aria-expanded="false" aria-label="' + esc(t('More actions')) + '">' + ICON.more + '</button>' +
         '<div class="menu" id="detailMenu" hidden>' +
           '<button data-action="edit" data-id="' + esc(r.id) + '">' + esc(t('Edit')) + '</button>' +
           '<button data-action="duplicate" data-id="' + esc(r.id) + '">' + esc(t('Duplicate')) + '</button>' +
@@ -4077,9 +4079,15 @@ function renderModals() {
     var el = m.render();
     m.el = el;
     modalRoot.appendChild(el);
-    if (scrolls[i]) {
-      var body = el.querySelector('.sheet-body');
-      if (body) body.scrollTop = scrolls[i];
+    var body = el.querySelector('.sheet-body');
+    if (body && scrolls[i]) body.scrollTop = scrolls[i];
+    // A form's title steps aside once the form scrolls under it; Close stays.
+    if (body && el.classList.contains('page')) {
+      var syncScrolled = (function (page, b) {
+        return function () { page.classList.toggle('is-scrolled', b.scrollTop > 8); };
+      })(el, body);
+      body.addEventListener('scroll', syncScrolled, { passive: true });
+      syncScrolled();
     }
 
     var crumbs = el.querySelector('.crumbs');
@@ -4155,10 +4163,12 @@ function focusLastStep(m, rowSelector) {
    sheets over a dimmed list gives no sense of where you are. A page with a
    breadcrumb does, and the trail is just the modal stack drawn out.
 
-   The head and foot stay pinned with the body scrolling between them, so
-   Save is always reachable above the keyboard. Class names from the sheet
-   era are kept where behaviour hangs off them (.sheet-body carries scroll
-   position across re-renders).
+   The head rides at the top of the scrolling body and the foot floats at
+   the bottom, so Close and Save are always reachable — Save above the
+   keyboard too. Once the form scrolls, the trail and title fade and the
+   form passes under a lone glass Close, the way the timer's controls
+   float. Class names from the sheet era are kept where behaviour hangs
+   off them (.sheet-body carries scroll position across re-renders).
 
    Confirmations are deliberately not pages: v3 reserves the centred modal
    for destructive choices, and an interruption should read as one. */
@@ -4167,14 +4177,16 @@ function sheet(opts) {
   wrap.className = 'page';
   wrap.innerHTML =
     '<div class="page-inner' + (opts.narrow ? ' narrow' : '') + '" role="dialog" aria-modal="true">' +
-      '<div class="page-head">' +
-        '<nav class="crumbs" aria-label="Breadcrumb"></nav>' +
-        '<div class="page-title-row">' +
-          '<h2>' + esc(opts.title) + '</h2>' +
-          '<button class="iconbtn" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+      '<div class="sheet-body">' +
+        '<div class="page-head">' +
+          '<nav class="crumbs" aria-label="Breadcrumb"></nav>' +
+          '<div class="page-title-row">' +
+            '<h2>' + esc(opts.title) + '</h2>' +
+            '<button class="iconbtn glass" data-glass="4" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+          '</div>' +
         '</div>' +
+        opts.body +
       '</div>' +
-      '<div class="sheet-body">' + opts.body + '</div>' +
       '<div class="sheet-foot glass" data-glass="6">' + opts.foot + '</div>' +
     '</div>';
   return wrap;
