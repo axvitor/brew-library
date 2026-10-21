@@ -920,7 +920,6 @@ var TRANSLATIONS = {
     'Choose a type first.': 'Escolha um tipo primeiro.',
     'Not set': 'Não definido',
     'Moka pot': 'Moka',
-    'Drip machine': 'Cafeteira elétrica',
     'Cold brew': 'Cold brew',
     'Coffee steeping in the press': 'Café em infusão na prensa',
     'Moka pot brewing on the stove': 'Moka preparando no fogão',
@@ -1344,7 +1343,7 @@ var BREWER_SVG = {
    free text ("Pressure", "Imersão"…), which is read for its meaning. The
    type decides the timer's drawing and backs up the icon when the name
    says nothing. */
-var METHOD_TYPES = ['Pour over', 'Immersion', 'Espresso', 'AeroPress', 'Moka pot', 'Drip machine', 'Cold brew'];
+var METHOD_TYPES = ['Pour over', 'Immersion', 'Espresso', 'AeroPress', 'Moka pot', 'Cold brew'];
 
 function typeFromText(text) {
   var k = String(text || '').toLowerCase();
@@ -1354,8 +1353,8 @@ function typeFromText(text) {
   if (/immers|imers|french|prensa/.test(k)) return 'Immersion';
   if (/espresso|pressure|press[aã]o/.test(k)) return 'Espresso';
   if (/moka|stovetop|fog[aã]o/.test(k)) return 'Moka pot';
-  if (/drip|cafeteira|machine|m[aá]quina|gotej/.test(k)) return 'Drip machine';
-  if (/pour|coado|filtro/.test(k)) return 'Pour over';
+  // A drip machine is a filter brew, so it reads as pour over.
+  if (/pour|coado|filtro|drip|cafeteira|machine|m[aá]quina|gotej/.test(k)) return 'Pour over';
   return '';
 }
 
@@ -1375,9 +1374,9 @@ function brewerFromName(me) {
 }
 
 var TYPE_BREWER = { 'Pour over': 'v60', 'Immersion': 'press', 'Espresso': 'espresso', 'AeroPress': 'aeropress',
-  'Moka pot': 'moka', 'Drip machine': 'drip', 'Cold brew': 'press' };
+  'Moka pot': 'moka', 'Cold brew': 'press' };
 var BREWER_TYPE = { v60: 'Pour over', origami: 'Pour over', flat: 'Pour over', chemex: 'Pour over', aeropress: 'AeroPress',
-  espresso: 'Espresso', moka: 'Moka pot', press: 'Immersion', drip: 'Drip machine' };
+  espresso: 'Espresso', moka: 'Moka pot', press: 'Immersion', drip: 'Pour over' };
 
 // The method's type: what the form chose, else what its name implies.
 function methodType(me) {
