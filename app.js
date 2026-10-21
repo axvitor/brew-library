@@ -525,7 +525,7 @@ function preset(styleId, dose, water, methodName) {
   // 2:00, swirl, let it settle, then press gently over about 30 seconds.
   if (styleId === 'st-hoffmann-aeropress') {
     return [
-      { t: '0:00', label: 'Add the coffee, then pour all the water in one go.', water: g(water) },
+      { t: '0:00', label: 'Add the coffee, then pour all the water in one go.', water: g(water), pour: 10 },
       { t: '0:15', label: 'Insert the plunger just enough to seal, then leave it alone.', water: 0 },
       { t: '2:00', label: 'Remove the plunger and swirl gently to settle the bed.', water: 0 },
       { t: '2:30', label: 'Press slowly and evenly — about 30 seconds.', water: 0 }
@@ -916,6 +916,7 @@ var TRANSLATIONS = {
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
     'poured': 'despejados',
+    'AeroPress brewing into the mug': 'AeroPress preparando na caneca',
     'in the basket': 'no porta-filtro',
     'Stop the shot': 'Parar a extração',
     'Espresso pouring into the cup': 'Espresso caindo na xícara',
@@ -2498,7 +2499,7 @@ function renderDetail(id, keepScroll) {
     '</section>';
   } else {
     doseCard = '<section class="rd-dose is-static"><div class="rd-dose-nums">' +
-      '<span><b>' + num(r.dose) + '<small>g</small></b><i>' + BEAN_MARK + esc(t('coffee')) + '</i></span>' +
+      (Number(r.dose) > 0 ? '<span><b>' + num(r.dose) + '<small>g</small></b><i>' + BEAN_MARK + esc(t('coffee')) + '</i></span>' : '') +
       (r.water !== '' && r.water != null ? '<span><b>' + num(r.water) + '<small>g</small></b><i>' + ICON.drop + esc(t('water')) + '</i></span>' : '') +
     '</div></section>';
   }
@@ -2837,7 +2838,7 @@ function animColors() {
     strong: cs.getPropertyValue('--border-strong').trim(), accent: cs.getPropertyValue('--text-accent').trim(),
     paper: dark ? 'rgba(237,235,231,.07)' : 'rgba(26,24,22,.04)', rib: dark ? 'rgba(237,235,231,.05)' : 'rgba(26,24,22,.06)',
     water: dark ? 'rgba(143,179,201,.9)' : 'rgba(91,143,176,.9)', glass: dark ? 'rgba(237,235,231,.75)' : 'rgba(26,24,22,.7)',
-    steam: dark ? '237,235,231' : '107,103,95', wood: dark ? '#6B4A33' : '#8A6A4E'
+    steam: dark ? '237,235,231' : '107,103,95', wood: dark ? '#6B4A33' : '#8A6A4E', dark: dark
   };
 }
 
@@ -2855,6 +2856,7 @@ function animDraw(e) {
   if (!timer.animCol || timer.animTheme !== theme) { timer.animCol = animColors(); timer.animTheme = theme; }
   var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (timer.anim.kind === 'pour') drawPourAnim(ctx, e, timer.anim, timer.animCol, still);
+  else if (timer.anim.kind === 'aero') drawAeroAnim(ctx, e, timer.anim, timer.animCol, still);
   else drawShotAnim(ctx, e, timer.anim, timer.animCol, still);
 }
 
@@ -2978,6 +2980,162 @@ function drawPourAnim(ctx, tt, M, col, still) {
   }
 }
 
+/* AeroPress, side on: the chamber standing on a mug. Water goes in with
+   the pour, the grounds darken and bubble; the plunger is set in to hold
+   the brew; a swirl stirs the surface; then the press drives the seal
+   down, the coffee streams through the cap into the mug, and the plunger
+   ends with a hiss of air on the puck. The moments come from the
+   recipe's steps — read from their wording, falling back to sensible
+   defaults — so the drawing follows whatever schedule the recipe has. */
+function aeroModel(plan, dose, water) {
+  var W = plan.water || Number(water) || 200;
+  var pours = [];
+  plan.segs.forEach(function (sg) {
+    if (!sg.water) return;
+    var len = sg.end - sg.start;
+    pours.push({ at: sg.start, g: sg.water, dur: sg.pour ? Math.min(sg.pour, len) : Math.min(10, len) });
+  });
+  if (!pours.length) pours.push({ at: 0, g: W, dur: 10 });
+  function find(re) {
+    for (var i = 0; i < plan.segs.length; i++) if (re.test(plan.segs[i].label || '')) return plan.segs[i];
+    return null;
+  }
+  var ins = find(/plunger|seal|êmbolo|tampe/i), sw = find(/swirl|stir|gir|mex/i), pr = find(/press|pression|empurr/i);
+  var last = plan.segs[plan.segs.length - 1];
+  var pressStart = pr ? pr.start : last.start, pressEnd = pr ? Math.min(pr.end, pr.start + 40) : plan.total;
+  if (pressEnd - pressStart < 5) pressEnd = Math.min(plan.total, pressStart + 20);
+  return {
+    kind: 'aero', water: W, dose: Number(dose) || W / 16, pours: pours,
+    insertAt: ins ? ins.start : pours[pours.length - 1].at + pours[pours.length - 1].dur + 3,
+    swirlAt: sw ? sw.start : -1, pressStart: pressStart, pressEnd: pressEnd
+  };
+}
+
+function drawAeroAnim(ctx, tt, M, col, still) {
+  var cL = 106, cR = 194, cTop = 40, cBot = 196, puckTop = 184;
+  // Water poured so far.
+  var poured = 0, pour = null;
+  M.pours.forEach(function (q) {
+    if (tt >= q.at + q.dur) poured += q.g;
+    else if (tt >= q.at) { poured += q.g * (tt - q.at) / q.dur; pour = q; }
+  });
+  var fillFrac = Math.min(1, poured / (M.water * 1.15));
+  var press = M.pressEnd > M.pressStart ? animEase((tt - M.pressStart) / (M.pressEnd - M.pressStart)) : 0;
+  var liquidTop0 = puckTop - fillFrac * (puckTop - cTop - 22);
+  var plungerIn = tt >= M.insertAt;
+  var sealY = plungerIn ? animLerp(Math.min(liquidTop0 - 6, cTop + 12), puckTop - 2, press) : null;
+  var liquidTop = plungerIn ? Math.max(liquidTop0, sealY + 4) : liquidTop0;
+  var absorbed = Math.min(M.dose * 2, poured);
+  var mugG = (poured - absorbed) * press;
+  var wet = Math.min(1, poured / Math.max(1, M.dose * 2));
+
+  // Mug.
+  var mL = 84, mR = 216, mTop = 214, mBot = 300;
+  var mLevel = mBot - 6 - Math.min(1, mugG / (M.water * 1.05)) * (mBot - mTop - 16);
+  ctx.save(); ctx.beginPath(); animRoundRect(ctx, mL, mTop, mR - mL, mBot - mTop, 14); ctx.clip();
+  if (mugG > 0.5) {
+    var gm = ctx.createLinearGradient(0, mLevel, 0, mBot); gm.addColorStop(0, '#7A4A2A'); gm.addColorStop(1, '#2E1A0F');
+    ctx.fillStyle = gm; ctx.beginPath(); ctx.moveTo(mL, mLevel);
+    for (var x = mL; x <= mR; x += 4) ctx.lineTo(x, mLevel + Math.sin(x * 0.12 + tt * 4) * (press > 0 && press < 1 ? 1.2 : 0.4));
+    ctx.lineTo(mR, mBot); ctx.lineTo(mL, mBot); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.beginPath(); animRoundRect(ctx, mL, mTop, mR - mL, mBot - mTop, 14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(mR, 232); ctx.bezierCurveTo(mR + 26, 232, mR + 26, 272, mR, 272); ctx.stroke();
+
+  // The stream through the cap while pressing.
+  if (press > 0.02 && press < 0.99) {
+    ctx.strokeStyle = '#5A3520'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(150, 206); ctx.lineTo(150 + Math.sin(tt * 12) * 0.4, mLevel); ctx.stroke();
+  }
+
+  // Chamber: a clear tube with its flange resting on the mug.
+  ctx.fillStyle = col.card; ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.beginPath(); animRoundRect(ctx, cL - 18, cBot, cR - cL + 36, 8, 3); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col.sunken; ctx.beginPath(); animRoundRect(ctx, cL + 6, cBot + 8, cR - cL - 12, 6, 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col.paper; ctx.fillRect(cL, cTop, cR - cL, cBot - cTop);
+
+  // Inside: grounds settle as a puck; the slurry above is dark and bubbly.
+  ctx.save(); ctx.beginPath(); ctx.rect(cL, cTop, cR - cL, cBot - cTop); ctx.clip();
+  if (poured > 0.5) {
+    var swirlK = M.swirlAt >= 0 && tt >= M.swirlAt && tt < M.swirlAt + 4 ? Math.sin((tt - M.swirlAt) / 4 * Math.PI) : 0;
+    var amp = (pour ? 1.6 : 0.6) + swirlK * 4;
+    var surf = function (xx) { return liquidTop + Math.sin(xx * 0.1 + tt * (4 + swirlK * 6)) * amp + (xx - 150) * 0.06 * swirlK * Math.sin(tt * 5); };
+    var gl = ctx.createLinearGradient(0, liquidTop, 0, puckTop);
+    gl.addColorStop(0, 'rgba(122,80,48,.92)'); gl.addColorStop(1, 'rgba(46,26,15,.97)');
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.moveTo(cL, plungerIn ? liquidTop : surf(cL));
+    for (x = cL; x <= cR; x += 3) ctx.lineTo(x, plungerIn && press > 0 ? liquidTop : surf(x));
+    ctx.lineTo(cR, puckTop); ctx.lineTo(cL, puckTop); ctx.closePath(); ctx.fill();
+    if (!(plungerIn && press > 0)) {
+      ctx.strokeStyle = 'rgba(217,185,143,.85)'; ctx.lineWidth = 2; ctx.beginPath();
+      for (x = cL + 2; x <= cR - 2; x += 3) ctx[x === cL + 2 ? 'moveTo' : 'lineTo'](x, surf(x));
+      ctx.stroke();
+    }
+    // Fresh grounds release gas for the first moments after the pour.
+    var fizz = Math.max(0, 1 - Math.max(0, tt - (M.pours[0].at + M.pours[0].dur)) / 20) * (press > 0 ? 0 : 1);
+    if (fizz > 0 && !still) {
+      for (var bi = 0; bi < 12; bi++) {
+        var life = 1.4 + animRnd(bi) * 1.2, ph = ((tt + animRnd(bi + 3) * life) % life) / life;
+        ctx.strokeStyle = 'rgba(217,185,143,' + (0.7 * fizz * (1 - ph)) + ')'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(animLerp(cL + 8, cR - 8, animRnd(bi + 21)), liquidTop + 4 + ph * 4, 1.4 + ph * 2, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+  }
+  ctx.fillStyle = animMix('#9C7A5A', '#3A2418', animEase(wet));
+  ctx.fillRect(cL, puckTop, cR - cL, cBot - puckTop);
+  for (var gi = 0; gi < 50; gi++) {
+    ctx.fillStyle = 'rgba(0,0,0,' + (0.2 + animRnd(gi + 7) * 0.2) + ')';
+    ctx.fillRect(animLerp(cL + 2, cR - 3, animRnd(gi)), animLerp(puckTop + 1, cBot - 2, animRnd(gi + 99)), 1.4, 1.4);
+  }
+  ctx.restore();
+  // Tube walls, number marks, and a highlight down the glass.
+  ctx.strokeStyle = col.glass; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cL, cTop); ctx.lineTo(cL, cBot); ctx.moveTo(cR, cTop); ctx.lineTo(cR, cBot); ctx.stroke();
+  ctx.lineWidth = 1; ctx.fillStyle = col.strong; ctx.font = '500 9px "Albert Sans", sans-serif';
+  for (var mk = 1; mk <= 4; mk++) {
+    var my = puckTop - mk * (puckTop - cTop - 22) / 4;
+    ctx.strokeStyle = col.strong; ctx.beginPath(); ctx.moveTo(cR - 10, my); ctx.lineTo(cR - 2, my); ctx.stroke();
+    ctx.fillText(String(mk), cR - 19, my + 3);
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fillRect(cL + 6, cTop + 6, 5, cBot - cTop - 16);
+
+  // The plunger: seal in the tube, body above it, and the cap on top.
+  if (plungerIn) {
+    var drop = animEase((tt - M.insertAt) / 0.8);
+    var sY = animLerp(cTop - 30, sealY, drop);
+    ctx.fillStyle = col.card; ctx.strokeStyle = col.strong; ctx.lineWidth = 2;
+    ctx.beginPath(); animRoundRect(ctx, cL + 6, sY - 150, cR - cL - 12, 150, 4); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); animRoundRect(ctx, cL - 4, sY - 158, cR - cL + 8, 10, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = col.dark ? '#2A2723' : '#3F3B36'; ctx.beginPath(); animRoundRect(ctx, cL + 1, sY - 6, cR - cL - 2, 8, 3); ctx.fill();
+    // Air hissing through the puck as the press bottoms out.
+    if (press > 0.92 && press < 1 && !still) {
+      for (var hi = 0; hi < 8; hi++) {
+        var hp = ((tt * 3 + animRnd(hi) * 3) % 1);
+        ctx.fillStyle = 'rgba(232,210,180,' + (0.6 * (1 - hp)) + ')';
+        ctx.beginPath(); ctx.arc(animLerp(cL + 10, cR - 10, animRnd(hi + 40)), puckTop - 2 - hp * 4, 1.2, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // Kettle stream while the water goes in.
+  if (pour && !plungerIn) {
+    var into = tt - pour.at, k1 = animEase(into / 0.5) * (1 - animEase((into - pour.dur + 0.5) / 0.5));
+    var land = 150 + Math.sin(into * 2.2) * 18;
+    ctx.strokeStyle = col.water; ctx.lineCap = 'round'; ctx.lineWidth = 3.2 * k1;
+    ctx.beginPath(); ctx.moveTo(220, 0); ctx.bezierCurveTo(204, 12, land + 6, liquidTop - 40, land, liquidTop); ctx.stroke();
+  }
+
+  // Steam once the mug has coffee in it.
+  var sa = Math.max(0, Math.min(1, (mugG - 30) / 60)) * (still ? 0.5 : 1);
+  if (sa > 0 && press >= 1) {
+    for (var wv = 0; wv < 3; wv++) {
+      ctx.strokeStyle = 'rgba(' + col.steam + ',' + 0.2 * sa + ')'; ctx.lineWidth = 3; ctx.beginPath();
+      for (var k = 0; k <= 10; k++) ctx[k ? 'lineTo' : 'moveTo'](128 + wv * 22 + Math.sin(tt + wv * 2 + k * 0.6) * (1.5 + k * 0.4), mTop - 4 - k * 2.4);
+      ctx.stroke();
+    }
+  }
+}
+
 function drawShotAnim(ctx, tt, M, col, still) {
   var u = tt / M.total * 28, flow = shotProfile(u), vol = animAt(M.cum, M.dt, tt), blond = animEase((u - 23) / 5);
   // Group head and portafilter.
@@ -3059,6 +3217,7 @@ function drawShotAnim(ctx, tt, M, col, still) {
 function buildTimerEl(r, plan) {
   var me = findIn('method', r.methodId);
   var shot = !plan.water && brewerKey(me) === 'espresso';
+  var aero = brewerKey(me) === 'aeropress';
   var rowsHTML = plan.segs.map(function (s, i) {
     return '<li class="timer-step" data-i="' + i + '">' +
       '<span class="ts-t">' + esc(mmss(s.start)) + '</span>' +
@@ -3093,7 +3252,8 @@ function buildTimerEl(r, plan) {
                     '<span class="timer-total">' + esc(t('in the basket')) + '</span></span>'
                 : '') +
           '</div>' +
-          (plan.water ? animHTML(t('Water in the cone')) : shot ? animHTML(t('Espresso pouring into the cup')) : '') +
+          (aero ? animHTML(t('AeroPress brewing into the mug'))
+            : plan.water ? animHTML(t('Water in the cone')) : shot ? animHTML(t('Espresso pouring into the cup')) : '') +
           '<div class="timer-now glass" data-glass="8">' +
             '<span class="tm-done-cup" aria-hidden="true">' + DONE_CUP + '</span>' +
             '<span class="timer-now-kicker"></span>' +
@@ -3141,7 +3301,8 @@ function openTimer(id) {
   stopTimer();
   timer = {
     shot: !plan.water && brewerKey(findIn('method', r.methodId)) === 'espresso',
-    anim: plan.water ? pourModel(plan, r.dose)
+    anim: brewerKey(findIn('method', r.methodId)) === 'aeropress' ? aeroModel(plan, r.dose, r.water)
+      : plan.water ? pourModel(plan, r.dose)
       : brewerKey(findIn('method', r.methodId)) === 'espresso' ? shotModel(plan, r.dose) : null,
     id: id, ratio: (Number(r.dose) > 0 && Number(r.water) > 0) ? ratio(r.dose, r.water) : '',
     plan: plan, el: buildTimerEl(r, plan), sheet: null,
