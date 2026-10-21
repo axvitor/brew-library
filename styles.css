@@ -2998,3 +2998,22 @@ body:has(.gate-screen){padding-bottom:0}
 /* Confirmation dialogs: no red rule across the top — the red Delete /
    Leave button already says this one bites. */
 .dialog{border-top:var(--border-w-hairline) solid var(--border-hairline)}
+
+/* ---------- timer: espresso shot ---------- */
+.tm-shot{display:flex;justify-content:center;margin-top:clamp(4px,1.5vh,14px)}
+.tm-shot svg{width:auto;height:min(270px,31vh);display:block;overflow:visible}
+.shot-head{fill:var(--surface-sunken);stroke:var(--border-strong);stroke-width:2}
+.shot-pf{fill:var(--surface-card);stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
+.shot-spout{fill:var(--surface-sunken);stroke:var(--border-strong);stroke-width:2;stroke-linejoin:round}
+.shot-stream{fill:none;stroke:#6B4226;stroke-width:3.5;stroke-linecap:round;opacity:0;transition:opacity .35s}
+.is-pouring .shot-stream{opacity:1;stroke-dasharray:6 4;animation:shotFlow .5s linear infinite}
+@keyframes shotFlow{to{stroke-dashoffset:-10}}
+.shot-liquid{fill:#4A2B18;transition:y .25s linear}
+.shot-crema{fill:#C9A27A;opacity:0;transition:opacity .4s,y .25s linear}
+.shot-cup{fill:none;stroke:var(--text-title);stroke-width:2}
+.shot-saucer{stroke:var(--border-strong);stroke-width:2;stroke-linecap:round}
+[data-theme="light"] .shot-liquid{fill:#6B4226}
+@media (prefers-reduced-motion:reduce){.is-pouring .shot-stream{animation:none;stroke-dasharray:none}}
+/* One continuous pull: no "next step" line. */
+.is-shot .timer-next{display:none}
+.is-shot .sheet-timer.is-done .tm-shot svg{height:min(170px,20vh)}

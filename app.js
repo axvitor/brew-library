@@ -916,6 +916,9 @@ var TRANSLATIONS = {
     'Enjoy your cup': 'Aproveite seu café',
     'Rate this cup': 'Avalie esta xícara',
     'poured': 'despejados',
+    'in the basket': 'no porta-filtro',
+    'Stop the shot': 'Parar a extração',
+    'Espresso pouring into the cup': 'Espresso caindo na xícara',
     'Your coffee · every device': 'Seu café · todo dispositivo',
     'Contents': 'Conteúdo',
     'Pours': 'Despejos',
@@ -1144,6 +1147,7 @@ var ICON = {
   plus: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 5v14M5 12h14"/></svg>',
   drop: '<svg viewBox="0 0 24 24" class="ico"><path d="M12 3.5c3.5 4.2 6 7.6 6 10.6a6 6 0 0 1-12 0c0-3 2.5-6.4 6-10.6z"/></svg>',
   cup: '<svg viewBox="0 0 24 24" class="cup"><path d="M5 9h12v4a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H16"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" class="ico ico-fill"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
   minus: '<svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14"/></svg>',
   close: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" class="ico"><path d="M15 18l-6-6 6-6"/></svg>',
@@ -2776,7 +2780,31 @@ function coneSVG() {
   '</svg></div>';
 }
 
+/* Espresso, side on: the group head and portafilter, two streams, and the
+   cup filling with espresso under a band of crema as the shot runs. A
+   shot is one continuous pull, so there are no steps — just the clock
+   and the cup. The cup's insides are a clip path the fill is drawn
+   through, so the level can be a plain rectangle. */
+function shotSVG() {
+  return '<div class="tm-shot"><svg viewBox="0 0 300 290" role="img" aria-label="' + esc(t('Espresso pouring into the cup')) + '">' +
+    '<defs><clipPath id="shotCupClip"><path d="M102 198 H198 V236 A26 26 0 0 1 172 262 H128 A26 26 0 0 1 102 236 Z"/></clipPath></defs>' +
+    '<rect class="shot-head" x="70" y="0" width="160" height="34" rx="6"/>' +
+    '<path class="shot-pf" d="M84 34 H216 L208 66 Q206 74 198 74 H102 Q94 74 92 66 Z"/>' +
+    '<path class="shot-pf" d="M216 46 H286 Q292 46 292 52 V58 Q292 64 286 64 H212"/>' +
+    '<path class="shot-spout" d="M128 74 V86 H140 V74 M160 74 V86 H172 V74"/>' +
+    '<path class="shot-stream" d="M134 88 Q133 150 140 216"/>' +
+    '<path class="shot-stream" d="M166 88 Q167 150 160 216"/>' +
+    '<g clip-path="url(#shotCupClip)"><rect class="shot-liquid" x="100" y="264" width="100" height="70"/>' +
+      '<rect class="shot-crema" x="100" y="264" width="100" height="7"/></g>' +
+    '<path class="shot-cup" d="M100 196 H200 V236 A28 28 0 0 1 172 264 H128 A28 28 0 0 1 100 236 Z"/>' +
+    '<path class="shot-cup" d="M200 206 H210 A12 12 0 0 1 210 230 H200"/>' +
+    '<path class="shot-saucer" d="M78 276 H222"/>' +
+  '</svg></div>';
+}
+
 function buildTimerEl(r, plan) {
+  var me = findIn('method', r.methodId);
+  var shot = !plan.water && brewerKey(me) === 'espresso';
   var rowsHTML = plan.segs.map(function (s, i) {
     return '<li class="timer-step" data-i="' + i + '">' +
       '<span class="ts-t">' + esc(mmss(s.start)) + '</span>' +
@@ -2788,7 +2816,7 @@ function buildTimerEl(r, plan) {
   var wrap = document.createElement('div');
   // Fullscreen, not a floating dialog — brewing wants undivided attention,
   // not a card sharing space with the library behind it. See .overlay-full.
-  wrap.className = 'overlay overlay-full';
+  wrap.className = 'overlay overlay-full' + (shot ? ' is-shot' : '');
   wrap.innerHTML =
     '<div class="sheet narrow sheet-timer" role="dialog" aria-modal="true" aria-label="' + esc(titleOf(r)) + '">' +
       '<div class="sheet-head">' +
@@ -2800,15 +2828,18 @@ function buildTimerEl(r, plan) {
       '</div>' +
       '<div class="sheet-body timer-body">' +
         '<div class="timer-hero">' +
-          '<div class="tm-clock' + (plan.water ? ' is-split' : '') + '">' +
+          '<div class="tm-clock' + (plan.water || shot ? ' is-split' : '') + '">' +
             '<span class="tm-time"><span class="timer-elapsed" role="timer" aria-live="off">0:00</span>' +
             '<span class="timer-total">' + esc(t('of')) + ' ' + esc(mmss(plan.total)) + '</span></span>' +
             (plan.water
               ? '<span class="tm-water"><span class="timer-poured">0<small> g</small></span>' +
                   '<span class="timer-total">' + esc(t('of')) + ' ' + plan.water + ' g ' + esc(t('poured')) + '</span></span>'
-              : '') +
+              : shot && Number(r.dose) > 0
+                ? '<span class="tm-water"><span class="timer-poured is-dose">' + num(r.dose) + '<small> g</small></span>' +
+                    '<span class="timer-total">' + esc(t('in the basket')) + '</span></span>'
+                : '') +
           '</div>' +
-          (plan.water ? coneSVG() : '') +
+          (plan.water ? coneSVG() : shot ? shotSVG() : '') +
           '<div class="timer-now glass" data-glass="8">' +
             '<span class="tm-done-cup" aria-hidden="true">' + DONE_CUP + '</span>' +
             '<span class="timer-now-kicker"></span>' +
@@ -2838,7 +2869,9 @@ function buildTimerEl(r, plan) {
           '</svg>' +
           '<button class="timer-toggle glass" data-glass="3" data-action="timer-toggle"></button>' +
         '</div>' +
-        '<button class="timer-side glass" data-glass="4" data-action="timer-skip" aria-label="' + esc(t('Skip to next step')) + '" title="' + esc(t('Skip to next step')) + '">' + ICON.skip + '</button>' +
+        (shot
+          ? '<button class="timer-side glass" data-glass="4" data-action="timer-skip" aria-label="' + esc(t('Stop the shot')) + '" title="' + esc(t('Stop the shot')) + '">' + ICON.stop + '</button>'
+          : '<button class="timer-side glass" data-glass="4" data-action="timer-skip" aria-label="' + esc(t('Skip to next step')) + '" title="' + esc(t('Skip to next step')) + '">' + ICON.skip + '</button>') +
       '</div>' +
     '</div>';
   wrap.addEventListener('mousedown', function (ev) { if (ev.target === wrap) closeModal(); });
@@ -2853,6 +2886,7 @@ function openTimer(id) {
 
   stopTimer();
   timer = {
+    shot: !plan.water && brewerKey(findIn('method', r.methodId)) === 'espresso',
     id: id, ratio: (Number(r.dose) > 0 && Number(r.water) > 0) ? ratio(r.dose, r.water) : '',
     plan: plan, el: buildTimerEl(r, plan), sheet: null,
     elapsed: 0, running: false, from: 0, at: 0, raf: 0, seg: -1, wake: null,
@@ -2922,7 +2956,15 @@ function timerPaint() {
     }
     timer.sheet.classList.toggle('is-waiting', !!seg.water && !pouringNow);
   }
-  var poured = el.querySelector('.timer-poured');
+  if (timer.shot) {
+    // The cup fills with the shot, crema riding on top of it.
+    var cupY = 262 - Math.min(1, frac) * 46;
+    el.querySelector('.shot-liquid').setAttribute('y', cupY.toFixed(1));
+    el.querySelector('.shot-crema').setAttribute('y', (cupY - 2).toFixed(1));
+    el.querySelector('.shot-crema').style.opacity = frac > 0.12 ? 1 : 0;
+    timer.sheet.classList.toggle('is-pouring', timer.running && !done && e > 2);
+  }
+  var poured = el.querySelector('.timer-poured:not(.is-dose)');
   if (poured) {
     var pct = pourFor > 0 ? Math.min(1, Math.max(0, (e - seg.start) / pourFor)) : 1;
     var g = seg.from + (seg.upto - seg.from) * pct;
@@ -2948,8 +2990,9 @@ function timerPaint() {
   if (i === timer.seg) return;
   timer.seg = i;
 
-  el.querySelector('.timer-eyebrow').textContent =
-    t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length;
+  el.querySelector('.timer-eyebrow').textContent = timer.shot
+    ? nameOf('method', recipeById(timer.id) ? recipeById(timer.id).methodId : '')
+    : t('Step') + ' ' + (i + 1) + ' ' + t('of') + ' ' + plan.segs.length;
   var nxt = plan.segs[i + 1];
   el.querySelector('.timer-next .nt').textContent = nxt ? t('Next') + ' · ' + mmss(nxt.start) : t('Last step');
   el.querySelector('.timer-next .nx').textContent = nxt ? t(nxt.label) : '';
