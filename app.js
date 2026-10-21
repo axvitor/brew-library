@@ -1351,12 +1351,14 @@ function brewerIcon(me) {
 
 /* ---- appearance ----
    Dark is F4 as designed; light is the same layout on warm white, with
-   frosted white glass. "Device" follows the phone's own setting. The
+   frosted white glass. "Device" follows the phone's own setting and is
+   the default, so the app matches the sign-in screen until someone
+   picks Dark or Light. The
    choice is per device (localStorage), like the language. index.html
    applies it before the stylesheet paints, so a light phone never
    flashes dark on load; this keeps it current afterwards. */
 var themeChoice = (function () {
-  try { return localStorage.getItem('brewTheme') || 'dark'; } catch (e) { return 'dark'; }
+  try { return localStorage.getItem('brewTheme') || 'auto'; } catch (e) { return 'auto'; }
 })();
 var themeQuery = window.matchMedia('(prefers-color-scheme: light)');
 
@@ -5611,7 +5613,7 @@ document.addEventListener('click', function (ev) {
       ev.preventDefault();
       var themeBox = btn.closest('.segs');
       var themeFrom = lensPos(themeBox);
-      setTheme(btn.getAttribute('data-theme-choice') || 'dark');
+      setTheme(btn.getAttribute('data-theme-choice') || 'auto');
       Array.prototype.forEach.call(themeBox.querySelectorAll('.seg'), function (b) {
         b.classList.toggle('on', b === btn);
       });
