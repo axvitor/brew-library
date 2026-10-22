@@ -2770,7 +2770,7 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .hc-top{align-items:center}
 .hc-txt{flex:1}
 .hc-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;align-self:flex-start}
-.ktab{display:inline-flex;align-items:center;gap:6px}
+.ktab{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .ktab .brewer-ico{width:16px;height:16px}
 .slide-method{display:inline-flex;align-items:center;gap:6px;min-width:0}
 .slide-method .brewer-ico{width:15px;height:15px;flex:none;color:var(--text-accent)}
