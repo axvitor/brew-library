@@ -3158,3 +3158,23 @@ body:has(.gate-screen){padding-bottom:0}
 .es-btn-quiet:hover{background:var(--surface-sunken)}
 .es-link{min-height:44px;padding:0 16px;border:0;border-radius:var(--radius-full);background:none;color:var(--text-accent);font:500 14px var(--font-text);cursor:pointer}
 .es-link:hover{text-decoration:underline}
+
+/* ---------- add recipe: a cup ----------
+   On a phone the capsule's Add is a cup on its saucer with a + in it, in
+   the same orange glass the round button had: a white sheen from the top,
+   a bright rim, an orange glow. The sidebar on a wide screen keeps its
+   plain + beside the label. */
+.nav-cup{display:none}
+@media(max-width:860px){
+  .appnav .nav-add,.appnav .nav-add:active{background:none;box-shadow:none}
+  .nav-add .nav-add-mark > .ico{display:none}
+  .nav-cup{
+    display:block;width:50px;height:43px;overflow:visible;
+    filter:drop-shadow(0 6px 8px rgba(200,74,22,.45));
+    transition:transform var(--dur-fast) var(--ease-tap),filter var(--dur-fast) var(--ease-standard);
+  }
+  .nav-cup-body path{fill:rgba(200,74,22,.9)}
+  .nav-cup-rim{fill:none;stroke:#fff;stroke-opacity:.5;stroke-width:1.2;stroke-linecap:round}
+  .nav-cup-plus{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round}
+  .nav-add:active .nav-cup{transform:scale(var(--press-scale));filter:drop-shadow(0 4px 6px rgba(200,74,22,.4)) brightness(.85)}
+}
