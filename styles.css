@@ -3187,3 +3187,15 @@ body:has(.gate-screen){padding-bottom:0}
 .inp-ratio span{flex:none;color:var(--text-muted);font-variant-numeric:tabular-nums}
 .inp-ratio input{flex:1;min-width:0;border:0;outline:none;background:none;padding:0;color:inherit;font:inherit;font-variant-numeric:tabular-nums}
 .inp-ratio:focus-within{border-color:var(--border-focus, var(--text-accent));box-shadow:var(--shadow-focus)}
+
+/* Long dose numbers (a litre of water, a decimal dose) step down a size
+   rather than pushing the − and + off the card. */
+/* Sized from the card's own width: what's left between the − and +
+   buttons, shared by however many characters the two numbers have
+   (--k, roughly their width in ems), never above the 52px design size. */
+.rd-dose{container-type:inline-size}
+.rd-dose-row .rd-dose-nums{flex:1;gap:8px;--k:3.5}
+.rd-dose-row .rd-dose-nums b{font-size:clamp(24px, calc((100cqi - 156px) / var(--k)), 52px)}
+.rd-dose-nums.is-long{--k:4.05}
+.rd-dose-nums.is-xlong{--k:4.6}
+.rd-dose-nums.is-xxlong{--k:5.2}

@@ -2793,6 +2793,13 @@ function scalable(r) {
   return d > 0 && w > 0;
 }
 
+// The dose card's big numbers step down a size as they get longer, so a
+// litre of water ("60 g → 1000 g") still fits between the − and + buttons.
+function doseNumsSize(r) {
+  var len = num(r.dose).length + num(r.water).length;
+  return len >= 8 ? ' is-xxlong' : len >= 7 ? ' is-xlong' : len >= 6 ? ' is-long' : '';
+}
+
 function viewRecipe(r) {
   if (!r || doseView.id !== r.id || doseView.dose == null || !scalable(r)) return r;
   var k = doseView.dose / Number(r.dose);
@@ -2897,7 +2904,7 @@ function renderDetail(id, keepScroll) {
       '<div class="rd-dose-row">' +
         '<button type="button" class="rd-step-btn" data-action="dose-step" data-d="-1" aria-label="' + esc(t('Less coffee')) + '"' +
           (Number(r.dose) <= 1 ? ' disabled' : '') + '>' + ICON.minus + '</button>' +
-        '<div class="rd-dose-nums">' +
+        '<div class="rd-dose-nums' + doseNumsSize(r) + '">' +
           '<span><b>' + num(r.dose) + '<small>g</small></b><i>' + BEAN_MARK + esc(t('coffee')) + '</i></span>' +
           '<span class="rd-arrow" aria-hidden="true">→</span>' +
           '<span><b>' + num(r.water) + '<small>g</small></b><i>' + ICON.drop + esc(t('water')) + '</i></span>' +
@@ -2910,7 +2917,7 @@ function renderDetail(id, keepScroll) {
         : esc(t('Change the dose and every pour below rescales.'))) + '</p>' +
     '</section>';
   } else {
-    doseCard = '<section class="rd-dose is-static"><div class="rd-dose-nums">' +
+    doseCard = '<section class="rd-dose is-static"><div class="rd-dose-nums' + doseNumsSize(r) + '">' +
       (Number(r.dose) > 0 ? '<span><b>' + num(r.dose) + '<small>g</small></b><i>' + BEAN_MARK + esc(t('coffee')) + '</i></span>' : '') +
       (r.water !== '' && r.water != null ? '<span><b>' + num(r.water) + '<small>g</small></b><i>' + ICON.drop + esc(t('water')) + '</i></span>' : '') +
     '</div></section>';
