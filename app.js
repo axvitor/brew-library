@@ -386,7 +386,7 @@ var ENTITIES = {
     fields: [
       { k: 'name', l: 'Name', ph: 'Chemex', req: true },
       { k: 'kind', l: 'Type', kind: 'choice', choices: function () { return METHOD_TYPES; }, read: typeFromText, req: true },
-      { k: 'ratio', l: 'Typical ratio', ph: '1:16' },
+      { k: 'ratio', l: 'Typical ratio', ph: '16', kind: 'ratio' },
       { k: 'notes', l: 'Notes', ph: 'Filter, kettle, gear…', area: true }
     ],
     meta: function (e) { return [t(e.kind), e.ratio].filter(Boolean).join(' · '); }
@@ -918,6 +918,8 @@ var TRANSLATIONS = {
     'poured': 'despejados',
     'Choose a type': 'Escolha um tipo',
     'Choose a type first.': 'Escolha um tipo primeiro.',
+    'Water per gram of coffee': 'Água por grama de café',
+    'The ratio needs a number of grams of water, like 16.': 'A proporção precisa de um número de gramas de água, como 16.',
     'Add your first brew — the coffee, the gear and how you pour it. The cup is waiting.': 'Adicione seu primeiro preparo — o café, o equipamento e como você despeja. A xícara está esperando.',
     'Import a library': 'Importar uma biblioteca',
     'Nothing in the cup': 'Nada na xícara',
@@ -6425,6 +6427,13 @@ function openEntityForm(type, existing, onSaved, prefill) {
             opts.map(function (o) {
               return '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' + esc(t(o)) + '</option>';
             }).join('') + '</select>';
+        } else if (f.kind === 'ratio') {
+          // Always one part coffee: the "1:" is fixed and only the water
+          // side is typed. Stored whole ("1:16"), as recipes read it.
+          var parts = String(d[f.k] || '').replace(/^\s*1\s*:\s*/, '');
+          control = '<label class="inp inp-ratio" for="e-' + f.k + '"><span aria-hidden="true">1 :</span>' +
+            '<input id="e-' + f.k + '" data-k="' + f.k + '" data-ratio value="' + esc(parts) + '" placeholder="' + esc(f.ph || '') + '" ' +
+            'inputmode="decimal" autocomplete="off" aria-label="' + esc(t('Water per gram of coffee')) + '" /></label>';
         } else if (f.area) {
           control = '<textarea class="inp" id="e-' + f.k + '" data-k="' + f.k + '" placeholder="' + esc(t(f.ph || '')) + '">' + val + '</textarea>';
         } else {
@@ -6466,7 +6475,14 @@ function readEntityForm(m, def) {
   }
   def.fields.forEach(function (f) {
     var input = m.el.querySelector('[data-k="' + f.k + '"]');
-    if (input) m.draft[f.k] = input.value.trim();
+    if (!input) return;
+    var v = input.value.trim();
+    if (f.kind === 'ratio') {
+      // Whatever was typed or pasted ("16", "1:16", "15,5") becomes "1:16".
+      v = v.replace(/^1\s*:\s*/, '').replace(',', '.');
+      v = v ? '1:' + v : '';
+    }
+    m.draft[f.k] = v;
   });
 }
 
@@ -6475,6 +6491,10 @@ function saveEntity(m) {
   readEntityForm(m, def);
   var d = m.draft;
   if (!d.name) { toast(t('Give it a name first.')); return; }
+  var badRatio = def.fields.filter(function (f) {
+    return f.kind === 'ratio' && d[f.k] && !(Number(d[f.k].slice(2)) > 0);
+  })[0];
+  if (badRatio) { toast(t('The ratio needs a number of grams of water, like 16.')); return; }
   var missing = def.fields.filter(function (f) { return f.req && f.k !== 'name' && !d[f.k]; })[0];
   if (missing) { toast(t('Choose a type first.')); return; }
   // Two of the same name can't be told apart in a picker. Coffees may share

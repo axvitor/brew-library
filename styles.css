@@ -3178,3 +3178,12 @@ body:has(.gate-screen){padding-bottom:0}
   .nav-cup-plus{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round}
   .nav-add:active .nav-cup{transform:scale(var(--press-scale));filter:drop-shadow(0 4px 6px rgba(200,74,22,.4)) brightness(.85)}
 }
+
+/* ---------- ratio field ----------
+   One part coffee, always: "1 :" is fixed text inside the field and only
+   the water side is typed. */
+.inp-ratio,.field label.inp-ratio{display:flex;align-items:center;gap:8px;cursor:text;margin:0;
+  font:var(--type-body);color:var(--text-title);text-transform:none;letter-spacing:0}
+.inp-ratio span{flex:none;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.inp-ratio input{flex:1;min-width:0;border:0;outline:none;background:none;padding:0;color:inherit;font:inherit;font-variant-numeric:tabular-nums}
+.inp-ratio:focus-within{border-color:var(--border-focus, var(--text-accent));box-shadow:var(--shadow-focus)}
