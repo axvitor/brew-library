@@ -5276,6 +5276,11 @@ function prepScanImage(file, crop) {
       cv.width = w; cv.height = h;
       var ctx = cv.getContext('2d');
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+      // PaddleOCR reads the photo as it is; the clean-up below is for
+      // Tesseract, the fallback.
+      var raw = document.createElement('canvas');
+      raw.width = w; raw.height = h;
+      raw.getContext('2d').drawImage(cv, 0, 0);
 
       var data, px;
       try {
@@ -5283,7 +5288,7 @@ function prepScanImage(file, crop) {
       } catch (e) {
         // Shouldn't happen for a local file, but never fail the scan over
         // preprocessing — the untouched canvas still reads.
-        resolve({ canvas: cv, inverted: false });
+        resolve({ canvas: cv, raw: raw, inverted: false });
         return;
       }
       px = data.data;
@@ -5304,7 +5309,7 @@ function prepScanImage(file, crop) {
         px[i] = px[i + 1] = px[i + 2] = lum;
       }
       ctx.putImageData(data, 0, 0);
-      resolve({ canvas: cv, inverted: invert });
+      resolve({ canvas: cv, raw: raw, inverted: invert });
     };
     img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('decode')); };
     img.src = url;
@@ -5365,6 +5370,146 @@ function runScanOCR(canvas, onProgress) {
     }, function (err) {
       if (worker) { try { worker.terminate(); } catch (e) { /* already gone */ } }
       throw err;
+    });
+  });
+}
+
+/* ---- PaddleOCR ----
+   Tesseract was made for scanned pages and reads a coffee bag — dark foil,
+   curved, artwork behind the type — badly or not at all. PaddleOCR is made
+   for text in photos: it finds the lines first, then reads each one, and
+   its compact v6 model handles Portuguese accents. It runs on the phone
+   through ONNX Runtime: the runtime comes from the CDN, the two model
+   files (about 6 MB) are served with the app and kept in the cache after
+   the first scan. Tesseract stays as the fallback if any of it won't load. */
+var ORT_SRC = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js';
+var ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
+var PADDLE_SRC = 'https://cdn.jsdelivr.net/npm/esearch-ocr@8.5.2/dist/esearch-ocr.js';
+var PADDLE_MODELS = { det: 'ocr/ppocr6_tiny_det.onnx', rec: 'ocr/ppocr6_tiny_rec.onnx', dic: 'ocr/tiny_dic.txt' };
+var PADDLE_CACHE = 'brew-ocr-v6-tiny';
+var paddleLoad = null;
+
+function loadScript(src) {
+  return new Promise(function (resolve, reject) {
+    var el = document.createElement('script');
+    el.src = src; el.async = true;
+    el.onload = resolve;
+    el.onerror = function () { reject(new Error('paddle-network')); };
+    document.head.appendChild(el);
+  });
+}
+
+// A model file, from the cache when this phone has fetched it before.
+function fetchModel(path) {
+  var url = new URL(path, document.baseURI).href;
+  function net() {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('paddle-network');
+      return r;
+    });
+  }
+  if (!window.caches) return net().then(function (r) { return r.arrayBuffer(); });
+  return caches.open(PADDLE_CACHE).then(function (cache) {
+    return cache.match(url).then(function (hit) {
+      if (hit) return hit;
+      return net().then(function (r) { cache.put(url, r.clone()).catch(function () {}); return r; });
+    });
+  }).then(function (r) { return r.arrayBuffer(); });
+}
+
+function loadPaddle() {
+  if (paddleLoad) return paddleLoad;
+  paddleLoad = Promise.all([
+    window.ort ? Promise.resolve() : loadScript(ORT_SRC),
+    import(PADDLE_SRC),
+    fetchModel(PADDLE_MODELS.det),
+    fetchModel(PADDLE_MODELS.rec),
+    fetchModel(PADDLE_MODELS.dic)
+  ]).then(function (got) {
+    var ort = window.ort;
+    ort.env.wasm.wasmPaths = ORT_WASM;
+    // Threads need a cross-origin-isolated page, which GitHub Pages isn't.
+    ort.env.wasm.numThreads = 1;
+    var reader = { rec: null };
+    return got[1].init({
+      ort: ort,
+      // Plain ArrayBuffers: the library tests anything else against
+      // SharedArrayBuffer, which doesn't exist on a page like this one.
+      det: { input: got[2] },
+      rec: {
+        input: got[3],
+        decodeDic: new TextDecoder().decode(got[4]),
+        optimize: { space: false },
+        on: function (i, r, total) { if (reader.progress) reader.progress((i + 1) / Math.max(1, total)); }
+      }
+    }).then(function (ocr) { reader.ocr = ocr; return reader; });
+  });
+  paddleLoad.catch(function () { paddleLoad = null; });
+  return paddleLoad;
+}
+
+/* PaddleOCR reports each run of text on its own, with where it sits, so a
+   label and its value side by side ("ORIGEM" · "Carmo de Minas – MG") come
+   back as two lines. Rows are put back together by height, left to right,
+   so the parser sees "ORIGEM Carmo de Minas – MG" as the bag printed it.
+   The separate lines, with their sizes, still go to the name picker. */
+function paddleToData(res) {
+  var items = (res && res.src || []).filter(function (l) {
+    return l.text && l.text.trim() && (l.mean == null || l.mean >= 0.5);
+  }).map(function (l) {
+    var xs = l.box.map(function (p) { return p[0]; }), ys = l.box.map(function (p) { return p[1]; });
+    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    // The line's own tilt, from its top edge (↖ to ↗), and its true height
+    // across that tilt rather than its bounding box.
+    var dx = l.box[1][0] - l.box[0][0], slope = dx > 4 ? (l.box[1][1] - l.box[0][1]) / dx : 0;
+    var lh = Math.hypot(l.box[3][0] - l.box[0][0], l.box[3][1] - l.box[0][1]) || (y1 - y0);
+    return { text: l.text.trim(), conf: l.mean || 0, x0: Math.min.apply(null, xs), x1: Math.max.apply(null, xs),
+      y0: y0, y1: y1, cy: (y0 + y1) / 2, cx: (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2,
+      h: y1 - y0, lh: lh, slope: Math.max(-0.5, Math.min(0.5, slope)) };
+  });
+  // Rows are followed left to right, each piece joining the row it carries
+  // on from. On a tilted photo or a curved bag a label and its value sit at
+  // different heights — far enough that the row below can look closer — so
+  // the row's line is extended along its own tilt to where the piece
+  // starts, and the piece has to land on that.
+  items.sort(function (a, b) { return a.x0 - b.x0; });
+  var rows = [];
+  items.forEach(function (it) {
+    var best = null, bestD = Infinity;
+    rows.forEach(function (row) {
+      var last = row.items[row.items.length - 1];
+      if (last.x1 > it.x0 + it.lh * 0.5) return;
+      var slope = (last.slope + it.slope) / 2;
+      var d = Math.abs(it.cy - (last.cy + slope * (it.cx - last.cx)));
+      if (d < 0.5 * Math.min(last.lh, it.lh) && d < bestD) { bestD = d; best = row; }
+    });
+    if (best) best.items.push(it);
+    else rows.push({ items: [it] });
+  });
+  rows.forEach(function (r) {
+    r.cy = r.items.reduce(function (a, it) { return a + it.cy; }, 0) / r.items.length;
+    r.y0 = Math.min.apply(null, r.items.map(function (it) { return it.y0; }));
+  });
+  rows.sort(function (a, b) { return a.y0 - b.y0; });
+  var text = rows.map(function (r) {
+    return r.items.map(function (it) { return it.text; }).join(' ');
+  }).join('\n');
+  items.sort(function (a, b) { return a.y0 - b.y0; });
+  return {
+    text: text,
+    lines: items.map(function (it) {
+      return { text: it.text, confidence: it.conf * 100, bbox: { x0: it.x0, y0: it.y0, x1: it.x1, y1: it.y1 } };
+    }),
+    engine: 'paddle'
+  };
+}
+
+function runPaddleOCR(canvas, onProgress) {
+  return loadPaddle().then(function (reader) {
+    reader.progress = onProgress;
+    return reader.ocr.ocr(canvas).then(function (res) {
+      reader.progress = null;
+      return paddleToData(res);
     });
   });
 }
@@ -6339,8 +6484,9 @@ function scanPhoto(m) {
       paintScan(m, { busy: true, progress: 0, label: t('Preparing the photo…') });
       return prepScanImage(file, crop || null).then(function (prepped) {
         paintScan(m, { busy: true, progress: 0, label: t('Loading the reader…') });
-        return runScanOCR(prepped.canvas, function (p) {
-          paintScan(m, { busy: true, progress: p, label: t('Reading the label…') });
+        function progress(p) { paintScan(m, { busy: true, progress: p, label: t('Reading the label…') }); }
+        return runPaddleOCR(prepped.raw || prepped.canvas, progress).catch(function () {
+          return runScanOCR(prepped.canvas, progress);
         });
       }).then(function (data) {
         if (stack.indexOf(m) === -1) return null;
