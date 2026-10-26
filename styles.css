@@ -3230,4 +3230,3 @@ body:has(.gate-screen){padding-bottom:0}
   color:var(--text-body);font:var(--weight-regular) 13px/1.3 var(--font-text);text-align:left;cursor:pointer;
 }
 .scan-line:hover{border-color:var(--text-accent);color:var(--text-title)}
-.scan-review .scan{margin:20px 0 0}

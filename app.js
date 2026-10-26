@@ -918,8 +918,6 @@ var TRANSLATIONS = {
     'poured': 'despejados',
     'Choose a type': 'Escolha um tipo',
     'Choose a type first.': 'Escolha um tipo primeiro.',
-    'Add another photo': 'Adicionar outra foto',
-    'The back of the bag often has the origin, process and notes. Only empty fields are filled from it.': 'O verso do pacote costuma ter a origem, o processo e as notas. Só os campos vazios são preenchidos com ela.',
     'Frame the label': 'Enquadre o rótulo',
     'Drag the frame around the label — the panel with origin, process and notes. Drag a corner to resize it.': 'Arraste a moldura em volta do rótulo — o painel com origem, processo e notas. Arraste um canto para redimensionar.',
     'Whole photo': 'Foto inteira',
@@ -927,7 +925,6 @@ var TRANSLATIONS = {
     'close to a roaster in your library': 'parecido com uma torrefação da sua biblioteca',
     'spelling corrected to a known name': 'grafia corrigida para um nome conhecido',
     'you already have “{name}”': 'você já tem “{name}”',
-    'from the other photo': 'da outra foto',
     'picked from what it read': 'escolhido do que foi lido',
     'Pick text, or type it': 'Escolha do texto, ou digite',
     'Pick text': 'Escolher do texto',
@@ -6408,10 +6405,8 @@ var SCAN_FIELDS = [
   ['varietal', 'Varietal'], ['notes', 'Tasting notes']
 ];
 
-// more: the block sits in the review sheet, where it adds another photo
-// rather than starting a scan.
-function scanBlockHTML(state, more) {
-  var inner, act = more ? 'scan-more' : 'scan-label';
+function scanBlockHTML(state) {
+  var inner;
   if (state && state.busy) {
     var frac = Math.max(0, Math.min(1, state.progress || 0));
     inner = '<div class="scan-busy"><div class="scan-bar">' +
@@ -6419,10 +6414,7 @@ function scanBlockHTML(state, more) {
       '<p>' + esc(state.label || t('Reading the label…')) + '</p></div>';
   } else if (state && state.error) {
     inner = '<p class="scan-err">' + esc(state.error) + '</p>' +
-      '<button class="btn btn-ghost btn-sm" data-action="' + act + '">' + ICON.camera + esc(t('Try again')) + '</button>';
-  } else if (more) {
-    inner = '<button class="btn btn-ghost btn-sm" data-action="scan-more">' + ICON.camera + esc(t('Add another photo')) + '</button>' +
-      '<p>' + esc(t('The back of the bag often has the origin, process and notes. Only empty fields are filled from it.')) + '</p>';
+      '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + esc(t('Try again')) + '</button>';
   } else {
     inner = '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + esc(t('Scan label')) + '</button>' +
       '<p>' + esc(t('Fill the frame with the label itself, not the whole bag — the panel listing origin, process and notes. Small print needs a close, straight, evenly lit shot. Nothing leaves your device.')) + '</p>';
@@ -6437,7 +6429,7 @@ function paintScan(m, state) {
   var block = m.el.querySelector('.scan');
   if (!block || !block.isConnected) return;
   var fresh = document.createElement('div');
-  fresh.innerHTML = scanBlockHTML(state, m.scanMore);
+  fresh.innerHTML = scanBlockHTML(state);
   block.replaceWith(fresh.firstChild);
 }
 
@@ -6473,9 +6465,9 @@ function pickImage() {
   });
 }
 
-/* Pick a photo, frame the label, read it. Shared by the first scan and by
-   "add another photo" in the review; resolves with the parse, or null when
-   the person backs out. `m` is the sheet whose scan block shows progress. */
+/* Pick a photo, frame the label, read it. Resolves with the parse, or null
+   when the person backs out. `m` is the sheet whose scan block shows
+   progress. */
 function scanPhoto(m) {
   return pickImage().then(function (file) {
     if (!file) return null;
@@ -6697,12 +6689,10 @@ function scanLines(raw) {
 /* The review step. Nothing the scanner found is written to the form until
    it's confirmed here: OCR on a curved foil bag is wrong often enough that
    silently overwriting typed fields would be the worst possible behaviour.
-   Every field is listed, found or not; tap one, then tap any line the
-   reader saw to put it there. Another photo — the back of the bag — fills
-   only what is still empty. */
+   Every field is listed, found or not; "Pick text" on one shows the lines
+   the reader saw, to tap into it. */
 function openScanReview(parent, parsed) {
   var review = {
-    scanMore: true,
     values: {}, take: {}, why: {}, active: '',
     lines: scanLines(parsed.raw),
     raw: parsed.raw,
@@ -6715,17 +6705,6 @@ function openScanReview(parent, parsed) {
         if (v) review.values[k] = v.value;
         if (tk) review.take[k] = tk.checked;
       });
-    },
-    merge: function (more) {
-      SCAN_FIELDS.forEach(function (pair) {
-        var k = pair[0];
-        if ((review.values[k] || '').trim() || !more.found[k]) return;
-        review.values[k] = more.found[k];
-        review.take[k] = true;
-        review.why[k] = (more.why[k] || '') + ' · ' + t('from the other photo');
-      });
-      scanLines(more.raw).forEach(function (l) { if (review.lines.indexOf(l) === -1) review.lines.push(l); });
-      review.raw += '\n' + more.raw;
     },
     putLine: function (i) {
       review.capture();
@@ -6780,7 +6759,7 @@ function openScanReview(parent, parsed) {
       var chips = review.lines.length
         ? '<details class="scan-raw"><summary>' + esc(t('Everything it read')) + '</summary>' + chipList + '</details>'
         : '';
-      var body = '<div class="scan-review">' + rows + chips + scanBlockHTML(null, true) + '</div>';
+      var body = '<div class="scan-review">' + rows + chips + '</div>';
       var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
         '<button class="btn btn-primary" data-action="apply-scan">' + esc(t('Fill fields')) + '</button>';
       var el = sheet({ title: t('What the label says'), body: body, foot: foot, narrow: true });
@@ -7655,16 +7634,7 @@ document.addEventListener('click', function (ev) {
     case 'scan-line':
       if (top && top.putLine) top.putLine(Number(btn.getAttribute('data-i')));
       return;
-    case 'scan-more':
-      if (!top || !top.merge) return;
-      top.capture();
-      var reviewing = top;
-      scanPhoto(reviewing).then(function (more) {
-        if (!more || stack.indexOf(reviewing) === -1) return;
-        reviewing.merge(more);
-        renderModals();
-      });
-      return;
+
 
     case 'quick-add':
       openEntityForm(type, null, function (newId) {
