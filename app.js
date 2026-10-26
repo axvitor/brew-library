@@ -918,6 +918,9 @@ var TRANSLATIONS = {
     'poured': 'despejados',
     'Choose a type': 'Escolha um tipo',
     'Choose a type first.': 'Escolha um tipo primeiro.',
+    'learned from your coffees': 'aprendido dos seus cafés',
+    'where {roaster} prints it': 'onde a {roaster} costuma imprimir',
+    'a recognised place': 'um local reconhecido',
     'Frame the label': 'Enquadre o rótulo',
     'Drag the frame around the label — the panel with origin, process and notes. Drag a corner to resize it.': 'Arraste a moldura em volta do rótulo — o painel com origem, processo e notas. Arraste um canto para redimensionar.',
     'Whole photo': 'Foto inteira',
@@ -5494,6 +5497,13 @@ function paddleToData(res) {
   items.sort(function (a, b) { return a.y0 - b.y0; });
   return {
     text: text,
+    rows: rows.map(function (r) {
+      return { text: r.items.map(function (it) { return it.text; }).join(' '),
+        x0: Math.min.apply(null, r.items.map(function (it) { return it.x0; })),
+        x1: Math.max.apply(null, r.items.map(function (it) { return it.x1; })),
+        y0: r.y0, y1: Math.max.apply(null, r.items.map(function (it) { return it.y1; })),
+        h: Math.max.apply(null, r.items.map(function (it) { return it.lh; })) };
+    }),
     lines: items.map(function (it) {
       return { text: it.text, confidence: it.conf * 100, bbox: { x0: it.x0, y0: it.y0, x1: it.x1, y1: it.y1 } };
     }),
@@ -6395,6 +6405,378 @@ function parseLabel(data) {
   return { found: found, why: why, raw: raw };
 }
 
+/* ---- scan intelligence ----
+   Three things that make the reading smarter without sending the photo
+   anywhere, each covering a gap in the others:
+
+   Places — every Brazilian municipality with its state (IBGE), plus coffee
+   countries and regions. A line naming a real town is an origin, even with
+   no "Origem" beside it, and a misread one comes back spelled properly.
+
+   Roaster layouts — a roaster prints the same label on every bag. Once a
+   scan is confirmed, where each field sat on that roaster's label is
+   remembered, and the next bag from them is read from those spots.
+
+   A small classifier — naive Bayes over the words and letter patterns of
+   each field, trained on the coffees already in the library, a set of
+   built-in examples, and every scan confirmed since. It fills what the
+   rules left empty, second-guesses a doubtful name, and puts the likeliest
+   lines first under "Pick text". */
+
+var PLACES = null, placesLoad = null;
+function loadPlaces() {
+  if (PLACES) return Promise.resolve(PLACES);
+  if (placesLoad) return placesLoad;
+  placesLoad = fetchModel('ocr/places.txt').then(function (buf) {
+    var byName = {}, byUf = {};
+    new TextDecoder().decode(buf).split('\n').forEach(function (l) {
+      var p = l.split('|');
+      if (p.length !== 2) return;
+      var k = scanNorm(p[0]);
+      (byName[k] = byName[k] || []).push({ name: p[0], uf: p[1] });
+      (byUf[p[1]] = byUf[p[1]] || []).push({ name: p[0], key: k });
+    });
+    PLACES = { byName: byName, byUf: byUf };
+    return PLACES;
+  });
+  placesLoad.catch(function () { placesLoad = null; });
+  return placesLoad;
+}
+
+// Coffee countries (as either language prints them) and growing regions
+// abroad, for bags that aren't Brazilian.
+var COFFEE_COUNTRIES = ['etiopia', 'ethiopia', 'colombia', 'quenia', 'kenya', 'ruanda', 'rwanda', 'burundi',
+  'guatemala', 'honduras', 'costa rica', 'el salvador', 'nicaragua', 'panama', 'mexico', 'peru', 'bolivia',
+  'equador', 'ecuador', 'indonesia', 'sumatra', 'iemen', 'yemen', 'tanzania', 'uganda', 'congo', 'india',
+  'papua nova guine', 'papua new guinea', 'jamaica', 'hawaii', 'china', 'vietna', 'vietnam', 'brasil', 'brazil'];
+var WORLD_REGIONS = ['yirgacheffe', 'yirgacheffee', 'sidamo', 'sidama', 'guji', 'limu', 'harrar', 'huila', 'narino',
+  'cauca', 'tolima', 'antioquia', 'antigua', 'huehuetenango', 'atitlan', 'tarrazu', 'west valley', 'kirinyaga',
+  'nyeri', 'kiambu', 'cajamarca', 'cusco', 'chiapas', 'veracruz', 'santa barbara', 'boquete', 'kona'];
+
+/* A line that names a place, as { text, strong }: the place spelled
+   properly, and whether it's certain (a town with its state, or a known
+   region) rather than a bare town name that could be something else. */
+function placeMatch(line) {
+  if (!PLACES) return null;
+  var raw = String(line || '');
+  var lead = labelHits(raw)[0];
+  if (lead && lead.start === 0) raw = raw.slice(lead.end).replace(/^\s*[:；;：\-–—]?\s*/, '');
+  var n = scanNorm(raw).replace(/[.,;:]+$/, '');
+  if (!n) return null;
+  // "Carmo de Minas - MG", "Carmo de Minas/MG", "Carmo de Minas, MG"
+  var m = n.match(/^(.*?)[\s,\-–—\/]+([a-z]{2})$/);
+  if (m && new RegExp('^(' + BR_STATES + ')$', 'i').test(m[2])) {
+    var uf = m[2].toUpperCase(), town = m[1].trim(), list = PLACES.byUf[uf] || [];
+    var best = null, bestD = Infinity;
+    list.forEach(function (p) {
+      if (p.key === town) { best = p; bestD = 0; return; }
+      if (bestD === 0) return;
+      var d = editDistance(town, p.key), budget = p.key.length >= 10 ? 2 : (p.key.length >= 6 ? 1 : 0);
+      if (d <= budget && d < bestD) { best = p; bestD = d; }
+    });
+    if (best) return { text: best.name + ' – ' + uf, strong: true };
+  }
+  if (regionMatch(n)) return { text: correctRegion(trimEdges(raw)), strong: true };
+  if (COFFEE_COUNTRIES.indexOf(n) !== -1 || WORLD_REGIONS.indexOf(n) !== -1) return { text: trimEdges(raw), strong: true };
+  // A bare town name: only a whole line, long enough, and not a word a
+  // bag uses for anything else ("Natal", "Mel", "Laranja").
+  var hits = PLACES.byName[n];
+  if (hits && n.length >= 6 && !flavourHits(n) && !matchTerms(n, PROCESS_TERMS) && NOT_A_NAME.indexOf(n) === -1) {
+    return { text: hits.length === 1 ? hits[0].name + ' – ' + hits[0].uf : hits[0].name, strong: false };
+  }
+  return null;
+}
+
+function applyPlaces(parsed) {
+  if (!PLACES) return;
+  var found = parsed.found, why = parsed.why, lines = scanLines(parsed.raw);
+  var name = scanNorm(found.name || '');
+  var cur = found.origin ? placeMatch(found.origin) : null;
+  if (cur && cur.text !== found.origin) {
+    found.origin = cur.text;
+    why.origin = (why.origin ? why.origin + ' · ' : '') + t('spelling corrected to a known name');
+  }
+  if (cur && cur.strong) return;
+  // No origin, or one that isn't a place: a line naming a real place wins.
+  var pick = null;
+  lines.forEach(function (l) {
+    if (scanNorm(l) === name) return;
+    var pm = placeMatch(l);
+    if (pm && (!pick || (pm.strong && !pick.strong))) pick = pm;
+  });
+  if (pick && (pick.strong || !found.origin)) {
+    found.origin = pick.text;
+    why.origin = t('a recognised place');
+  }
+}
+
+/* ---- the classifier ---- */
+var SCAN_CLASSES = ['name', 'roasterName', 'origin', 'process', 'varietal', 'notes', 'altitude', 'roast', 'other'];
+
+// Built-in examples, so it knows the shapes before it has seen a bag.
+var SCAN_SEED = {
+  other: ['250 g', '500g', '1 kg', 'peso líquido 250g', 'café especial', 'café torrado em grãos', 'torrado e moído',
+    'moagem média', 'grãos', '100% arábica', 'produto do brasil', 'indústria brasileira', '86 pontos', '87,5 pontos SCA',
+    'pontuação 85', 'torrado em 10/10/2026', 'validade 12/2027', 'lote 23', 'safra 2025', 'www.cafe.com.br',
+    '@torrefacao', 'instagram', 'conserve em local seco', 'após aberto consumir em 30 dias', 'single origin',
+    'microlote', 'specialty coffee', 'net wt 250g', 'roasted on', 'best before', 'whole bean', 'secagem em terreiro',
+    'peneira 16 acima', 'métodos indicados: coado, prensa', 'filtrado', 'espresso'],
+  altitude: ['1.200 m', '1100 msnm', '1.050 metros', '950 - 1.200 m', '1.300m', '1400 masl', '1.150 m de altitude'],
+  name: ['Fazenda Sertão', 'Sítio Palmito', 'Fazenda Santa Inês', 'Chácara São José', 'Família Pereira', 'Estância Rocha',
+    'Fazenda Ambiental Fortaleza', 'Sítio Recanto', 'Lote Especial Rubi', 'Fazenda Samambaia'],
+  notes: ['chocolate ao leite, caramelo e laranja', 'frutas vermelhas, mel e floral', 'notas de chocolate e castanhas',
+    'acidez cítrica, corpo aveludado', 'caramelo, rapadura e frutas amarelas', 'jasmim, bergamota e pêssego',
+    'cacau, avelã e açúcar mascavo', 'red fruits, chocolate and honey']
+};
+
+function scanFeatures(text) {
+  var n = scanNorm(text), out = [];
+  var words = n.split(/[^a-z0-9%@.]+/).filter(Boolean);
+  words.forEach(function (w) { out.push('w:' + w.replace(/\d/g, '0')); });
+  var p = ' ' + n.replace(/\d/g, '0') + ' ';
+  for (var i = 0; i + 3 <= p.length; i++) out.push('c:' + p.substr(i, 3));
+  if (/\d/.test(n)) out.push('s:digit');
+  if (/\d[\d.,]*\s*(m|msnm|masl|metros|meters)\b/.test(n)) out.push('s:height');
+  if (/\d\s*(g|kg|gramas)\b/.test(n)) out.push('s:weight');
+  if (new RegExp('[\\s,\\-–—/](' + BR_STATES + ')$', 'i').test(n)) out.push('s:uf');
+  if (/,/.test(n) || /\se\s/.test(n)) out.push('s:list');
+  if (/@|www|\.com/.test(n)) out.push('s:web');
+  if (/^(fazenda|sitio|chacara|estancia|familia|lote)\b/.test(n)) out.push('s:farm');
+  out.push('s:words' + Math.min(5, words.length));
+  if (/[A-Za-zÀ-ɏ]/.test(text) && text === text.toUpperCase()) out.push('s:caps');
+  if (flavourHits(n)) out.push('s:flavour');
+  if (matchTerms(n, PROCESS_TERMS)) out.push('s:process');
+  if (matchTerms(n, ROAST_TERMS)) out.push('s:roast');
+  if (matchTerms(n, VARIETAL_TABLE)) out.push('s:varietal');
+  if (PLACES && placeMatch(text)) out.push('s:place');
+  return out;
+}
+
+// Text compared by its letters and numbers only: a hyphen read as a dash,
+// or a stray comma, doesn't make two readings different.
+function looseNorm(s) { return scanNorm(s).replace(/[^a-z0-9]+/g, ' ').trim(); }
+
+function scanLearnStore() {
+  if (!state.scanLearn) state.scanLearn = { ex: [], layouts: {} };
+  return state.scanLearn;
+}
+
+// Trained afresh for each scan — a few hundred short examples, a few ms.
+function trainFieldModel() {
+  var ex = [];
+  function add(field, v, w) { v = String(v || '').trim(); if (v) ex.push([field, v, w || 1]); }
+  coll('coffee').forEach(function (c) {
+    ['name', 'origin', 'process', 'varietal', 'notes', 'altitude', 'roast'].forEach(function (k) { add(k, c[k]); });
+  });
+  coll('roaster').forEach(function (r) { add('roasterName', r.name); });
+  Object.keys(SCAN_SEED).forEach(function (k) { SCAN_SEED[k].forEach(function (v) { add(k, v); }); });
+  PROCESS_TERMS.forEach(function (row) { row[1].forEach(function (v) { add('process', v); }); });
+  ROAST_TERMS.forEach(function (row) { row[1].forEach(function (v) { add('roast', v); }); });
+  VARIETAL_TERMS.forEach(function (v) { add('varietal', v); });
+  REGION_TERMS.forEach(function (v) { add('origin', v); });
+  // What was confirmed in earlier scans counts double: it's this person's
+  // bags, read by this reader.
+  scanLearnStore().ex.forEach(function (e) { add(e[1], e[0], 2); });
+
+  var counts = {}, totals = {}, vocab = {};
+  SCAN_CLASSES.forEach(function (c) { counts[c] = {}; totals[c] = 0; });
+  ex.forEach(function (e) {
+    if (!counts[e[0]]) return;
+    scanFeatures(e[1]).forEach(function (f) {
+      counts[e[0]][f] = (counts[e[0]][f] || 0) + e[2];
+      totals[e[0]] += e[2];
+      vocab[f] = 1;
+    });
+  });
+  var V = Object.keys(vocab).length || 1;
+  return {
+    // Probabilities over the fields for one line. Log-likelihoods are
+    // averaged per feature before the softmax, or long lines would make
+    // every answer look certain.
+    classify: function (text) {
+      var fs = scanFeatures(text), ll = {}, max = -Infinity;
+      SCAN_CLASSES.forEach(function (c) {
+        var sum = 0;
+        fs.forEach(function (f) { sum += Math.log(((counts[c][f] || 0) + 0.5) / (totals[c] + 0.5 * V)); });
+        ll[c] = sum / Math.max(1, fs.length) * 6;
+        if (ll[c] > max) max = ll[c];
+      });
+      var z = 0, out = {};
+      SCAN_CLASSES.forEach(function (c) { out[c] = Math.exp(ll[c] - max); z += out[c]; });
+      SCAN_CLASSES.forEach(function (c) { out[c] /= z; });
+      return out;
+    }
+  };
+}
+
+function argmaxField(probs) {
+  var best = 'other';
+  SCAN_CLASSES.forEach(function (c) { if (probs[c] > probs[best]) best = c; });
+  return best;
+}
+
+function cleanScanLine(l) {
+  var lead = labelHits(l)[0];
+  if (lead && lead.start === 0) {
+    var rest = l.slice(lead.end).replace(/^\s*[:；;：\-–—]?\s*/, '').trim();
+    if (rest) l = rest;
+  }
+  return trimEdges(l);
+}
+
+function applyModel(parsed, model) {
+  var found = parsed.found, why = parsed.why;
+  var lines = scanLines(parsed.raw);
+  var used = function (l) {
+    var n = looseNorm(cleanScanLine(l));
+    return SCAN_FIELDS.some(function (pair) {
+      var v = looseNorm(found[pair[0]] || '');
+      return v && (v === n || (n.length > 4 && v.indexOf(n) !== -1) || (v.length > 4 && n.indexOf(v) !== -1));
+    });
+  };
+  var scored = lines.map(function (l) { return { line: l, p: model.classify(cleanScanLine(l)) }; });
+  parsed.lineProbs = scored;
+  // A name the rules picked that reads far more like something else, with
+  // a convincing name elsewhere, is swapped.
+  if (found.name && !parsed.nameFromLayout) {
+    var pn = model.classify(found.name), arg = argmaxField(pn);
+    if (arg !== 'name' && pn[arg] >= 0.7) {
+      var alt = null;
+      scored.forEach(function (s) {
+        if (scanNorm(cleanScanLine(s.line)) === scanNorm(found.name)) return;
+        if (argmaxField(s.p) === 'name' && s.p.name >= 0.5 && (!alt || s.p.name > alt.p.name)) alt = s;
+      });
+      if (alt) { found.name = cleanScanLine(alt.line); why.name = t('learned from your coffees'); }
+    }
+  }
+  ['name', 'origin', 'process', 'varietal', 'notes', 'altitude', 'roast'].forEach(function (k) {
+    if (found[k]) return;
+    var best = null;
+    scored.forEach(function (s) {
+      if (argmaxField(s.p) !== k || s.p[k] < 0.65 || used(s.line)) return;
+      if (!best || s.p[k] > best.p[k]) best = s;
+    });
+    if (!best) return;
+    var v = cleanScanLine(best.line);
+    if (k === 'altitude') v = parseAltitudeLoose(v) || v;
+    found[k] = v;
+    why[k] = t('learned from your coffees');
+  });
+}
+
+/* ---- roaster layouts ---- */
+function textExtent(rows) {
+  var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, hmax = 1;
+  rows.forEach(function (r) {
+    x0 = Math.min(x0, r.x0); y0 = Math.min(y0, r.y0); x1 = Math.max(x1, r.x1); y1 = Math.max(y1, r.y1);
+    hmax = Math.max(hmax, r.h || 0);
+  });
+  return { x0: x0, y0: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0), hmax: hmax };
+}
+function relRow(r, ext) {
+  return { cx: ((r.x0 + r.x1) / 2 - ext.x0) / ext.w, cy: ((r.y0 + r.y1) / 2 - ext.y0) / ext.h, h: (r.h || 0) / ext.hmax };
+}
+
+function applyLayout(parsed) {
+  var rows = parsed.rows, found = parsed.found, why = parsed.why;
+  if (!rows || !rows.length || !found.roasterName) return;
+  var lay = scanLearnStore().layouts[scanNorm(found.roasterName)];
+  if (!lay) return;
+  var ext = textExtent(rows), roasterN = scanNorm(found.roasterName);
+  Object.keys(lay.fields).forEach(function (k) {
+    var spot = lay.fields[k];
+    // A labelled field is read from its label wherever it lands; the
+    // spot only finds what has no label.
+    if (spot.label && found[k]) return;
+    var best = null, bestD = 0.22;
+    rows.forEach(function (r) {
+      if (spot.label) {
+        var lead = labelHits(r.text)[0];
+        if (!lead || lead.start !== 0) return;
+      }
+      if (scanNorm(r.text) === roasterN) return;
+      var rel = relRow(r, ext);
+      var d = Math.abs(rel.cx - spot.cx) * 0.5 + Math.abs(rel.cy - spot.cy) + Math.abs(rel.h - spot.h) * 0.5;
+      if (d < bestD) { bestD = d; best = r; }
+    });
+    if (!best) return;
+    if (found[k] && k !== 'name') return;
+    var v = cleanScanLine(best.text);
+    if (!v) return;
+    found[k] = k === 'altitude' ? (parseAltitudeLoose(v) || v) : v;
+    why[k] = tf('where {roaster} prints it', { roaster: found.roasterName });
+    if (k === 'name') parsed.nameFromLayout = true;
+  });
+}
+
+// After a scan is confirmed: what each field turned out to be becomes an
+// example, and where it sat is remembered for this roaster.
+function learnFromScan(review, final) {
+  var store = scanLearnStore();
+  var finalNorm = {};
+  Object.keys(final).forEach(function (k) { finalNorm[k] = looseNorm(final[k]); });
+  Object.keys(final).forEach(function (k) {
+    if (k === 'roasterName' && coll('roaster').some(function (r) { return looseNorm(r.name) === finalNorm[k]; })) return;
+    store.ex.push([final[k], k]);
+  });
+  // Lines nobody claimed are the bag's other print — weight, dates, slogans.
+  var others = 0;
+  review.lines.forEach(function (l) {
+    var n = looseNorm(cleanScanLine(l));
+    if (others >= 6 || n.length < 3) return;
+    var claimed = Object.keys(finalNorm).some(function (k) {
+      var v = finalNorm[k];
+      return v && (v.indexOf(n) !== -1 || n.indexOf(v) !== -1);
+    });
+    if (!claimed) { store.ex.push([cleanScanLine(l), 'other']); others++; }
+  });
+  if (store.ex.length > 400) store.ex = store.ex.slice(-400);
+
+  if (review.rows && review.rows.length && final.roasterName) {
+    var key = scanNorm(final.roasterName), ext = textExtent(review.rows);
+    var lay = store.layouts[key] || { fields: {}, n: 0 };
+    Object.keys(final).forEach(function (k) {
+      if (k === 'roasterName') return;
+      var v = finalNorm[k], best = null, bestLen = 0;
+      review.rows.forEach(function (r) {
+        var n = looseNorm(cleanScanLine(r.text));
+        if (!n || !v) return;
+        if (n === v || n.indexOf(v) !== -1 || v.indexOf(n) !== -1) {
+          var len = Math.min(n.length, v.length);
+          if (len > bestLen) { bestLen = len; best = r; }
+        }
+      });
+      if (!best || bestLen < 3) return;
+      var rel = relRow(best, ext), lead = labelHits(best.text)[0];
+      var spot = { cx: rel.cx, cy: rel.cy, h: rel.h, label: lead && lead.start === 0 ? lead.label : '' };
+      var old = lay.fields[k];
+      // Averaged over the bags seen, so one odd framing doesn't move it far.
+      if (old) ['cx', 'cy', 'h'].forEach(function (q) { spot[q] = (old[q] * Math.min(lay.n, 4) + spot[q]) / (Math.min(lay.n, 4) + 1); });
+      lay.fields[k] = spot;
+    });
+    lay.n++;
+    store.layouts[key] = lay;
+    var keys = Object.keys(store.layouts);
+    if (keys.length > 60) delete store.layouts[keys[0]];
+  }
+  save();
+}
+
+function enrichScan(parsed) {
+  applyPlaces(parsed);
+  matchLibrary(parsed);
+  applyLayout(parsed);
+  applyModel(parsed, trainFieldModel());
+  flagTwin(parsed);
+  return parsed;
+}
+function flagTwin(parsed) {
+  var found = parsed.found, why = parsed.why;
+  if (!found.name) return;
+  var twin = libraryNear(found.name, coll('coffee').map(function (c) { return c.name; }));
+  if (twin) { found.name = twin; why.name = (why.name ? why.name + ' · ' : '') + tf('you already have “{name}”', { name: twin }); }
+}
+
 /* ---- scan UI ---- */
 
 // Which proposed fields the review sheet offers, in the order the form
@@ -6483,7 +6865,13 @@ function scanPhoto(m) {
       }).then(function (data) {
         if (stack.indexOf(m) === -1) return null;
         paintScan(m, null);
-        var parsed = matchLibrary(parseLabel(data));
+        var parsed = parseLabel(data);
+        parsed.rows = data.rows || null;
+        return loadPlaces().catch(function () { return null; }).then(function () {
+          return enrichScan(parsed);
+        });
+      }).then(function (parsed) {
+        if (!parsed) return null;
         if (!Object.keys(parsed.found).length && !parsed.raw.trim()) {
           paintScan(m, { error: t('Couldn’t read any text. Try filling the frame with the label, in even light.') });
           return null;
@@ -6663,13 +7051,6 @@ function matchLibrary(parsed) {
       why[k] = (why[k] ? why[k] + ' · ' : '') + t('spelling corrected to a known name');
     }
   });
-  if (found.name) {
-    var twin = libraryNear(found.name, coffees.map(function (c) { return c.name; }));
-    if (twin) {
-      found.name = twin;
-      why.name = (why.name ? why.name + ' · ' : '') + tf('you already have “{name}”', { name: twin });
-    }
-  }
   return parsed;
 }
 
@@ -6696,6 +7077,8 @@ function openScanReview(parent, parsed) {
     values: {}, take: {}, why: {}, active: '',
     lines: scanLines(parsed.raw),
     raw: parsed.raw,
+    rows: parsed.rows || null,
+    probs: parsed.lineProbs || null,
     capture: function () {
       var el = review.el;
       if (!el) return;
@@ -6725,6 +7108,16 @@ function openScanReview(parent, parsed) {
       }
       var cur = (review.values[k] || '').trim();
       review.values[k] = (k === 'notes' && cur) ? cur + ', ' + line : line;
+      // One line, one field: picked here, it leaves any other field it had
+      // been guessed into.
+      var ln = looseNorm(line);
+      SCAN_FIELDS.forEach(function (pair) {
+        var o = pair[0];
+        if (o === k || looseNorm(review.values[o] || '') !== ln) return;
+        review.values[o] = '';
+        review.take[o] = false;
+        review.why[o] = '';
+      });
       review.take[k] = true;
       review.why[k] = t('picked from what it read');
       review.active = '';
@@ -6738,9 +7131,20 @@ function openScanReview(parent, parsed) {
       if (row && review.active) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     },
     render: function () {
-      var chipList = '<div class="scan-lines">' + review.lines.map(function (l, i) {
-        return '<button type="button" class="scan-line" data-action="scan-line" data-i="' + i + '">' + esc(l) + '</button>';
-      }).join('') + '</div>';
+      // Picking a field: the lines that most look like it come first.
+      function chipList(k) {
+        var order = review.lines.map(function (l, i) { return i; });
+        if (k && review.probs) {
+          var pOf = function (i) {
+            var hit = review.probs.filter(function (s) { return s.line === review.lines[i]; })[0];
+            return hit ? hit.p[k] || 0 : 0;
+          };
+          order.sort(function (a, b) { return pOf(b) - pOf(a); });
+        }
+        return '<div class="scan-lines">' + order.map(function (i) {
+          return '<button type="button" class="scan-line" data-action="scan-line" data-i="' + i + '">' + esc(review.lines[i]) + '</button>';
+        }).join('') + '</div>';
+      }
       var rows = SCAN_FIELDS.map(function (pair) {
         var k = pair[0], val = review.values[k] || '', picking = review.active === k;
         var current = (parent.draft[k] || '').trim();
@@ -6753,11 +7157,11 @@ function openScanReview(parent, parsed) {
           '<input class="inp" data-val="' + k + '" value="' + esc(val) + '" placeholder="' + esc(t('Pick text, or type it')) + '" />' +
           ((review.why[k] || clash) ? '<p class="scan-why">' + esc(review.why[k] || '') +
             (clash ? ' · ' + esc(tf('replaces “{v}”', { v: current })) : '') + '</p>' : '') +
-          (picking ? '<p class="scan-pick-hint">' + esc(tf('Tap what belongs in {field}:', { field: t(pair[1]).toLowerCase() })) + '</p>' + chipList : '') +
+          (picking ? '<p class="scan-pick-hint">' + esc(tf('Tap what belongs in {field}:', { field: t(pair[1]).toLowerCase() })) + '</p>' + chipList(k) : '') +
         '</div>';
       }).join('');
       var chips = review.lines.length
-        ? '<details class="scan-raw"><summary>' + esc(t('Everything it read')) + '</summary>' + chipList + '</details>'
+        ? '<details class="scan-raw"><summary>' + esc(t('Everything it read')) + '</summary>' + chipList('') + '</details>'
         : '';
       var body = '<div class="scan-review">' + rows + chips + '</div>';
       var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
@@ -6781,10 +7185,12 @@ function openScanReview(parent, parsed) {
     },
     applyScan: function () {
       review.capture();
+      var final = {};
       SCAN_FIELDS.forEach(function (pair) {
         var k = pair[0], v = (review.values[k] || '').trim();
-        if (review.take[k] && v) parent.draft[k] = v;
+        if (review.take[k] && v) { parent.draft[k] = v; final[k] = v; }
       });
+      try { learnFromScan(review, final); } catch (e) { /* learning is a bonus, never a blocker */ }
       // closeModal re-renders the stack, and the parent form builds from
       // its draft — so the filled values appear without disturbing
       // anything already typed into it.
