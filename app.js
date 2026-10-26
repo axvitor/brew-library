@@ -918,6 +918,21 @@ var TRANSLATIONS = {
     'poured': 'despejados',
     'Choose a type': 'Escolha um tipo',
     'Choose a type first.': 'Escolha um tipo primeiro.',
+    'Add another photo': 'Adicionar outra foto',
+    'The back of the bag often has the origin, process and notes. Only empty fields are filled from it.': 'O verso do pacote costuma ter a origem, o processo e as notas. Só os campos vazios são preenchidos com ela.',
+    'Frame the label': 'Enquadre o rótulo',
+    'Drag the frame around the label — the panel with origin, process and notes. Drag a corner to resize it.': 'Arraste a moldura em volta do rótulo — o painel com origem, processo e notas. Arraste um canto para redimensionar.',
+    'Whole photo': 'Foto inteira',
+    'Read this part': 'Ler esta parte',
+    'close to a roaster in your library': 'parecido com uma torrefação da sua biblioteca',
+    'spelling corrected to a known name': 'grafia corrigida para um nome conhecido',
+    'you already have “{name}”': 'você já tem “{name}”',
+    'from the other photo': 'da outra foto',
+    'picked from what it read': 'escolhido do que foi lido',
+    'Pick text, or type it': 'Escolha do texto, ou digite',
+    'Pick text': 'Escolher do texto',
+    'Tap what belongs in {field}:': 'Toque no que vai em {field}:',
+    'replaces “{v}”': 'substitui “{v}”',
     'Water per gram of coffee': 'Água por grama de café',
     'The ratio needs a number of grams of water, like 16.': 'A proporção precisa de um número de gramas de água, como 16.',
     'Add your first brew — the coffee, the gear and how you pour it. The cup is waiting.': 'Adicione seu primeiro preparo — o café, o equipamento e como você despeja. A xícara está esperando.',
@@ -5241,19 +5256,26 @@ function loadTesseract() {
    twice now that two layout passes run. */
 var SCAN_MAX_EDGE = 2000;
 
-function prepScanImage(file) {
+// crop: the part of the photo to read, as fractions of it ({x, y, w, h});
+// none reads the whole photo.
+function prepScanImage(file, crop) {
   return new Promise(function (resolve, reject) {
     var url = URL.createObjectURL(file);
     var img = new Image();
     img.onload = function () {
       URL.revokeObjectURL(url);
-      var scale = Math.min(1, SCAN_MAX_EDGE / Math.max(img.width, img.height));
-      var w = Math.max(1, Math.round(img.width * scale));
-      var h = Math.max(1, Math.round(img.height * scale));
+      var sx = 0, sy = 0, sw = img.width, sh = img.height;
+      if (crop) {
+        sx = Math.round(crop.x * img.width); sy = Math.round(crop.y * img.height);
+        sw = Math.max(1, Math.round(crop.w * img.width)); sh = Math.max(1, Math.round(crop.h * img.height));
+      }
+      var scale = Math.min(1, SCAN_MAX_EDGE / Math.max(sw, sh));
+      var w = Math.max(1, Math.round(sw * scale));
+      var h = Math.max(1, Math.round(sh * scale));
       var cv = document.createElement('canvas');
       cv.width = w; cv.height = h;
       var ctx = cv.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
 
       var data, px;
       try {
@@ -6241,8 +6263,10 @@ var SCAN_FIELDS = [
   ['varietal', 'Varietal'], ['notes', 'Tasting notes']
 ];
 
-function scanBlockHTML(state) {
-  var inner;
+// more: the block sits in the review sheet, where it adds another photo
+// rather than starting a scan.
+function scanBlockHTML(state, more) {
+  var inner, act = more ? 'scan-more' : 'scan-label';
   if (state && state.busy) {
     var frac = Math.max(0, Math.min(1, state.progress || 0));
     inner = '<div class="scan-busy"><div class="scan-bar">' +
@@ -6250,7 +6274,10 @@ function scanBlockHTML(state) {
       '<p>' + esc(state.label || t('Reading the label…')) + '</p></div>';
   } else if (state && state.error) {
     inner = '<p class="scan-err">' + esc(state.error) + '</p>' +
-      '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + esc(t('Try again')) + '</button>';
+      '<button class="btn btn-ghost btn-sm" data-action="' + act + '">' + ICON.camera + esc(t('Try again')) + '</button>';
+  } else if (more) {
+    inner = '<button class="btn btn-ghost btn-sm" data-action="scan-more">' + ICON.camera + esc(t('Add another photo')) + '</button>' +
+      '<p>' + esc(t('The back of the bag often has the origin, process and notes. Only empty fields are filled from it.')) + '</p>';
   } else {
     inner = '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + esc(t('Scan label')) + '</button>' +
       '<p>' + esc(t('Fill the frame with the label itself, not the whole bag — the panel listing origin, process and notes. Small print needs a close, straight, evenly lit shot. Nothing leaves your device.')) + '</p>';
@@ -6265,7 +6292,7 @@ function paintScan(m, state) {
   var block = m.el.querySelector('.scan');
   if (!block || !block.isConnected) return;
   var fresh = document.createElement('div');
-  fresh.innerHTML = scanBlockHTML(state);
+  fresh.innerHTML = scanBlockHTML(state, m.scanMore);
   block.replaceWith(fresh.firstChild);
 }
 
@@ -6301,29 +6328,30 @@ function pickImage() {
   });
 }
 
-function startLabelScan(m) {
-  if (!m || m.type !== 'coffee') return;
-  pickImage().then(function (file) {
-    if (!file) return;
-    paintScan(m, { busy: true, progress: 0, label: t('Preparing the photo…') });
-    return prepScanImage(file).then(function (prepped) {
-      paintScan(m, { busy: true, progress: 0, label: t('Loading the reader…') });
-      return runScanOCR(prepped.canvas, function (p) {
-        paintScan(m, { busy: true, progress: p, label: t('Reading the label…') });
+/* Pick a photo, frame the label, read it. Shared by the first scan and by
+   "add another photo" in the review; resolves with the parse, or null when
+   the person backs out. `m` is the sheet whose scan block shows progress. */
+function scanPhoto(m) {
+  return pickImage().then(function (file) {
+    if (!file) return null;
+    return openScanCrop(file).then(function (crop) {
+      if (crop === null) return null;
+      paintScan(m, { busy: true, progress: 0, label: t('Preparing the photo…') });
+      return prepScanImage(file, crop || null).then(function (prepped) {
+        paintScan(m, { busy: true, progress: 0, label: t('Loading the reader…') });
+        return runScanOCR(prepped.canvas, function (p) {
+          paintScan(m, { busy: true, progress: p, label: t('Reading the label…') });
+        });
+      }).then(function (data) {
+        if (stack.indexOf(m) === -1) return null;
+        paintScan(m, null);
+        var parsed = matchLibrary(parseLabel(data));
+        if (!Object.keys(parsed.found).length && !parsed.raw.trim()) {
+          paintScan(m, { error: t('Couldn’t read any text. Try filling the frame with the label, in even light.') });
+          return null;
+        }
+        return parsed;
       });
-    }).then(function (data) {
-      // The sheet may have been closed while OCR ran; writing into a
-      // discarded draft would silently lose the result.
-      if (stack.indexOf(m) === -1) return;
-      paintScan(m, null);
-      var parsed = parseLabel(data);
-      var any = false, k;
-      for (k in parsed.found) if (Object.prototype.hasOwnProperty.call(parsed.found, k)) { any = true; break; }
-      if (!any && !parsed.raw.trim()) {
-        paintScan(m, { error: t('Couldn’t read any text. Try filling the frame with the label, in even light.') });
-        return;
-      }
-      openScanReview(m, parsed);
     });
   }).catch(function (err) {
     var msg = t('Something went wrong reading that photo.');
@@ -6333,50 +6361,304 @@ function startLabelScan(m) {
       msg = t('That file didn’t open as an image.');
     }
     paintScan(m, { error: msg });
+    return null;
   });
+}
+
+function startLabelScan(m) {
+  if (!m || m.type !== 'coffee') return;
+  scanPhoto(m).then(function (parsed) {
+    if (parsed && stack.indexOf(m) !== -1) openScanReview(m, parsed);
+  });
+}
+
+/* ---- framing the label ----
+   Busy artwork around the text is the reader's worst case, so before
+   reading, the photo opens with a frame to drag around the label: move it
+   from the middle, size it from a corner, or draw a new one anywhere.
+   Resolves with the frame as fractions of the photo, false for the whole
+   photo, or null if closed. */
+function openScanCrop(file) {
+  return new Promise(function (resolve) {
+    var url = URL.createObjectURL(file);
+    var settled = false;
+    function finish(v) {
+      if (settled) return;
+      settled = true;
+      URL.revokeObjectURL(url);
+      resolve(v);
+    }
+    var crop = {
+      box: { x: 0.08, y: 0.12, w: 0.84, h: 0.76 },
+      onClose: function () { finish(null); },
+      finish: function (useBox) {
+        var b = crop.box;
+        crop.onClose = null;
+        closeModal(true);
+        finish(useBox ? { x: b.x, y: b.y, w: b.w, h: b.h } : false);
+      },
+      render: function () {
+        var body = '<p class="crop-hint">' + esc(t('Drag the frame around the label — the panel with origin, process and notes. Drag a corner to resize it.')) + '</p>' +
+          '<div class="crop-stage"><img src="' + url + '" alt="" draggable="false" />' +
+            '<div class="crop-box"><i data-h="tl"></i><i data-h="tr"></i><i data-h="bl"></i><i data-h="br"></i></div></div>';
+        var foot = '<button class="btn btn-ghost" data-action="scan-crop-whole">' + esc(t('Whole photo')) + '</button>' +
+          '<button class="btn btn-primary" data-action="scan-crop-read">' + esc(t('Read this part')) + '</button>';
+        var el = sheet({ title: t('Frame the label'), body: body, foot: foot, narrow: true });
+        wireCrop(el, crop);
+        return el;
+      }
+    };
+    openModal(crop);
+  });
+}
+
+function wireCrop(el, crop) {
+  var stage = el.querySelector('.crop-stage'), boxEl = el.querySelector('.crop-box');
+  var MIN = 0.12;
+  function paint() {
+    var b = crop.box;
+    boxEl.style.left = (b.x * 100) + '%'; boxEl.style.top = (b.y * 100) + '%';
+    boxEl.style.width = (b.w * 100) + '%'; boxEl.style.height = (b.h * 100) + '%';
+  }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  var drag = null;
+  stage.addEventListener('pointerdown', function (ev) {
+    var r = stage.getBoundingClientRect();
+    var px = (ev.clientX - r.left) / r.width, py = (ev.clientY - r.top) / r.height;
+    var h = ev.target.getAttribute && ev.target.getAttribute('data-h');
+    var b = crop.box;
+    var inside = px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h;
+    drag = { h: h || (inside ? 'move' : 'new'), px: px, py: py, start: { x: b.x, y: b.y, w: b.w, h: b.h }, r: r };
+    if (drag.h === 'new') { crop.box = { x: px, y: py, w: 0, h: 0 }; drag.start = { x: px, y: py, w: 0, h: 0 }; drag.h = 'br'; }
+    stage.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+  });
+  stage.addEventListener('pointermove', function (ev) {
+    if (!drag) return;
+    var px = clamp((ev.clientX - drag.r.left) / drag.r.width, 0, 1), py = clamp((ev.clientY - drag.r.top) / drag.r.height, 0, 1);
+    var dx = px - drag.px, dy = py - drag.py, s = drag.start, b;
+    if (drag.h === 'move') {
+      b = { x: clamp(s.x + dx, 0, 1 - s.w), y: clamp(s.y + dy, 0, 1 - s.h), w: s.w, h: s.h };
+    } else {
+      var x1 = s.x, y1 = s.y, x2 = s.x + s.w, y2 = s.y + s.h;
+      if (drag.h.charAt(1) === 'l') x1 = clamp(s.x + dx, 0, x2 - MIN); else x2 = clamp(s.x + s.w + dx, Math.min(1, x1 + MIN), 1);
+      if (drag.h.charAt(0) === 't') y1 = clamp(s.y + dy, 0, y2 - MIN); else y2 = clamp(s.y + s.h + dy, Math.min(1, y1 + MIN), 1);
+      b = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+    }
+    crop.box = b;
+    paint();
+  });
+  function end() {
+    if (!drag) return;
+    drag = null;
+    var b = crop.box;
+    // A tap outside the frame draws a box too small to read; give it room.
+    if (b.w < MIN || b.h < MIN) crop.box = { x: Math.min(b.x, 1 - MIN), y: Math.min(b.y, 1 - MIN), w: Math.max(b.w, MIN), h: Math.max(b.h, MIN) };
+    paint();
+  }
+  stage.addEventListener('pointerup', end);
+  stage.addEventListener('pointercancel', end);
+  paint();
+}
+
+/* ---- matching the library ----
+   What's already in the library is the best spelling check there is. OCR
+   seldom reads a name perfectly but usually gets close, so a value within a
+   letter or two of one you've used before takes your spelling, and a
+   coffee you already have is flagged before it's added twice. */
+function libraryNear(value, candidates) {
+  var v = scanNorm(value);
+  if (!v) return '';
+  var best = '', bestD = Infinity;
+  candidates.forEach(function (c) {
+    var n = scanNorm(c);
+    if (!n || n.length < 4) return;
+    if (n === v) { best = c; bestD = 0; return; }
+    var d = editDistance(v, n), budget = Math.max(1, Math.floor(n.length / 6));
+    if (d <= budget && d < bestD) { best = c; bestD = d; }
+  });
+  return best;
+}
+
+function matchLibrary(parsed) {
+  var found = parsed.found, why = parsed.why;
+  var coffees = coll('coffee');
+  function distinct(k) {
+    var seen = {}, out = [];
+    coffees.forEach(function (c) { var v = (c[k] || '').trim(); if (v && !seen[v.toLowerCase()]) { seen[v.toLowerCase()] = 1; out.push(v); } });
+    return out;
+  }
+  // Roaster: a line, or a run of its words, close to a roaster on record.
+  if (!found.roasterName) {
+    var lines = parsed.raw.split(/\r?\n/);
+    coll('roaster').some(function (ro) {
+      var rn = scanNorm(ro.name), span = rn.split(' ').length;
+      if (rn.length < 4) return false;
+      return lines.some(function (line) {
+        var words = scanNorm(line).split(' ');
+        for (var i = 0; i + span <= words.length; i++) {
+          if (libraryNear(words.slice(i, i + span).join(' '), [ro.name])) {
+            found.roasterName = ro.name;
+            why.roasterName = t('close to a roaster in your library');
+            return true;
+          }
+        }
+        return false;
+      });
+    });
+  }
+  // The roaster's name set above the coffee's gets read as part of it
+  // ("Moka Clubc FAZENDA SERTÃO"); take it back out.
+  if (found.roasterName && found.name) {
+    var rw = scanNorm(found.roasterName).split(' ').length;
+    var nw = found.name.split(/\s+/);
+    if (nw.length > rw && libraryNear(nw.slice(0, rw).join(' '), [found.roasterName])) found.name = nw.slice(rw).join(' ');
+    else if (nw.length > rw && libraryNear(nw.slice(-rw).join(' '), [found.roasterName])) found.name = nw.slice(0, -rw).join(' ');
+  }
+  ['origin', 'varietal', 'process', 'roast'].forEach(function (k) {
+    if (!found[k]) return;
+    // Varieties also check the reader's own list, so a first "Bourbon
+    // Amarel0" comes out right before the library has one to copy.
+    var near = libraryNear(found[k], distinct(k).concat(k === 'varietal' ? VARIETAL_TERMS : []));
+    if (near && near !== found[k]) {
+      found[k] = near;
+      why[k] = (why[k] ? why[k] + ' · ' : '') + t('spelling corrected to a known name');
+    }
+  });
+  if (found.name) {
+    var twin = libraryNear(found.name, coffees.map(function (c) { return c.name; }));
+    if (twin) {
+      found.name = twin;
+      why.name = (why.name ? why.name + ' · ' : '') + tf('you already have “{name}”', { name: twin });
+    }
+  }
+  return parsed;
+}
+
+// The lines worth offering to tap into a field: each once, and not debris.
+function scanLines(raw) {
+  var seen = {}, out = [];
+  raw.split(/\r?\n/).forEach(function (l) {
+    l = trimEdges(l.replace(/\s+/g, ' '));
+    var n = scanNorm(l), letters = (l.match(/[A-Za-zÀ-ɏ0-9]/g) || []).length;
+    if (!n || seen[n] || letters < 3 || letters / l.length < 0.6) return;
+    seen[n] = 1;
+    out.push(l);
+  });
+  return out.slice(0, 60);
 }
 
 /* The review step. Nothing the scanner found is written to the form until
    it's confirmed here: OCR on a curved foil bag is wrong often enough that
    silently overwriting typed fields would be the worst possible behaviour.
-   Each row can be unticked, and every value stays editable. */
+   Every field is listed, found or not; tap one, then tap any line the
+   reader saw to put it there. Another photo — the back of the bag — fills
+   only what is still empty. */
 function openScanReview(parent, parsed) {
   var review = {
-    render: function () {
-      var rows = '';
-      SCAN_FIELDS.forEach(function (pair) {
-        var k = pair[0];
-        var val = parsed.found[k];
-        if (!val) return;
-        var current = (parent.draft[k] || '').trim();
-        var clash = current && current.toLowerCase() !== val.toLowerCase();
-        rows += '<div class="scan-row">' +
-          '<label class="scan-take"><input type="checkbox" data-take="' + k + '" checked />' +
-            '<span>' + esc(pair[1]) + '</span></label>' +
-          '<input class="inp" data-val="' + k + '" value="' + esc(val) + '" />' +
-          '<p class="scan-why">' + esc(parsed.why[k] || '') +
-            (clash ? ' · replaces “' + esc(current) + '”' : '') + '</p>' +
-        '</div>';
-      });
-      if (!rows) {
-        rows = '<p class="scan-none">Text came through, but none of it matched a field. ' +
-          'The full reading is below — copy anything useful.</p>';
-      }
-      var body = '<div class="scan-review">' + rows +
-        '<details class="scan-raw"><summary>' + esc(t('Everything it read')) + '</summary>' +
-        '<pre>' + esc(parsed.raw.trim() || '—') + '</pre></details></div>';
-      var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
-        '<button class="btn btn-primary" data-action="apply-scan">' + esc(t('Fill fields')) + '</button>';
-      return sheet({ title: t('What the label says'), body: body, foot: foot, narrow: true });
-    },
-    applyScan: function () {
+    scanMore: true,
+    values: {}, take: {}, why: {}, active: '',
+    lines: scanLines(parsed.raw),
+    raw: parsed.raw,
+    capture: function () {
       var el = review.el;
       if (!el) return;
       SCAN_FIELDS.forEach(function (pair) {
         var k = pair[0];
-        var take = el.querySelector('[data-take="' + k + '"]');
-        var val = el.querySelector('[data-val="' + k + '"]');
-        if (take && take.checked && val && val.value.trim()) parent.draft[k] = val.value.trim();
+        var v = el.querySelector('[data-val="' + k + '"]'), tk = el.querySelector('[data-take="' + k + '"]');
+        if (v) review.values[k] = v.value;
+        if (tk) review.take[k] = tk.checked;
+      });
+    },
+    merge: function (more) {
+      SCAN_FIELDS.forEach(function (pair) {
+        var k = pair[0];
+        if ((review.values[k] || '').trim() || !more.found[k]) return;
+        review.values[k] = more.found[k];
+        review.take[k] = true;
+        review.why[k] = (more.why[k] || '') + ' · ' + t('from the other photo');
+      });
+      scanLines(more.raw).forEach(function (l) { if (review.lines.indexOf(l) === -1) review.lines.push(l); });
+      review.raw += '\n' + more.raw;
+    },
+    putLine: function (i) {
+      review.capture();
+      var line = review.lines[i];
+      if (!line) return;
+      var k = review.active;
+      if (!k) {
+        // No field picked yet: the first empty one.
+        SCAN_FIELDS.some(function (pair) { if (!(review.values[pair[0]] || '').trim()) { k = pair[0]; return true; } return false; });
+        k = k || 'name';
+      }
+      // "Processo: Natural" goes in as "Natural": a label the line starts
+      // with names the field, it isn't part of the value.
+      var lead = labelHits(line)[0];
+      if (lead && lead.start === 0) {
+        var rest = line.slice(lead.end).replace(/^\s*[:；;：\-–—]?\s*/, '').trim();
+        if (rest) line = rest;
+      }
+      var cur = (review.values[k] || '').trim();
+      review.values[k] = (k === 'notes' && cur) ? cur + ', ' + line : line;
+      review.take[k] = true;
+      review.why[k] = t('picked from what it read');
+      review.active = '';
+      renderModals();
+    },
+    pick: function (k) {
+      review.capture();
+      review.active = review.active === k ? '' : k;
+      renderModals();
+      var row = review.el && review.el.querySelector('[data-row="' + k + '"]');
+      if (row && review.active) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    },
+    render: function () {
+      var chipList = '<div class="scan-lines">' + review.lines.map(function (l, i) {
+        return '<button type="button" class="scan-line" data-action="scan-line" data-i="' + i + '">' + esc(l) + '</button>';
+      }).join('') + '</div>';
+      var rows = SCAN_FIELDS.map(function (pair) {
+        var k = pair[0], val = review.values[k] || '', picking = review.active === k;
+        var current = (parent.draft[k] || '').trim();
+        var clash = val && current && current.toLowerCase() !== val.trim().toLowerCase();
+        return '<div class="scan-row' + (picking ? ' is-active' : '') + (val ? '' : ' is-empty') + '" data-row="' + k + '">' +
+          '<div class="scan-row-head"><label class="scan-take"><input type="checkbox" data-take="' + k + '"' + (review.take[k] ? ' checked' : '') + ' />' +
+            '<span>' + esc(t(pair[1])) + '</span></label>' +
+            (review.lines.length ? '<button type="button" class="scan-pick" data-action="scan-pick" data-k="' + k + '" aria-expanded="' + picking + '">' +
+              esc(t(picking ? 'Done' : 'Pick text')) + '</button>' : '') + '</div>' +
+          '<input class="inp" data-val="' + k + '" value="' + esc(val) + '" placeholder="' + esc(t('Pick text, or type it')) + '" />' +
+          ((review.why[k] || clash) ? '<p class="scan-why">' + esc(review.why[k] || '') +
+            (clash ? ' · ' + esc(tf('replaces “{v}”', { v: current })) : '') + '</p>' : '') +
+          (picking ? '<p class="scan-pick-hint">' + esc(tf('Tap what belongs in {field}:', { field: t(pair[1]).toLowerCase() })) + '</p>' + chipList : '') +
+        '</div>';
+      }).join('');
+      var chips = review.lines.length
+        ? '<details class="scan-raw"><summary>' + esc(t('Everything it read')) + '</summary>' + chipList + '</details>'
+        : '';
+      var body = '<div class="scan-review">' + rows + chips + scanBlockHTML(null, true) + '</div>';
+      var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
+        '<button class="btn btn-primary" data-action="apply-scan">' + esc(t('Fill fields')) + '</button>';
+      var el = sheet({ title: t('What the label says'), body: body, foot: foot, narrow: true });
+      // Picking a field to fill: focusing its value marks it, without a
+      // re-render that would steal the caret.
+      el.addEventListener('focusin', function (ev) {
+        var k = ev.target.getAttribute && ev.target.getAttribute('data-val');
+        if (!k) return;
+        review.active = k;
+        [].forEach.call(el.querySelectorAll('.scan-row'), function (r) { r.classList.toggle('is-active', r.getAttribute('data-row') === k); });
+      });
+      el.addEventListener('input', function (ev) {
+        var k = ev.target.getAttribute && ev.target.getAttribute('data-val');
+        if (!k) return;
+        var tk = el.querySelector('[data-take="' + k + '"]');
+        if (tk && ev.target.value.trim()) tk.checked = true;
+      });
+      return el;
+    },
+    applyScan: function () {
+      review.capture();
+      SCAN_FIELDS.forEach(function (pair) {
+        var k = pair[0], v = (review.values[k] || '').trim();
+        if (review.take[k] && v) parent.draft[k] = v;
       });
       // closeModal re-renders the stack, and the parent form builds from
       // its draft — so the filled values appear without disturbing
@@ -6384,6 +6666,10 @@ function openScanReview(parent, parsed) {
       closeModal();
     }
   };
+  SCAN_FIELDS.forEach(function (pair) {
+    var k = pair[0];
+    if (parsed.found[k]) { review.values[k] = parsed.found[k]; review.take[k] = true; review.why[k] = parsed.why[k] || ''; }
+  });
   openModal(review);
 }
 
@@ -7210,6 +7496,28 @@ document.addEventListener('click', function (ev) {
       return;
     case 'apply-scan':
       if (top && top.applyScan) top.applyScan();
+      return;
+    case 'scan-crop-read':
+      if (top && top.finish) top.finish(true);
+      return;
+    case 'scan-crop-whole':
+      if (top && top.finish) top.finish(false);
+      return;
+    case 'scan-pick':
+      if (top && top.pick) top.pick(btn.getAttribute('data-k'));
+      return;
+    case 'scan-line':
+      if (top && top.putLine) top.putLine(Number(btn.getAttribute('data-i')));
+      return;
+    case 'scan-more':
+      if (!top || !top.merge) return;
+      top.capture();
+      var reviewing = top;
+      scanPhoto(reviewing).then(function (more) {
+        if (!more || stack.indexOf(reviewing) === -1) return;
+        reviewing.merge(more);
+        renderModals();
+      });
       return;
 
     case 'quick-add':
