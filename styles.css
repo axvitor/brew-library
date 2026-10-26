@@ -3199,3 +3199,34 @@ body:has(.gate-screen){padding-bottom:0}
 .rd-dose-nums.is-long{--k:4.05}
 .rd-dose-nums.is-xlong{--k:4.6}
 .rd-dose-nums.is-xxlong{--k:5.2}
+
+/* ---------- label scan v2 ----------
+   Framing: the photo with a frame dragged around the label; outside it is
+   dimmed. Review: every field listed, the one being filled marked, and the
+   lines the reader saw as chips to tap into it. */
+.crop-hint{margin:0 0 12px;color:var(--text-muted);font:var(--type-body-sm)}
+.crop-stage{position:relative;width:max-content;max-width:100%;margin:0 auto;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden;border-radius:var(--radius-md)}
+.crop-stage img{display:block;max-width:100%;max-height:58vh;pointer-events:none}
+.crop-box{position:absolute;border:2px solid #FFFFFF;border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);cursor:move}
+.crop-box i{position:absolute;width:22px;height:22px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.crop-box i::before{content:"";position:absolute;inset:-11px}
+.crop-box i[data-h="tl"]{left:-12px;top:-12px;cursor:nwse-resize}
+.crop-box i[data-h="tr"]{right:-12px;top:-12px;cursor:nesw-resize}
+.crop-box i[data-h="bl"]{left:-12px;bottom:-12px;cursor:nesw-resize}
+.crop-box i[data-h="br"]{right:-12px;bottom:-12px;cursor:nwse-resize}
+
+.scan-row.is-active{box-shadow:inset 3px 0 0 var(--text-accent);padding-left:12px;margin-left:-12px}
+.scan-row.is-empty .scan-take span{color:var(--text-muted)}
+.scan-row-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.scan-row-head .scan-take{margin-bottom:7px}
+.scan-pick{min-height:36px;padding:0 12px;margin:-6px -4px 1px 0;border:0;border-radius:var(--radius-full);background:none;color:var(--text-accent);font:var(--weight-medium) 13px/1 var(--font-text);cursor:pointer}
+.scan-pick[aria-expanded="true"]{background:var(--surface-sunken)}
+.scan-pick-hint{margin:12px 0 8px;color:var(--text-muted);font:var(--type-caption)}
+.scan-raw .scan-lines{margin-top:10px}
+.scan-lines{display:flex;flex-wrap:wrap;gap:6px}
+.scan-line{
+  min-height:36px;max-width:100%;padding:6px 12px;border-radius:var(--radius-full);
+  border:var(--border-w-hairline) solid var(--border-hairline);background:var(--surface-card);
+  color:var(--text-body);font:var(--weight-regular) 13px/1.3 var(--font-text);text-align:left;cursor:pointer;
+}
+.scan-line:hover{border-color:var(--text-accent);color:var(--text-title)}
