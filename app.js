@@ -1774,6 +1774,7 @@ function renderFirebaseError() {
 var NAV_TABS = ['home', 'library', 'ranking', 'account'];
 var shownRoute = null, navPending = false, navToken = 0, uaSwipeAt = 0;
 var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+var phoneWidth = window.matchMedia('(max-width:640px)');
 
 // Safari's edge swipe back already slides the page; don't slide it twice.
 window.addEventListener('popstate', function (ev) { if (ev.hasUAVisualTransition) uaSwipeAt = Date.now(); });
@@ -4411,6 +4412,43 @@ function renderModals() {
   if (!inPopstate) syncHistory();
 }
 
+/* On a phone a list squeezed under a field halfway down the screen shows
+   three options. Scroll the field's label up to just under the floating
+   head instead, so the list gets the rest of the screen. The last fields
+   can't scroll that far on their own, so the body borrows room at its
+   foot — kept until the form closes, since handing it back after a pick
+   would drag the whole form down under your finger. Returns the height
+   left under the field once it has arrived. */
+function liftField(scroller, box, field) {
+  var label = box.querySelector('label') || field;
+  var sb = scroller.getBoundingClientRect();
+  var head = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 8;
+  var by = label.getBoundingClientRect().top - sb.top - head;
+  var room = scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
+  if (by > room) {
+    if (!scroller.dataset.basePad) scroller.dataset.basePad = getComputedStyle(scroller).paddingBottom;
+    var extra = (+scroller.dataset.extraPad || 0) + Math.ceil(by - room);
+    scroller.dataset.extraPad = extra;
+    scroller.style.paddingBottom = 'calc(' + scroller.dataset.basePad + ' + ' + extra + 'px)';
+  }
+  // Down to the floating Cancel / Save bar, not under it.
+  var foot = (scroller.closest('.page, .sheet') || scroller.parentNode).querySelector('.sheet-foot');
+  var floor = foot ? Math.min(sb.bottom, foot.getBoundingClientRect().top) : sb.bottom;
+  if (Math.abs(by) >= 2) {
+    scroller.scrollTo({ top: scroller.scrollTop + by, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+  }
+  return floor - (field.getBoundingClientRect().bottom - by) - 12;
+}
+
+// A text field with suggestions (Roaster in the coffee form) gets the same
+// lift, so the browser's suggestion list has room to open under it.
+document.addEventListener('focusin', function (ev) {
+  var el = ev.target;
+  if (!phoneWidth.matches || el.tagName !== 'INPUT' || !el.getAttribute('list')) return;
+  var scroller = el.closest('.sheet-body');
+  if (scroller) liftField(scroller, el.closest('.field') || el, el);
+});
+
 // You pressed "Add step" because you have a step to write — put the cursor in
 // it. Scrolls the fresh row into view too, which is the one case where moving
 // the view is what you actually asked for.
@@ -4670,6 +4708,7 @@ function enhanceSelect(sel) {
     wrap.classList.remove('drop-up');
     list.style.maxHeight = '';
     if (!scroller) return;
+    if (phoneWidth.matches) { lift(scroller); return; }
     var sb = scroller.getBoundingClientRect();
     var fr = field.getBoundingClientRect();
     // A clear gap, not flush: a list sitting on the footer's edge reads as
@@ -4688,6 +4727,9 @@ function enhanceSelect(sel) {
       if (canScroll > 0) { scroller.scrollTop += canScroll; below += canScroll; }
       list.style.maxHeight = Math.max(120, below) + 'px';
     }
+  }
+  function lift(scroller) {
+    list.style.maxHeight = Math.max(160, liftField(scroller, box, field)) + 'px';
   }
   function close() {
     wrap.classList.remove('drop-up');
