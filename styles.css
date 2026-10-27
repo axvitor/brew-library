@@ -3179,10 +3179,12 @@ body:has(.gate-screen){padding-bottom:0}
   .nav-add:active .nav-cup{transform:scale(var(--press-scale));filter:drop-shadow(0 4px 6px rgba(200,74,22,.4)) brightness(.85)}
 }
 /* In the sidebar it is a primary button like any other: the orange pill,
-   label centred, with the same sheen, glow and press. */
+   label centred, with the same sheen, glow and press — and it leads the
+   menu, above Home. (On a phone it stays mid-capsule, under the thumb.) */
 @media(min-width:861px){
   .nav-add{
-    justify-content:center;gap:8px;margin-top:10px;border-radius:var(--radius-full);
+    order:-1;margin:0 0 12px;
+    justify-content:center;gap:8px;border-radius:var(--radius-full);
     background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.26), transparent 65%),var(--accent-timer);
     color:#FFFFFF;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px -8px rgba(200,74,22,.8);
