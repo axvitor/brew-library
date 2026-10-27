@@ -2175,9 +2175,12 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .slide-brew{
   pointer-events:auto;flex:none;width:52px;height:52px;border-radius:var(--radius-full);
   display:flex;align-items:center;justify-content:center;
-  background:var(--accent-timer);color:#FFFFFF;transition:var(--transition-control);
+  /* The primary button's fill, sheen and glow, in a circle. */
+  background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.26), transparent 65%),var(--accent-timer);
+  color:#FFFFFF;transition:var(--transition-control);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px -8px rgba(200,74,22,.8);
 }
-.slide-brew:hover{background:var(--roast-500)}
+.slide-brew:hover{background:radial-gradient(100% 70% at 50% 0%, rgba(255,255,255,.26), transparent 65%),var(--roast-700)}
 .slide-brew:active{transform:scale(var(--press-scale))}
 .slide-brew .ico{width:16px;height:16px;fill:currentColor;stroke:none}
 .slide-open{flex:none;width:44px;height:44px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;background:var(--surface-sunken);color:var(--text-muted)}
