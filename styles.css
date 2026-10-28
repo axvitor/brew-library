@@ -2769,7 +2769,9 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .ktab .brewer-ico{width:16px;height:16px}
 /* The card, trimmed: name and method badge share the top row, the
    numbers in light weight under them, the brew button beside the grind. */
-.slide-body{min-height:0;gap:14px;padding:18px 18px 18px 20px}
+/* min-width:0 — the body is a flex child of the card, and without it a long
+   method name widens the body past the card instead of truncating. */
+.slide-body{min-height:0;min-width:0;gap:14px;padding:18px 18px 18px 20px}
 .slide-top{align-items:flex-start;gap:10px}
 .slide-name{flex:1;min-width:0}
 .slide-name .nm{font-size:22px}
