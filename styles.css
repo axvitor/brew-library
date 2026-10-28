@@ -2157,8 +2157,6 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
   min-height:270px;box-sizing:border-box;padding:22px;
 }
 .slide-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.slide-chip{padding:5px 10px;border-radius:var(--radius-full);background:var(--surface-sunken);font:var(--weight-regular) 12px/1 var(--font-text);color:var(--text-muted)}
-.slide-chip.is-continue{background:rgba(200,74,22,.2);color:var(--text-accent);font-weight:var(--weight-medium)}
 .slide-method{font:var(--weight-regular) 12px/1.2 var(--font-text);color:var(--text-muted);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .slide-spark{display:block;width:100%;height:64px}
 .slide-spark .area{fill:rgba(200,74,22,.18)}
@@ -2513,7 +2511,6 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .slide-grind{display:flex;align-items:center;gap:7px;min-width:0;font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-body)}
 .slide-grind .ico{width:15px;height:15px;flex:none;color:var(--text-accent)}
 .slide-grind span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.slide-chip{background:rgba(255,255,255,.08)}
 
 .hspecs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .hspec{
@@ -2527,8 +2524,6 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 
 /* Selected tab: the same as the menu — glass lens, orange label. */
 .ktab.on,.tabs button.on,.seg.on{color:var(--text-accent)}
-.slide-body{min-height:0;gap:18px}
-.slide-name{margin-top:6px}
 
 
 /* ---------- form pages: glass controls ----------
@@ -2649,8 +2644,6 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 [data-theme="light"] .btn-google:hover{background:#000000;border-color:#000000}
 [data-theme="light"] .carousel-dots .dot{background:#CFCAC2}
 [data-theme="light"] .slide{box-shadow:0 14px 30px -22px rgba(26,24,22,.3)}
-[data-theme="light"] .slide-chip{background:#EFECE6;color:#5E5A53}
-[data-theme="light"] .slide-chip.is-continue{background:#FBE6DA;color:#A63A0D}
 [data-theme="light"] .hspec{background:#FFFFFF;box-shadow:inset 0 0 0 1px rgba(26,24,22,.08)}
 [data-theme="light"] .rd-dose{box-shadow:0 14px 30px -22px rgba(26,24,22,.3)}
 [data-theme="light"] .rd-step-btn{background:#F7F5F1}
@@ -2757,7 +2750,6 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .slide-body{flex:1;height:auto}
 .slide-foot{margin-top:auto}
 .slide-name .nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.slide-nums b{letter-spacing:-0.03em}
 
 /* ==========================================================
    Coffee details
@@ -2775,8 +2767,22 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .hc-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;align-self:flex-start}
 .ktab{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .ktab .brewer-ico{width:16px;height:16px}
-.slide-method{display:inline-flex;align-items:center;gap:6px;min-width:0}
-.slide-method .brewer-ico{width:15px;height:15px;flex:none;color:var(--text-accent)}
+/* The card, trimmed: name and method badge share the top row, the
+   numbers in light weight under them, the brew button beside the grind. */
+.slide-body{min-height:0;gap:14px;padding:18px 18px 18px 20px}
+.slide-top{align-items:flex-start;gap:10px}
+.slide-name{flex:1;min-width:0}
+.slide-name .nm{font-size:22px}
+.slide-nums b{font-weight:var(--weight-light);letter-spacing:-0.03em}
+.slide-nums i{order:-1}
+.slide-stats{gap:8px}
+.slide-method{
+  display:inline-flex;align-items:center;gap:6px;flex:0 1 auto;max-width:62%;
+  padding:5px 10px;border-radius:var(--radius-full);
+  background:rgba(255,255,255,.08);color:var(--text-body);font:var(--weight-regular) 12px/1 var(--font-text);
+}
+[data-theme="light"] .slide-method{background:#EFECE6;color:#5E5A53}
+.slide-method .brewer-ico{width:14px;height:14px;flex:none;color:var(--text-accent)}
 .slide-method span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rd-chip{display:inline-flex;align-items:center;gap:6px}
 .rd-chip .brewer-ico{width:14px;height:14px;color:var(--text-accent)}

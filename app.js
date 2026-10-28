@@ -677,8 +677,6 @@ var TRANSLATIONS = {
     'Immersion': 'Imersão',
     'Drip filter': 'Cafeteira',
     'Stovetop': 'Fogão',
-    'Continue': 'Continuar',
-    'Recent': 'Recente',
     'grams': 'gramas',
     'water': 'água',
     'shot': 'extração',
@@ -2284,7 +2282,7 @@ function monogram(r) {
   return letters.slice(0, 2).toUpperCase() || '·';
 }
 
-function slideHTML(r, kind) {
+function slideHTML(r) {
   var grind = grindText(r);
   var roaster = roasterOf(r);
   var style = nameOf('style', r.styleId);
@@ -2294,13 +2292,11 @@ function slideHTML(r, kind) {
     '<a class="slide-link" href="#/r/' + encodeURIComponent(r.id) + '" aria-label="' + esc(t('Open') + ' ' + titleOf(r)) + '"></a>' +
     '<div class="slide-body">' +
       '<div class="slide-top">' +
-        '<span class="slide-chip' + (kind === 'continue' ? ' is-continue' : '') + '">' +
-          esc(t(kind === 'continue' ? 'Continue' : 'Recent')) + '</span>' +
+        '<div class="slide-name">' +
+          '<span class="nm">' + esc(titleOf(r)) + '</span>' +
+          '<span class="mt">' + esc([roaster, style].filter(Boolean).join(' · ')) + '</span>' +
+        '</div>' +
         '<span class="slide-method">' + brewerIcon(findIn('method', r.methodId)) + '<span>' + esc(nameOf('method', r.methodId)) + '</span></span>' +
-      '</div>' +
-      '<div class="slide-name">' +
-        '<span class="nm">' + esc(titleOf(r)) + '</span>' +
-        '<span class="mt">' + esc([roaster, style].filter(Boolean).join(' · ')) + '</span>' +
       '</div>' +
       '<div class="slide-foot">' +
         '<div class="slide-stats">' +
@@ -2329,8 +2325,7 @@ function carouselHTML() {
     .sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); })
     .filter(function (r) { return !first || r.id !== first.id; })
     .slice(0, first ? 4 : 5);
-  var slides = (first ? [slideHTML(first, 'continue')] : [])
-    .concat(recent.map(function (r) { return slideHTML(r, 'recent'); }));
+  var slides = (first ? [slideHTML(first)] : []).concat(recent.map(slideHTML));
   if (!slides.length) return '';
   var dots = '';
   for (var i = 0; i < slides.length; i++) dots += '<span class="dot' + (i === 0 ? ' on' : '') + '"></span>';
