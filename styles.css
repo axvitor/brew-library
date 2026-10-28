@@ -2779,7 +2779,7 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .slide-nums i{order:-1}
 .slide-stats{gap:8px}
 .slide-method{
-  display:inline-flex;align-items:center;gap:6px;flex:0 1 auto;max-width:62%;
+  display:inline-flex;align-items:center;gap:6px;flex:0 1 auto;max-width:40%;
   padding:5px 10px;border-radius:var(--radius-full);
   background:rgba(255,255,255,.08);color:var(--text-body);font:var(--weight-regular) 12px/1 var(--font-text);
 }
