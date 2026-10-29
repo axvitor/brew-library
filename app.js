@@ -704,6 +704,7 @@ var TRANSLATIONS = {
     'roasters': 'torrefações',
     'All': 'Todos',
     'All recipes': 'Todas as receitas',
+    'Recent': 'Recentes',
     'Matching recipes': 'Receitas encontradas',
     'Brew': 'Preparar',
     'Open': 'Abrir',
@@ -2329,7 +2330,8 @@ function carouselHTML() {
   if (!slides.length) return '';
   var dots = '';
   for (var i = 0; i < slides.length; i++) dots += '<span class="dot' + (i === 0 ? ' on' : '') + '"></span>';
-  return '<div class="carousel" id="homeCarousel">' + slides.join('') + '</div>' +
+  return '<div class="home-sec home-sec-recent"><span class="home-sec-t">' + esc(t('Recent')) + '</span></div>' +
+    '<div class="carousel" id="homeCarousel">' + slides.join('') + '</div>' +
     (slides.length > 1 ? '<div class="carousel-dots" aria-hidden="true">' + dots + '</div>' : '');
 }
 

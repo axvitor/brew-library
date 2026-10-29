@@ -2215,6 +2215,9 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .home-sec-t{font:var(--weight-medium) 15px/1.3 var(--font-text);color:var(--text-title)}
 .home-sec-n{font:var(--weight-regular) 13px/1 var(--font-text);color:var(--text-muted)}
 .home-sec-a{min-height:36px;padding:0 4px;font:var(--weight-regular) 13px/1 var(--font-text);color:var(--text-accent)}
+/* Recent heads the carousel the way All recipes heads the list. */
+.home-sec-recent{margin-top:20px}
+.home-sec-recent + .carousel{margin-top:8px}
 
 /* Every recipe as a row: method monogram, name, method and roaster, the
    ratio (or shot time) set thin on the right. */
