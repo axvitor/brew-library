@@ -2347,15 +2347,15 @@ function grindText(r) {
 function homeRowHTML(r) {
   var roaster = roasterOf(r);
   var gr = findIn('grinder', r.grinderId);
-  function cell(v, k, text) {
-    return '<span class="hc-cell"><span class="v' + (text ? ' is-text' : '') + '">' + v + '</span>' +
+  function cell(kind, v, k) {
+    return '<span class="hc-cell is-' + kind + '"><span class="v">' + v + '</span>' +
       '<span class="k">' + esc(k) + '</span></span>';
   }
   var cells = '';
-  if (r.dose !== '' && r.dose != null) cells += cell(num(r.dose) + 'g', t('Coffee'));
-  if (r.water !== '' && r.water != null) cells += cell(num(r.water) + 'g', t('Water'));
-  else if (r.brewTime) cells += cell(esc(String(r.brewTime).replace('~', '')), t('Shot'));
-  if (r.grindSize) cells += cell(esc(r.grindSize), gr ? gr.name : t('Grind'), true);
+  if (r.dose !== '' && r.dose != null) cells += cell('coffee', num(r.dose) + 'g', t('Coffee'));
+  if (r.water !== '' && r.water != null) cells += cell('water', num(r.water) + 'g', t('Water'));
+  else if (r.brewTime) cells += cell('water', esc(String(r.brewTime).replace('~', '')), t('Shot'));
+  if (r.grindSize) cells += cell('grind', esc(r.grindSize), gr ? gr.name : t('Grind'));
   return '<a class="hcard" href="#/r/' + encodeURIComponent(r.id) + '">' +
     '<span class="hc-top">' +
       '<span class="hc-ico">' + brewerIcon(findIn('method', r.methodId)) + '</span>' +
