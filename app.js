@@ -1120,6 +1120,17 @@ var TRANSLATIONS = {
     'Your browser blocked the sign-in popup — allow popups for this site and try again.': 'Seu navegador bloqueou a janela de login — permita pop-ups neste site e tente novamente.',
     'Can’t connect': 'Sem conexão',
     'Still brewing': 'Preparo em andamento',
+    'Your timer is running. Leaving now will stop it and you’ll need to start over.': 'O timer está rodando. Sair agora vai pará-lo e você terá que recomeçar.',
+    'Delete “{name}”?': 'Excluir “{name}”?',
+    'It is used by {n} {what}.': 'Usado por {n} {what}.',
+    'Replace your library': 'Substituir sua biblioteca',
+    'Replace your current library — {a} — with the imported file ({b})?': 'Substituir sua biblioteca atual — {a} — pelo arquivo importado ({b})?',
+    'Replace library': 'Substituir biblioteca',
+    'Reset the library': 'Redefinir a biblioteca',
+    'Reset the library back to the starter data?': 'Redefinir a biblioteca para os dados iniciais?',
+    'Every recipe and coffee you added will be deleted — including {n} you currently have.': 'Todas as receitas e cafés que você adicionou serão excluídos — incluindo {n} que você tem agora.',
+    'Every recipe and coffee you added will be deleted.': 'Todas as receitas e cafés que você adicionou serão excluídos.',
+    'Reset library': 'Redefinir biblioteca',
     'Leave anyway': 'Sair mesmo assim',
     'Brew complete.': 'Preparo concluído.',
   }
@@ -4002,7 +4013,7 @@ function openTimer(id) {
       if (!timer || !timer.running) return true;
       confirmDanger({
         title: t('Still brewing'),
-        body: '<p>Your timer is running. Leaving now will stop it and you’ll need to start over.</p>',
+        body: '<p>' + esc(t('Your timer is running. Leaving now will stop it and you’ll need to start over.')) + '</p>',
         confirmLabel: t('Leave anyway'),
         onConfirm: function () {
           closeModal();       // dismiss this confirmation
@@ -7493,8 +7504,8 @@ function deleteEntity(type, id) {
     grinder: 'They keep their grind size, with no grinder set.',
     roaster: 'They stay, with no roaster set.'
   }[type];
-  var body = '<p>Delete “' + esc(e.name) + '”?</p>' +
-    (used ? '<p>It is used by ' + used + ' ' + (used === 1 ? noun : noun + 's') + '. ' + esc(t(after)) + '</p>' : '');
+  var body = '<p>' + esc(tf('Delete “{name}”?', { name: e.name })) + '</p>' +
+    (used ? '<p>' + esc(tf('It is used by {n} {what}.', { n: used, what: tPlural(used, noun, noun + 's') }) + ' ' + t(after)) + '</p>' : '');
   confirmDanger({
     title: t('Delete ' + def.label.toLowerCase()),
     body: body,
@@ -7554,11 +7565,13 @@ function importData(file) {
     }
     var have = state.recipes.length, incoming = data.recipes.length;
     confirmDanger({
-      title: 'Replace your library',
-      body: '<p>Replace your current library — ' + have + ' ' + (have === 1 ? 'recipe' : 'recipes') +
-        ' — with the imported file (' + incoming + ' ' + (incoming === 1 ? 'recipe' : 'recipes') + ')?</p>' +
+      title: t('Replace your library'),
+      body: '<p>' + esc(tf('Replace your current library — {a} — with the imported file ({b})?', {
+          a: have + ' ' + tPlural(have, 'recipe', 'recipes'),
+          b: incoming + ' ' + tPlural(incoming, 'recipe', 'recipes')
+        })) + '</p>' +
         '<p>' + esc(t('This cannot be undone — export a backup first if unsure.')) + '</p>',
-      confirmLabel: 'Replace library',
+      confirmLabel: t('Replace library'),
       onConfirm: function () {
         closeModal();
         state = normalizeLibrary(data);
@@ -7574,11 +7587,12 @@ function importData(file) {
 function resetAll() {
   var n = state.recipes.length;
   confirmDanger({
-    title: 'Reset the library',
-    body: '<p>Reset the library back to the starter data?</p>' +
-      '<p>Every recipe and coffee you added will be deleted' +
-      (n ? ' — including ' + n + ' ' + (n === 1 ? 'recipe' : 'recipes') + ' you currently have' : '') + '.</p>',
-    confirmLabel: 'Reset library',
+    title: t('Reset the library'),
+    body: '<p>' + esc(t('Reset the library back to the starter data?')) + '</p>' +
+      '<p>' + esc(n
+        ? tf('Every recipe and coffee you added will be deleted — including {n} you currently have.', { n: n + ' ' + tPlural(n, 'recipe', 'recipes') })
+        : t('Every recipe and coffee you added will be deleted.')) + '</p>',
+    confirmLabel: t('Reset library'),
     onConfirm: function () {
       closeModal();
       initialLibraryFor(currentUser).then(function (fresh) {
@@ -7760,8 +7774,8 @@ document.addEventListener('click', function (ev) {
       if (!dr) return;
       confirmDanger({
         title: t('Delete recipe'),
-        body: '<p>Delete “' + esc(titleOf(dr)) + '”?</p>',
-        confirmLabel: 'Delete',
+        body: '<p>' + esc(tf('Delete “{name}”?', { name: titleOf(dr) })) + '</p>',
+        confirmLabel: t('Delete'),
         onConfirm: function () {
           closeModal();
           state.recipes = state.recipes.filter(function (r) { return r.id !== id; });
