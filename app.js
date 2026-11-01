@@ -1025,7 +1025,7 @@ var TRANSLATIONS = {
     'Select a grinder…': 'Selecione um moedor…',
     'Select a style…': 'Selecione um estilo…',
     'e.g. 75 clicks': 'ex.: 75 cliques',
-    'What you do at this point': 'O que você faz neste momento',
+    'e.g. Bloom': 'ex.: Bloom',
     'What to do at this point': 'O que fazer neste momento',
     'Add step': 'Adicionar etapa',
     'This recipe style has no built-in formula — write the steps by hand.': 'Este estilo de receita não tem fórmula própria — escreva as etapas à mão.',
@@ -5020,7 +5020,7 @@ function stepsEditor(steps) {
   var rows = steps.map(function (s, i) {
     return '<div class="steprow" data-i="' + i + '">' +
       '<input class="inp" data-s="t" value="' + esc(s.t) + '" placeholder="0:45" inputmode="numeric" />' +
-      '<input class="inp" data-s="label" value="' + esc(s.label) + '" placeholder="' + esc(t('What you do at this point')) + '" />' +
+      '<input class="inp" data-s="label" value="' + esc(s.label) + '" placeholder="' + esc(t('e.g. Bloom')) + '" />' +
       '<input class="inp" data-s="water" value="' + esc(s.water === 0 ? '' : s.water) + '" placeholder="g" inputmode="decimal" />' +
       '<button type="button" class="del" data-action="del-step" data-i="' + i + '" aria-label="Remove step">' + ICON.close + '</button>' +
     '</div>';
