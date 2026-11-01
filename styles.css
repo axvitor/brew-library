@@ -2742,17 +2742,17 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .hc-fav svg{width:16px;height:16px}
 .hc-strip{display:flex;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px}
 .hc-cell{flex:1 1 0;display:flex;flex-direction:column;gap:2px;min-width:0}
-.hc-cell + .hc-cell{padding-left:12px;border-left:var(--border-w-hairline) solid var(--border-hairline)}
+.hc-cell + .hc-cell{padding-left:16px;border-left:var(--border-w-hairline) solid var(--border-hairline)}
+.hc-cell:not(:last-child){padding-right:16px}
 /* One size and weight for every value — 16px light. Coffee and water are
    sized to their longest value (999g, 9999g at 16px light measure 38.5 and
    48.1px; "Extração" under a shot is 48.2px), so the grind setting gets
-   the rest of the strip. A cell after the first also carries 12px of
-   padding and the 1px rule. */
+   the rest of the strip. Content-box, so those widths are the text's and
+   the 16px either side of each rule comes on top. */
 .hc-cell .v{font:var(--weight-light) 16px/1.25 var(--font-text);color:var(--text-title);font-variant-numeric:tabular-nums;white-space:nowrap}
-.hc-cell.is-coffee,.hc-cell.is-water{flex:0 0 auto}
+.hc-cell.is-coffee,.hc-cell.is-water{flex:0 0 auto;box-sizing:content-box}
 .hc-cell.is-coffee{width:40px}
 .hc-cell.is-water{width:50px}
-.hc-cell + .hc-cell.is-water{width:63px}
 .hc-cell.is-grind .v{white-space:normal}
 /* Label above the value, as on the Recent cards. */
 .hc-cell .k{order:-1;font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
