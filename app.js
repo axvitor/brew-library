@@ -740,7 +740,7 @@ var TRANSLATIONS = {
     'Device language': 'Idioma do dispositivo',
     'Account menu': 'Menu da conta',
     'Back to top': 'Voltar ao topo',
-    'Synced across your signed-in devices.': 'Sincronizado entre seus dispositivos conectados.',
+    'Synced across your signed-in devices.': 'Sincronizado nos seus dispositivos.',
     // --- home ---
     'Your brewing library': 'Sua biblioteca de preparos',
     'recipe': 'receita',
