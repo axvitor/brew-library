@@ -4401,6 +4401,9 @@ function renderModals() {
     // the safe default action, so a keyboard user can hit Enter to back
     // out immediately instead of landing nowhere.
     var focusable = last.el.querySelector('input,select,textarea,.dialog .btn-ghost');
+    // Not when the first field is a dropdown: focusing one opens its list,
+    // and a form that arrives with Coffee already open reads as a misclick.
+    if (focusable && focusable.closest('.combo')) focusable = null;
     if (focusable && !('ontouchstart' in window)) focusable.focus();
   }
 
