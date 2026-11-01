@@ -5033,13 +5033,13 @@ function buildRecipeForm(m) {
     '<div class="field" id="coffeeField"><label for="f-coffee-sel">' + esc(t('Coffee')) + '</label>' +
       coffeeSelectHTML(d.coffeeId) + '</div>' +
     '<div class="field"><label for="f-method-sel">' + esc(t('Brewing method')) + '</label>' + entitySelect('method', d.methodId, 'f-method-sel', t('Select a method…')) + '</div>' +
+    '<div class="field"><label for="f-style-sel">' + esc(t('Recipe style')) + '</label>' + entitySelect('style', d.styleId, 'f-style-sel', t('Select a style…')) +
+      '<div class="hint">' + esc(t('Pouring steps always follow the chosen recipe style. Add a style to build your own step-by-step schedule.')) + '</div></div>' +
     '<div class="row row-2">' +
       '<div class="field"><label for="f-grinder-sel">' + esc(t('Grinder')) + '</label>' + entitySelect('grinder', d.grinderId, 'f-grinder-sel', t('Select a grinder…')) + '</div>' +
       '<div class="field"><label for="f-grind">' + esc(t('Grind size')) + '</label>' +
         '<input class="inp" id="f-grind" value="' + esc(d.grindSize) + '" placeholder="' + esc(t('e.g. 75 clicks')) + '" /></div>' +
     '</div>' +
-    '<div class="field"><label for="f-style-sel">' + esc(t('Recipe style')) + '</label>' + entitySelect('style', d.styleId, 'f-style-sel', t('Select a style…')) +
-      '<div class="hint">' + esc(t('Pouring steps always follow the chosen recipe style. Add a style to build your own step-by-step schedule.')) + '</div></div>' +
 
     '<div class="form-sep-label">' + esc(t('Brew parameters')) + '</div>' +
     // Dose and water, then temperature and time: pairs on a phone, one row
