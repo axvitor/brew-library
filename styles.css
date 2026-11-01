@@ -1365,8 +1365,9 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .row{display:grid;gap:14px}
 .row-2{grid-template-columns:1fr 1fr}
 .row-3{grid-template-columns:repeat(3,1fr)}
+.row-4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:560px){
-  .row-3{grid-template-columns:1fr 1fr}
+  .row-3,.row-4{grid-template-columns:1fr 1fr}
   .row-2{grid-template-columns:1fr}
   /* Collapsed to one column the row is no longer grouping anything, so it
      stops adding its own gap on top of the field rhythm. */

@@ -970,7 +970,8 @@ var TRANSLATIONS = {
     'Add the water.': 'Informe a água.',
     'The pours add up to {a} g, but the water is {b} g — make them match.': 'Os despejos somam {a} g, mas a água é {b} g — deixe os dois iguais.',
     'Add the shot time.': 'Informe o tempo de extração.',
-    'Add the total brew time, or steps with times.': 'Informe o tempo total de preparo, ou etapas com tempos.',
+    'Add the total brew time, or pick a recipe style with steps.': 'Informe o tempo total de preparo, ou escolha um estilo de receita com etapas.',
+    'Pick a recipe style with pouring steps, so the timer can follow along.': 'Escolha um estilo de receita com etapas de despejo, para o timer acompanhar.',
     'You already have one called “{name}”.': 'Você já tem um chamado “{name}”.',
     '1 recipe uses “{name}” — move it to another one first.': '1 receita usa “{name}” — mude-a para outro primeiro.',
     '{n} recipes use “{name}” — move them to another one first.': '{n} receitas usam “{name}” — mude-as para outro primeiro.',
@@ -1025,7 +1026,6 @@ var TRANSLATIONS = {
     'Select a grinder…': 'Selecione um moedor…',
     'Select a style…': 'Selecione um estilo…',
     'e.g. 75 clicks': 'ex.: 75 cliques',
-    'e.g. Bloom': 'ex.: Bloom',
     'What to do at this point': 'O que fazer neste momento',
     'Add step': 'Adicionar etapa',
     'This recipe style has no built-in formula — write the steps by hand.': 'Este estilo de receita não tem fórmula própria — escreva as etapas à mão.',
@@ -5016,52 +5016,6 @@ function stepsOutOfOrder(steps) {
   return bad;
 }
 
-function stepsEditor(steps) {
-  var rows = steps.map(function (s, i) {
-    return '<div class="steprow" data-i="' + i + '">' +
-      '<input class="inp" data-s="t" value="' + esc(s.t) + '" placeholder="0:45" inputmode="numeric" />' +
-      '<input class="inp" data-s="label" value="' + esc(s.label) + '" placeholder="' + esc(t('e.g. Bloom')) + '" />' +
-      '<input class="inp" data-s="water" value="' + esc(s.water === 0 ? '' : s.water) + '" placeholder="g" inputmode="decimal" />' +
-      '<button type="button" class="del" data-action="del-step" data-i="' + i + '" aria-label="Remove step">' + ICON.close + '</button>' +
-    '</div>';
-  }).join('');
-  return '<p class="hint" style="margin:0 0 12px">' + esc(t('This recipe style has no built-in formula — write the steps by hand.')) + '</p>' +
-    '<div class="steps-head"><span>' + esc(t('Time')) + '</span><span>' + esc(t('Action')) + '</span><span>' + esc(t('Water')) + '</span><span></span></div>' +
-    '<div id="stepsWrap">' + rows + '</div>' +
-    '<div class="steps-tools">' +
-      '<button type="button" class="btn btn-ghost btn-sm" data-action="add-step">' + ICON.plus + esc(t('Add step')) + '</button>' +
-    '</div>';
-}
-
-// Decides, from the currently selected style, whether the steps section shows
-// a live read-only preview (style has a formula) or a manual editor (it doesn't).
-function stepsSectionHTML(m) {
-  var d = m.draft;
-  var mth = findIn('method', d.methodId);
-  var methodName = mth ? mth.name : '';
-
-  if (hasFormula(d.styleId)) {
-    var steps = preset(d.styleId, d.dose, d.water, methodName);
-    if (steps.length) {
-      return '<ol class="timeline">' + timelineHTML(steps) + '</ol>' +
-        '<p class="hint" style="margin-top:12px">' + esc(stepsCaption(d)) +
-        ' Switch to a custom recipe style to write steps by hand.</p>';
-    }
-    return '<p class="hint" style="margin:0">' + esc(noStepsMessage(d)) + '</p>';
-  }
-
-  var own = styleSteps(d.styleId);
-  if (own.length) {
-    var st = findIn('style', d.styleId);
-    return '<ol class="timeline">' + timelineHTML(scaleSteps(own, numIn(d.water))) + '</ol>' +
-      '<p class="hint" style="margin-top:12px">These steps come from the ' +
-      esc(st ? st.name : 'selected') + ' style, with the pours scaled to this recipe\'s water — edit the style to change them for every recipe using it.</p>';
-  }
-
-  if (!d.steps || !d.steps.length) d.steps = [{ t: '', label: '', water: '' }];
-  return stepsEditor(d.steps);
-}
-
 function openRecipeForm(existing) {
   var m = {
     draft: existing
@@ -5088,66 +5042,47 @@ function buildRecipeForm(m) {
       '<div class="hint">' + esc(t('Pouring steps always follow the chosen recipe style. Add a style to build your own step-by-step schedule.')) + '</div></div>' +
 
     '<div class="form-sep-label">' + esc(t('Brew parameters')) + '</div>' +
-    '<div class="row row-3">' +
+    // Dose and water, then temperature and time: pairs on a phone, one row
+    // of four on a wide screen.
+    '<div class="row row-4">' +
       '<div class="field"><label for="f-dose">' + esc(t('Coffee dose (g)')) + '</label>' +
         '<input class="inp" id="f-dose" value="' + esc(d.dose) + '" placeholder="15" inputmode="decimal" /></div>' +
       '<div class="field"><label for="f-water">' + esc(t('Water (g)')) + '</label>' +
         '<input class="inp" id="f-water" value="' + esc(d.water) + '" placeholder="250" inputmode="decimal" /></div>' +
       '<div class="field"><label for="f-temp">' + esc(t('Temperature (°C)')) + '</label>' +
         '<input class="inp" id="f-temp" value="' + esc(d.temp) + '" placeholder="94" inputmode="decimal" /></div>' +
-    '</div>' +
-    '<div class="row row-2">' +
       '<div class="field"><label for="f-time">' + esc(t('Total brew time')) + '</label>' +
         '<input class="inp" id="f-time" value="' + esc(d.brewTime) + '" placeholder="3:30" /></div>' +
-      '<div class="field"><label>' + esc(t('Ratio')) + '</label>' +
-        '<div class="inp" style="display:flex;align-items:center;background:var(--surface-sunken);border-style:dashed">' +
-          '<span id="ratioOut" class="ratio-hint">' + ratio(d.dose, d.water) + '</span></div></div>' +
     '</div>' +
+    '<div class="field"><label>' + esc(t('Ratio')) + '</label>' +
+      '<div class="inp" style="display:flex;align-items:center;background:var(--surface-sunken);border-style:dashed">' +
+        '<span id="ratioOut" class="ratio-hint">' + ratio(d.dose, d.water) + '</span></div></div>' +
 
-    '<div class="form-sep-label">' + esc(t('Pouring steps')) + '</div>' +
-    '<div id="stepsSection">' + stepsSectionHTML(m) + '</div>' +
-
+    // No pouring steps here: they belong to the recipe style, and are
+    // written there (Recipe style › +).
     '<div class="form-sep-label">' + esc(t('Finishing touches')) + '</div>' +
+    '<div class="field"><label>' + esc(t('Cup score')) + '</label>' +
+      '<div class="rate" id="rateWrap">' +
+        [1, 2, 3, 4, 5].map(function (i) {
+          return '<button type="button" class="' + (i <= (d.rating || 0) ? 'on' : '') + '" data-action="rate" data-v="' + i + '" aria-label="Rate ' + i + '">' +
+            iconBean(i <= (d.rating || 0)) + '</button>';
+        }).join('') +
+      '</div></div>' +
     '<div class="field"><label for="f-notes">' + esc(t('Personal notes')) + '</label>' +
       '<textarea class="inp" id="f-notes" placeholder="What worked, what to change next time…">' + esc(d.notes) + '</textarea></div>' +
-    '<div class="row row-2">' +
-      '<div class="field"><label for="f-name">' + esc(t('Custom title (optional)')) + '</label>' +
-        '<input class="inp" id="f-name" value="' + esc(d.name) + '" placeholder="' + esc(t('Defaults to the coffee name')) + '" /></div>' +
-      '<div class="field"><label>' + esc(t('Cup score')) + '</label>' +
-        '<div class="rate" id="rateWrap">' +
-          [1, 2, 3, 4, 5].map(function (i) {
-            return '<button type="button" class="' + (i <= (d.rating || 0) ? 'on' : '') + '" data-action="rate" data-v="' + i + '" aria-label="Rate ' + i + '">' +
-              iconBean(i <= (d.rating || 0)) + '</button>';
-          }).join('') +
-        '</div></div>' +
-    '</div>';
+    '<div class="field"><label for="f-name">' + esc(t('Custom title (optional)')) + '</label>' +
+      '<input class="inp" id="f-name" value="' + esc(d.name) + '" placeholder="' + esc(t('Defaults to the coffee name')) + '" /></div>';
 
   var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
     '<button class="btn btn-primary" data-action="save-recipe">' + esc(t(d.id ? 'Save changes' : 'Save recipe')) + '</button>';
 
   var el = sheet({ title: t(d.id ? 'Edit recipe' : 'New recipe'), body: body, foot: foot });
 
-  // live ratio + live steps preview (steps only react to dose/water while a
-  // style-driven formula is active — manual steps aren't touched by these).
+  // live ratio
   var dose = el.querySelector('#f-dose'), water = el.querySelector('#f-water'), out = el.querySelector('#ratioOut');
   function upd() { out.textContent = ratio(dose.value, water.value); }
-  function syncSteps() {
-    d.dose = dose.value.trim();
-    d.water = water.value.trim();
-    if (!styleProvidesSteps(d.styleId)) return;
-    var wrap = el.querySelector('#stepsSection');
-    if (wrap) wrap.innerHTML = stepsSectionHTML(m);
-  }
-  dose.addEventListener('input', function () { upd(); syncSteps(); });
-  water.addEventListener('input', function () { upd(); syncSteps(); });
-
-  function onStyleOrMethodChange() {
-    readRecipeForm(m);
-    var wrap = el.querySelector('#stepsSection');
-    if (wrap) wrap.innerHTML = stepsSectionHTML(m);
-  }
-  el.querySelector('#f-style-sel').addEventListener('change', onStyleOrMethodChange);
-  el.querySelector('#f-method-sel').addEventListener('change', onStyleOrMethodChange);
+  dose.addEventListener('input', upd);
+  water.addEventListener('input', upd);
 
   enhanceSelects(el);
   return el;
@@ -5168,13 +5103,9 @@ function readRecipeForm(m) {
   d.brewTime = normTime(q('#f-time').value);
   d.notes = q('#f-notes').value;
   d.name = q('#f-name').value.trim();
-  d.steps = [].map.call(el.querySelectorAll('.steprow'), function (row) {
-    return {
-      t: normTime(row.querySelector('[data-s="t"]').value),
-      label: row.querySelector('[data-s="label"]').value.trim(),
-      water: row.querySelector('[data-s="water"]').value.trim()
-    };
-  });
+  // Steps aren't edited here any more; a recipe saved before that keeps
+  // the ones it has.
+  d.steps = d.steps || [];
 }
 
 /* What a recipe has to carry for its page, its timer and the timer's
@@ -5198,10 +5129,10 @@ function recipeProblem(d) {
     }
   }
   if (!timerPlan(d)) {
-    return t(ty === 'Espresso' ? 'Add the shot time.' : 'Add the total brew time, or steps with times.');
+    return t(ty === 'Espresso' ? 'Add the shot time.' : 'Add the total brew time, or pick a recipe style with steps.');
   }
   if (ty === 'Pour over' && !effectiveSteps(d).some(function (s) { return Number(s.water) > 0; })) {
-    return t('Add the water each pour adds (g), so the timer can follow along.');
+    return t('Pick a recipe style with pouring steps, so the timer can follow along.');
   }
   return '';
 }
@@ -7961,20 +7892,6 @@ document.addEventListener('click', function (ev) {
     case 'confirm-danger':
       ev.preventDefault();
       if (top && top._onConfirm) top._onConfirm();
-      return;
-
-    case 'add-step':
-      top.capture();
-      top.draft.steps.push({ t: '', label: '', water: '' });
-      renderModals();
-      focusLastStep(top, '.steprow');
-      return;
-
-    case 'del-step':
-      top.capture();
-      top.draft.steps.splice(Number(btn.getAttribute('data-i')), 1);
-      if (!top.draft.steps.length) top.draft.steps.push({ t: '', label: '', water: '' });
-      renderModals();
       return;
 
     case 'style-step-add':
