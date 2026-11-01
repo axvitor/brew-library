@@ -1650,6 +1650,10 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .timer-side:hover{background:var(--surface-sunken)}
 .timer-side:active{transform:scale(var(--press-scale))}
 .timer-side .ico{width:19px;height:19px}
+/* Finished: the middle button is Brew again, so Restart would repeat it
+   and Skip has nothing left to skip. Both go, and the bar closes around
+   Brew again. */
+.sheet-timer.is-done .timer-side{display:none}
 .tm-play{position:relative;width:100px;height:100px;flex:none;display:flex;align-items:center;justify-content:center}
 .tm-play svg.tm-ring{position:absolute;inset:0;width:100%;height:100%}
 .tm-ring circle{fill:none;stroke-width:3}
