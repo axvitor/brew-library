@@ -2,15 +2,77 @@ rules_version = '2';
 
 // Paste this into: Firebase console → Firestore Database → Rules tab → Publish.
 //
-// Sign-in is open to anyone with a Google account. There's no allowlist —
-// every signed-in user gets their own document under libraries/{uid} and
-// can only ever read or write that one. Nobody can read anyone else's.
+// Sign-in is open to anyone with a Google account. Every signed-in user
+// gets their own document under libraries/{uid} and can only ever write
+// that one. Nobody can read anyone else's — except an admin, read-only.
+//
+// Admins are listed in admins/{uid}, a collection no app user can write
+// at all: an admin is added by hand in the Firebase console, so nobody
+// can grant themselves the role. Every rule below that mentions isAdmin()
+// checks that document again on every request.
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    // Roles: only 'admin' exists today — read-only access to every
+    // library, profile and the audit log. Add roles here when they're
+    // actually needed.
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
+    }
+
     match /libraries/{uid} {
-      allow read, write: if request.auth != null
-        && request.auth.uid == uid;
+      allow read: if isSelf(uid) || isAdmin();
+      allow write: if isSelf(uid);
+    }
+
+    // One per account, written by the app once a day: the name and email
+    // the sign-in carries (the email must be the token's own), when the
+    // account was made (fixed once written), when it was last used (the
+    // server's clock, not the device's) and the days it was used.
+    match /profiles/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow create, update: if isSelf(uid)
+        && request.resource.data.keys().hasOnly(['name', 'email', 'createdAt', 'lastActive', 'activeDays'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.email == request.auth.token.get('email', '')
+        && request.resource.data.createdAt is int
+        && (resource == null || request.resource.data.createdAt == resource.data.createdAt)
+        && request.resource.data.lastActive == request.time
+        && request.resource.data.activeDays is list
+        && request.resource.data.activeDays.size() <= 120;
+      allow delete: if false;
+    }
+
+    // Read by the app only to decide whether to show the way into the
+    // dashboard — and only your own entry. Written in the console only.
+    match /admins/{uid} {
+      allow get: if isSelf(uid);
+      allow list, write: if false;
+    }
+
+    // What admins looked at. Append-only: an admin can add an entry in
+    // their own name, stamped with the server's clock, and never change
+    // or remove one.
+    match /adminLog/{id} {
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['by', 'action', 'target', 'at'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.action is string
+        && request.resource.data.action.size() <= 40
+        && request.resource.data.target is string
+        && request.resource.data.target.size() <= 128
+        && request.resource.data.at == request.time;
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
   }
 }

@@ -1131,6 +1131,106 @@ var TRANSLATIONS = {
     'Every recipe and coffee you added will be deleted — including {n} you currently have.': 'Todas as receitas e cafés que você adicionou serão excluídos — incluindo {n} que você tem agora.',
     'Every recipe and coffee you added will be deleted.': 'Todas as receitas e cafés que você adicionou serão excluídos.',
     'Reset library': 'Redefinir biblioteca',
+    // --- admin dashboard ---
+    'None in this period.': 'Nada neste período.',
+    '1 account': '1 conta',
+    '{n} with a join date': '{n} com data de entrada',
+    'Account not found': 'Conta não encontrada',
+    'Accounts': 'Contas',
+    'Active': 'Ativo',
+    'Active days': 'Dias ativos',
+    'Active users': 'Usuários ativos',
+    'Added by them': 'Adicionados pela pessoa',
+    'Added by users': 'Adicionados pelos usuários',
+    'Admin': 'Administração',
+    'Admin dashboard': 'Painel de administração',
+    'All accounts': 'Todas as contas',
+    'All time': 'Todo o período',
+    'Averages are over the {n} accounts with anything in their library.': 'Médias calculadas sobre as {n} contas com algo na biblioteca.',
+    'Back to the app': 'Voltar ao app',
+    'Brewing equipment': 'Equipamentos de preparo',
+    'Brewing methods': 'Métodos de preparo',
+    'Brewing methods in use': 'Métodos em uso',
+    'Coffee and brewing': 'Café e preparo',
+    'Coffees and roasters added': 'Cafés e torrefações adicionados',
+    'Coffees and roasters carry a date from the dashboard’s launch on — earlier ones aren’t counted here.': 'Cafés e torrefações têm data a partir do lançamento do painel — os anteriores não entram aqui.',
+    'Coffees per roaster': 'Cafés por torrefação',
+    'Coffees per user': 'Cafés por usuário',
+    'Content': 'Conteúdo',
+    'Counted from the days each account opened the app — kept for 120 days, recorded from the dashboard’s launch on.': 'Contado pelos dias em que cada conta abriu o app — guardados por 120 dias, a partir do lançamento do painel.',
+    'Dashboard': 'Painel',
+    'Date range': 'Período',
+    'Different roasters': 'Torrefações diferentes',
+    'Engagement': 'Engajamento',
+    'Equipment added by users': 'Equipamentos adicionados',
+    'Grinders added by users': 'Moedores adicionados',
+    'Grinders and equipment': 'Moedores e equipamentos',
+    'Grinders per user': 'Moedores por usuário',
+    'In this period': 'Neste período',
+    'It may have been removed.': 'Ela pode ter sido removida.',
+    'Joined': 'Entrou',
+    'Last 12 months': 'Últimos 12 meses',
+    'Last 120 days': 'Últimos 120 dias',
+    'Last 30 days': 'Últimos 30 dias',
+    'Last 7 days': 'Últimos 7 dias',
+    'Last 90 days': 'Últimos 90 dias',
+    'Last active': 'Última atividade',
+    'Latest recipes': 'Receitas recentes',
+    'Live, read-only. Built-in equipment every library starts with is left out of the counts.': 'Ao vivo, somente leitura. Os equipamentos que toda biblioteca já traz ficam fora das contagens.',
+    'Loading data…': 'Carregando dados…',
+    'Most active users': 'Usuários mais ativos',
+    'Most coffees': 'Mais cafés',
+    'Most items': 'Mais itens',
+    'Most popular brewing methods': 'Métodos de preparo mais usados',
+    'Most recipes': 'Mais receitas',
+    'Most registered roasters': 'Torrefações mais cadastradas',
+    'Most used brewing equipment': 'Equipamentos mais usados',
+    'Most used grinders': 'Moedores mais usados',
+    'New accounts': 'Novas contas',
+    'New this month': 'Novas este mês',
+    'New this week': 'Novas esta semana',
+    'New today': 'Novas hoje',
+    'Newest': 'Mais recentes',
+    'No accounts match.': 'Nenhuma conta encontrada.',
+    'No recipes in this period.': 'Nenhuma receita neste período.',
+    'No recipes yet.': 'Nenhuma receita ainda.',
+    'Not available': 'Indisponível',
+    'Nothing recorded yet.': 'Nada registrado ainda.',
+    'Origins': 'Origens',
+    'Overview': 'Visão geral',
+    'Processes': 'Processos',
+    'Recently created': 'Criadas recentemente',
+    'Recipes created': 'Receitas criadas',
+    'Recipes per user': 'Receitas por usuário',
+    'Registered coffees': 'Cafés cadastrados',
+    'Registered roasters': 'Torrefações cadastradas',
+    'Roasters per user': 'Torrefações por usuário',
+    'Same name counted once': 'Mesmo nome conta uma vez',
+    'Search name or email': 'Buscar nome ou e-mail',
+    'Showing the first {n} — search to narrow it down.': 'Mostrando as primeiras {n} — busque para filtrar.',
+    'Since Monday': 'Desde segunda',
+    'Since the 1st': 'Desde o dia 1',
+    'Sort': 'Ordenar',
+    'This area is only for the app’s administrators.': 'Esta área é só para os administradores do app.',
+    'Total accounts': 'Total de contas',
+    'Total recipes': 'Total de receitas',
+    'Users': 'Usuários',
+    'Varieties': 'Variedades',
+    'Week of': 'Semana de',
+    'With a process': 'Com processo',
+    'With a variety': 'Com variedade',
+    'With an origin': 'Com origem',
+    'accounts': 'contas',
+    'active': 'ativos',
+    'total': 'total',
+    '{n} accounts': '{n} contas',
+    '{n} in this period': '{n} neste período',
+    '{n} not seen since the dashboard shipped': '{n} sem acesso desde o lançamento do painel',
+    '“Most used” counts every recipe that names the grinder or equipment, built-in ones included.': '“Mais usados” conta toda receita que cita o moedor ou equipamento, incluindo os que já vêm no app.',
+    'No access': 'Sem acesso',
+    'Couldn’t load the data': 'Não foi possível carregar os dados',
+    'The server didn’t confirm this account as an administrator.': 'O servidor não confirmou esta conta como administradora.',
+    'Check the connection and try again.': 'Verifique a conexão e tente de novo.',
     'Leave anyway': 'Sair mesmo assim',
     'Brew complete.': 'Preparo concluído.',
   }
@@ -1252,6 +1352,7 @@ var ICON = {
   chevUp: '<svg viewBox="0 0 24 24" class="ico"><path d="M18 15l-6-6-6 6"/></svg>',
   chevDown: '<svg viewBox="0 0 24 24" class="ico"><path d="M6 9l6 6 6-6"/></svg>',
   chevRight: '<svg viewBox="0 0 24 24" class="ico"><path d="M9 6l6 6-6 6"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" class="ico"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg>',
   soundOn: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
     '<path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.8 5.2a9 9 0 0 1 0 13.6"/></svg>',
   soundOff: '<svg viewBox="0 0 24 24" class="ico"><path d="M11 5L6 9H2v6h4l5 4z"/>' +
@@ -1699,7 +1800,7 @@ function updateNav() {
   document.body.classList.toggle('on-recipe', hash.indexOf('#/r/') === 0);
   measureNav();
 
-  var here = hash === '#/account' ? 'account'
+  var here = hash === '#/account' || hash.indexOf('#/admin') === 0 ? 'account'
     : hash === '#/library' ? 'library'
     : hash === '#/ranking' ? 'ranking'
     : hash.indexOf('#/r/') === 0 ? 'home'
@@ -1792,7 +1893,7 @@ window.addEventListener('popstate', function (ev) { if (ev.hasUAVisualTransition
 function routeKey() {
   if (authPhase !== 'ready') return 'gate';
   var hash = location.hash || '#/';
-  if (hash.indexOf('#/r/') === 0) return hash;
+  if (hash.indexOf('#/r/') === 0 || hash.indexOf('#/admin') === 0) return hash;
   return { '#/account': 'account', '#/library': 'library', '#/ranking': 'ranking' }[hash] || 'home';
 }
 
@@ -1800,6 +1901,8 @@ function navKind(from, to) {
   if (from === 'gate' || to === 'gate') return 'fade';
   if (to.indexOf('#/r/') === 0) return 'push';
   if (from.indexOf('#/r/') === 0) return 'pop';
+  if (to.indexOf('#/admin') === 0) return from.indexOf('#/admin/u/') === 0 ? 'pop' : 'push';
+  if (from.indexOf('#/admin') === 0) return 'pop';
   return NAV_TABS.indexOf(to) > NAV_TABS.indexOf(from) ? 'tab-fwd' : 'tab-back';
 }
 
@@ -1841,7 +1944,10 @@ function renderPage(arriving) {
   if (!m) doseView = { id: null, dose: null };
   // A repaint of the page already shown (a favourite tapped, data synced)
   // keeps your place; arriving starts at the top.
+  // Leaving the dashboard stops its live reads of every account.
+  if (hash.indexOf('#/admin') !== 0) adminUnwatch();
   if (m) renderDetail(decodeURIComponent(m[1]), !arriving);
+  else if (hash.indexOf('#/admin') === 0) renderAdmin(hash);
   else if (hash === '#/account') renderAccount();
   else if (hash === '#/library') renderLibrary();
   else if (hash === '#/ranking') renderRanking(!arriving);
@@ -2794,6 +2900,12 @@ function renderAccount() {
       '<p class="acc-sync"><i></i>' + esc(t('Synced across your signed-in devices.')) + '</p>' +
     '</div>' +
 
+    // The way into the dashboard, for admins only. Hiding it is a
+    // courtesy, not the lock: the rules refuse the data to anyone else.
+    (adminRole === 'admin'
+      ? '<div class="acc-group"><a class="acc-row" href="#/admin">' + ICON.chart +
+          '<span class="grow">' + esc(t('Admin dashboard')) + '</span>' + ICON.chevRight + '</a></div>'
+      : '') +
     '<div class="acc-group">' +
       row('sign-out', ICON.signout, t('Sign out')) +
       row('reset', ICON.trash, t('Reset library…'), '', true) +
@@ -2802,6 +2914,604 @@ function renderAccount() {
   window.scrollTo(0, 0);
   Array.prototype.forEach.call(view.querySelectorAll('.segs'), function (box) { tabsLens(box); });
 }
+
+/* ==========================================================
+   Admin dashboard
+   ----------------------------------------------------------
+   Read-only, for accounts listed in admins/{uid} (added by hand in the
+   Firebase console). The app only decides whether to show the way in;
+   the data comes through Firestore, whose rules check the role again on
+   every read, so the page opened by anyone else just gets
+   permission-denied and says so.
+
+   Everything here is counted from what the app actually stores:
+   - accounts, joins and activity from profiles/{uid}, which the app
+     writes once a day (so an account appears once it next opens the app);
+   - recipes from each library, with their own creation dates;
+   - coffees, roasters and equipment from each library. Only those added
+     after this dashboard shipped carry a date, so their growth starts then.
+   The built-in grinders, methods and styles every new library starts
+   with are not counted as anything a user registered.
+   ========================================================== */
+var adminRole = null;
+var admin = { data: null, error: '', unsub: null, logged: {} };
+var adminView = { tab: 'overview', range: '30', q: '', sort: 'active', joined: 'all' };
+var DAY_MS = 86400000;
+var ADMIN_RANGES = [['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last 12 months'], ['all', 'All time']];
+
+function onAdminPage() { return (location.hash || '').indexOf('#/admin') === 0; }
+
+// After a refusal it waits for Try again rather than asking in a loop.
+function adminWatch() {
+  if (admin.unsub || admin.error || !window.Brew.watchAdminData) return;
+  admin.unsub = window.Brew.watchAdminData(function (data) {
+    admin.data = data;
+    admin.error = '';
+    if (onAdminPage()) render();
+  }, function (err) {
+    admin.error = err && err.code === 'permission-denied' ? 'denied' : 'failed';
+    adminUnwatch();
+    if (onAdminPage()) render();
+  });
+}
+function adminUnwatch() {
+  if (admin.unsub) { admin.unsub(); admin.unsub = null; }
+}
+// Once per session for each thing looked at, so the log reads as a
+// record of visits rather than of repaints.
+function adminLog(action, target) {
+  var key = action + ':' + (target || '');
+  if (admin.logged[key] || !currentUser || !window.Brew.logAdmin) return;
+  admin.logged[key] = true;
+  window.Brew.logAdmin(currentUser.uid, action, target);
+}
+
+var BUILTIN_IDS = null;
+function builtinIds() {
+  if (BUILTIN_IDS) return BUILTIN_IDS;
+  var base = emptyLibrary();
+  BUILTIN_IDS = {};
+  base.grinders.concat(base.methods, base.styles, builtinStyles())
+    .forEach(function (e) { BUILTIN_IDS[e.id] = true; });
+  return BUILTIN_IDS;
+}
+
+function adminUsers(data) {
+  var ids = {}, b = builtinIds();
+  Object.keys(data.libraries).forEach(function (k) { ids[k] = true; });
+  Object.keys(data.profiles).forEach(function (k) { ids[k] = true; });
+  return Object.keys(ids).map(function (uid) {
+    var p = data.profiles[uid] || {}, L = data.libraries[uid] || {};
+    function arr(k) { return Array.isArray(L[k]) ? L[k] : []; }
+    function own(k) { return arr(k).filter(function (e) { return e && !b[e.id]; }); }
+    return {
+      uid: uid,
+      name: typeof p.name === 'string' ? p.name : '',
+      email: typeof p.email === 'string' ? p.email : '',
+      createdAt: typeof p.createdAt === 'number' ? p.createdAt : null,
+      lastActive: typeof p.lastActive === 'number' ? p.lastActive : null,
+      days: Array.isArray(p.activeDays) ? p.activeDays : [],
+      hasProfile: !!data.profiles[uid],
+      recipes: arr('recipes'), coffees: arr('coffees'), roasters: arr('roasters'),
+      grinders: own('grinders'), methods: own('methods'), styles: own('styles'),
+      allGrinders: arr('grinders'), allMethods: arr('methods')
+    };
+  });
+}
+function adminName(u) {
+  return u.name || u.email || t('Account') + ' ' + u.uid.slice(0, 6);
+}
+function adminItems(u) {
+  return u.recipes.length + u.coffees.length + u.roasters.length + u.grinders.length + u.methods.length;
+}
+
+/* ---- time ---- */
+function startOfDay(ms) { var d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); }
+function rangeStart(range) {
+  return range === 'all' ? -Infinity : startOfDay(Date.now()) - (Number(range) - 1) * DAY_MS;
+}
+function dayKeyOf(ms) {
+  var d = new Date(ms);
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate());
+}
+function dayMs(key) {
+  var p = String(key).split('-');
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getTime();
+}
+/* The periods a range is drawn in: days up to a month, weeks for 90 days,
+   months beyond. "All time" starts at the earliest dated record. */
+function adminBuckets(range, earliest) {
+  var out = [], now = Date.now(), i, d;
+  var fmtDay = { day: 'numeric', month: 'short' }, fmtMonth = { month: 'short', year: '2-digit' };
+  if (range === '7' || range === '30') {
+    var n = Number(range), s0 = startOfDay(now) - (n - 1) * DAY_MS;
+    for (i = 0; i < n; i++) {
+      d = new Date(s0 + i * DAY_MS);
+      out.push({ start: d.getTime(), end: d.getTime() + DAY_MS, label: d.toLocaleDateString(locale(), fmtDay) });
+    }
+  } else if (range === '90') {
+    var w0 = startOfDay(now) - 12 * 7 * DAY_MS - 6 * DAY_MS;
+    for (i = 0; i < 13; i++) {
+      d = new Date(w0 + i * 7 * DAY_MS);
+      out.push({ start: d.getTime(), end: d.getTime() + 7 * DAY_MS,
+        label: t('Week of') + ' ' + d.toLocaleDateString(locale(), fmtDay) });
+    }
+  } else {
+    var nowD = new Date(now), months = 12;
+    if (range === 'all' && earliest) {
+      var e = new Date(earliest);
+      months = Math.min(60, (nowD.getFullYear() - e.getFullYear()) * 12 + nowD.getMonth() - e.getMonth() + 1);
+    }
+    for (i = months - 1; i >= 0; i--) {
+      var a = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1);
+      var b = new Date(nowD.getFullYear(), nowD.getMonth() - i + 1, 1);
+      out.push({ start: a.getTime(), end: b.getTime(), label: a.toLocaleDateString(locale(), fmtMonth) });
+    }
+  }
+  return out;
+}
+function countInto(buckets, times) {
+  var counts = buckets.map(function () { return 0; });
+  times.forEach(function (ms) {
+    for (var i = 0; i < buckets.length; i++) {
+      if (ms >= buckets[i].start && ms < buckets[i].end) { counts[i]++; return; }
+    }
+  });
+  return counts;
+}
+
+/* ---- tallies ---- */
+function looseKey(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+// Counts by a loosely matched name, shown as it was first written.
+function tally(values) {
+  var map = {};
+  values.forEach(function (v) {
+    var k = looseKey(v);
+    if (!k) return;
+    if (!map[k]) map[k] = { label: String(v).trim(), value: 0 };
+    map[k].value++;
+  });
+  return Object.keys(map).map(function (k) { return map[k]; })
+    .sort(function (a, b) { return b.value - a.value || a.label.localeCompare(b.label); });
+}
+function byId(list) {
+  var m = {};
+  list.forEach(function (e) { if (e && e.id) m[e.id] = e; });
+  return m;
+}
+// Every recipe across accounts, with the names its ids point to in its
+// own library.
+function adminRecipes(users) {
+  var out = [];
+  users.forEach(function (u) {
+    var me = byId(u.allMethods), gr = byId(u.allGrinders), co = byId(u.coffees);
+    u.recipes.forEach(function (r) {
+      out.push({
+        user: u, at: typeof r.createdAt === 'number' ? r.createdAt : null,
+        method: me[r.methodId] ? me[r.methodId].name : '',
+        grinder: gr[r.grinderId] ? gr[r.grinderId].name : '',
+        coffee: co[r.coffeeId] ? co[r.coffeeId].name : ''
+      });
+    });
+  });
+  return out;
+}
+function datesOf(list) {
+  return list.map(function (e) { return e.createdAt; }).filter(function (v) { return typeof v === 'number'; });
+}
+function avg(total, n) { return n ? (Math.round(total / n * 10) / 10).toLocaleString(locale()) : '0'; }
+function fmtInt(n) { return Number(n).toLocaleString(locale()); }
+function fmtDate(ms) { return ms ? new Date(ms).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '—'; }
+
+/* ---- pieces ---- */
+// text: a date or a phrase rather than a number, set smaller so it fits.
+function statCard(label, value, sub, text) {
+  return '<div class="adm-stat"><span class="k">' + esc(label) + '</span>' +
+    '<span class="v' + (text ? ' is-text' : '') + '">' + esc(value) + '</span>' +
+    (sub ? '<span class="s">' + esc(sub) + '</span>' : '') + '</div>';
+}
+/* One measure per period as columns. Hover or focus a column for its
+   value; the same numbers sit in a table for screen readers. */
+function columnChart(title, buckets, counts, opts) {
+  opts = opts || {};
+  var max = Math.max.apply(null, counts.concat([0]));
+  var total = counts.reduce(function (a, b) { return a + b; }, 0);
+  var head = '<div class="adm-chart-head"><h3>' + esc(title) + '</h3>' +
+    '<span class="adm-chart-total">' + esc(opts.total != null ? opts.total : fmtInt(total)) + '</span></div>';
+  if (!total) {
+    return '<section class="adm-chart">' + head + '<p class="adm-empty">' + esc(t('None in this period.')) + '</p>' +
+      (opts.note ? '<p class="adm-note">' + esc(opts.note) + '</p>' : '') + '</section>';
+  }
+  var cols = buckets.map(function (b, i) {
+    var h = max ? Math.max(counts[i] ? 3 : 0, Math.round(counts[i] / max * 100)) : 0;
+    var tip = b.label + ' · ' + fmtInt(counts[i]) + (opts.unit ? ' ' + opts.unit : '') +
+      (opts.cumulative ? ' · ' + t('total') + ' ' + fmtInt(opts.cumulative[i]) : '');
+    return '<span class="adm-col" tabindex="0" data-tip="' + esc(tip) + '" aria-label="' + esc(tip) + '">' +
+      '<i style="height:' + h + '%"></i></span>';
+  }).join('');
+  var mid = Math.floor((buckets.length - 1) / 2);
+  return '<section class="adm-chart">' + head +
+    '<div class="adm-plot"><span class="adm-max">' + fmtInt(max) + '</span>' +
+      '<div class="adm-cols" style="--n:' + buckets.length + '">' + cols + '</div></div>' +
+    '<div class="adm-axis"><span>' + esc(buckets[0].label) + '</span>' +
+      (buckets.length > 2 ? '<span>' + esc(buckets[mid].label) + '</span>' : '') +
+      '<span>' + esc(buckets[buckets.length - 1].label) + '</span></div>' +
+    '<table class="sr-only"><caption>' + esc(title) + '</caption>' +
+      buckets.map(function (b, i) { return '<tr><th>' + esc(b.label) + '</th><td>' + counts[i] + '</td></tr>'; }).join('') +
+    '</table>' +
+    (opts.note ? '<p class="adm-note">' + esc(opts.note) + '</p>' : '') +
+  '</section>';
+}
+// Ranked rows: name, a bar to scale, the number written out.
+function barList(title, rows, opts) {
+  opts = opts || {};
+  var shown = rows.slice(0, opts.limit || 8);
+  var max = shown.length ? shown[0].value : 0;
+  var body = shown.length ? '<ol class="adm-bars">' + shown.map(function (r) {
+    var inner = '<span class="adm-bar-l">' + esc(r.label) + (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + '</span>' +
+      '<span class="adm-bar-t"><i style="width:' + (max ? Math.max(2, r.value / max * 100) : 0) + '%"></i></span>' +
+      '<span class="adm-bar-v">' + fmtInt(r.value) + '</span>';
+    return '<li>' + (r.href ? '<a href="' + esc(r.href) + '">' + inner + '</a>' : inner) + '</li>';
+  }).join('') + '</ol>'
+    : '<p class="adm-empty">' + esc(opts.empty || t('Nothing recorded yet.')) + '</p>';
+  return '<section class="adm-chart">' +
+    '<div class="adm-chart-head"><h3>' + esc(title) + '</h3>' +
+      (opts.unit ? '<span class="adm-chart-total">' + esc(opts.unit) + '</span>' : '') + '</div>' +
+    body + '</section>';
+}
+function rangeSegs(current, action) {
+  return '<div class="segs adm-range" role="group" aria-label="' + esc(t('Date range')) + '">' +
+    ADMIN_RANGES.map(function (r) {
+      return '<button type="button" class="seg' + (current === r[0] ? ' on' : '') + '" data-adm="' + action +
+        '" data-v="' + r[0] + '" aria-pressed="' + (current === r[0]) + '">' +
+        '<span class="adm-long">' + esc(t(r[1])) + '</span><span class="adm-short">' + esc(r[0] === 'all' ? t('All') : r[0] === '365' ? '12m' : r[0] + 'd') + '</span></button>';
+    }).join('') + '</div>';
+}
+
+/* ---- page ---- */
+function renderAdmin(hash) {
+  view.classList.remove('view-enter');
+  var detail = hash.match(/^#\/admin\/u\/(.+)$/);
+  var shell = function (inner) {
+    view.innerHTML = '<div class="adm">' + inner + '</div>';
+    Array.prototype.forEach.call(view.querySelectorAll('.segs'), function (box) { tabsLens(box); });
+  };
+  if (adminRole !== 'admin') {
+    shell(emptyState({ art: ES_ART.search(), title: t('Not available'),
+      copy: t('This area is only for the app’s administrators.'),
+      actions: '<a class="btn btn-primary es-btn" href="#/">' + esc(t('Back to the app')) + '</a>' }));
+    return;
+  }
+  adminWatch();
+  if (admin.error) {
+    shell(emptyState({ art: ES_ART.search(), title: t(admin.error === 'denied' ? 'No access' : 'Couldn’t load the data'),
+      copy: t(admin.error === 'denied'
+        ? 'The server didn’t confirm this account as an administrator.'
+        : 'Check the connection and try again.'),
+      actions: '<button class="btn btn-primary es-btn" data-adm="retry">' + esc(t('Try again')) + '</button>' }));
+    return;
+  }
+  if (!admin.data) {
+    shell('<div class="adm-head"><h1>' + esc(t('Dashboard')) + '</h1></div>' +
+      '<div class="adm-loading" role="status">' + esc(t('Loading data…')) + '</div>');
+    return;
+  }
+  var users = adminUsers(admin.data);
+  if (detail) {
+    var u = users.filter(function (x) { return x.uid === decodeURIComponent(detail[1]); })[0];
+    adminLog('view-user', u ? u.uid : '');
+    shell(adminUserHTML(u));
+    return;
+  }
+  adminLog('open-dashboard', '');
+  var tabs = [['overview', 'Overview'], ['users', 'Users'], ['content', 'Content']];
+  shell(
+    '<div class="adm-head"><h1>' + esc(t('Dashboard')) + '</h1>' +
+      '<p>' + esc(t('Live, read-only. Built-in equipment every library starts with is left out of the counts.')) + '</p></div>' +
+    '<div class="segs adm-tabs" role="tablist">' + tabs.map(function (x) {
+      var on = adminView.tab === x[0];
+      return '<button type="button" role="tab" aria-selected="' + on + '" class="seg' + (on ? ' on' : '') +
+        '" data-adm="tab" data-v="' + x[0] + '">' + esc(t(x[1])) + '</button>';
+    }).join('') + '</div>' +
+    (adminView.tab === 'users' ? adminUsersHTML(users)
+      : adminView.tab === 'content' ? adminContentHTML(users)
+      : adminOverviewHTML(users)));
+}
+
+function adminOverviewHTML(users) {
+  var now = Date.now(), today = startOfDay(now);
+  var wd = (new Date(today).getDay() + 6) % 7;            // Monday starts the week
+  var weekStart = today - wd * DAY_MS;
+  var monthStart = new Date(new Date(now).getFullYear(), new Date(now).getMonth(), 1).getTime();
+  var since = rangeStart(adminView.range);
+  var joined = users.map(function (u) { return u.createdAt; }).filter(function (v) { return v != null; });
+  var activeIn = users.filter(function (u) {
+    return u.days.some(function (k) { return dayMs(k) >= since; }) || (u.lastActive != null && u.lastActive >= since);
+  }).length;
+  var noProfile = users.filter(function (u) { return !u.hasProfile; }).length;
+
+  var recipes = adminRecipes(users);
+  var recipeTimes = recipes.map(function (r) { return r.at; }).filter(function (v) { return v != null; });
+  var coffeeTimes = [], roasterTimes = [];
+  users.forEach(function (u) { coffeeTimes = coffeeTimes.concat(datesOf(u.coffees)); roasterTimes = roasterTimes.concat(datesOf(u.roasters)); });
+  var earliest = Math.min.apply(null, joined.concat(recipeTimes, [now]));
+  var buckets = adminBuckets(adminView.range, earliest);
+
+  // Accounts that joined in each period, and how many there were by its end.
+  var joins = countInto(buckets, joined);
+  var before = joined.filter(function (v) { return v < buckets[0].start; }).length, run = before;
+  var cumulative = joins.map(function (n) { run += n; return run; });
+
+  // Distinct accounts active in each period, from the days each one used the app.
+  var active = buckets.map(function (b) {
+    return users.filter(function (u) {
+      return u.days.some(function (k) { var ms = dayMs(k); return ms >= b.start && ms < b.end; });
+    }).length;
+  });
+
+  var withLib = users.filter(function (u) { return u.recipes.length || u.coffees.length || u.roasters.length; }).length || users.length;
+  var sum = function (k) { return users.reduce(function (a, u) { return a + u[k].length; }, 0); };
+  var inRange = recipes.filter(function (r) { return r.at != null && r.at >= since; });
+  var methodsUsed = tally(recipes.map(function (r) { return r.method; })).length;
+
+  var topUsers = users.map(function (u) {
+    var n = u.recipes.filter(function (r) { return typeof r.createdAt === 'number' && r.createdAt >= since; }).length;
+    return { label: adminName(u), value: n, href: '#/admin/u/' + encodeURIComponent(u.uid), sub: u.email && u.name ? u.email : '' };
+  }).filter(function (r) { return r.value; }).sort(function (a, b) { return b.value - a.value; });
+
+  return rangeSegs(adminView.range, 'range') +
+    '<h2 class="adm-sec">' + esc(t('Accounts')) + '</h2>' +
+    '<div class="adm-stats">' +
+      statCard(t('Total accounts'), fmtInt(users.length), noProfile ? tf('{n} not seen since the dashboard shipped', { n: noProfile }) : '') +
+      statCard(t('New today'), fmtInt(joined.filter(function (v) { return v >= today; }).length)) +
+      statCard(t('New this week'), fmtInt(joined.filter(function (v) { return v >= weekStart; }).length), t('Since Monday')) +
+      statCard(t('New this month'), fmtInt(joined.filter(function (v) { return v >= monthStart; }).length), t('Since the 1st')) +
+      statCard(t('Active users'), fmtInt(activeIn), t(rangeLabel(adminView.range))) +
+    '</div>' +
+    '<div class="adm-grid">' +
+      columnChart(t('New accounts'), buckets, joins, { cumulative: cumulative, total: tf('{n} with a join date', { n: fmtInt(cumulative[cumulative.length - 1] || 0) }) }) +
+      columnChart(t('Active users'), buckets, active, { unit: t('active'), total: '',
+        note: t('Counted from the days each account opened the app — kept for 120 days, recorded from the dashboard’s launch on.') }) +
+    '</div>' +
+
+    '<h2 class="adm-sec">' + esc(t('Coffee and brewing')) + '</h2>' +
+    '<div class="adm-stats">' +
+      statCard(t('Recipes'), fmtInt(recipes.length), tf('{n} in this period', { n: fmtInt(inRange.length) })) +
+      statCard(t('Coffees'), fmtInt(sum('coffees'))) +
+      statCard(t('Roasters'), fmtInt(sum('roasters'))) +
+      statCard(t('Grinders'), fmtInt(sum('grinders')), t('Added by users')) +
+      statCard(t('Brewing equipment'), fmtInt(sum('methods')), t('Added by users')) +
+      statCard(t('Brewing methods in use'), fmtInt(methodsUsed)) +
+    '</div>' +
+    '<div class="adm-grid">' +
+      columnChart(t('Recipes created'), buckets, countInto(buckets, recipeTimes)) +
+      columnChart(t('Coffees and roasters added'), buckets, countInto(buckets, coffeeTimes.concat(roasterTimes)),
+        { note: t('Coffees and roasters carry a date from the dashboard’s launch on — earlier ones aren’t counted here.') }) +
+    '</div>' +
+
+    '<h2 class="adm-sec">' + esc(t('Engagement')) + '</h2>' +
+    '<div class="adm-stats">' +
+      statCard(t('Recipes per user'), avg(sum('recipes'), withLib)) +
+      statCard(t('Coffees per user'), avg(sum('coffees'), withLib)) +
+      statCard(t('Roasters per user'), avg(sum('roasters'), withLib)) +
+      statCard(t('Grinders per user'), avg(sum('grinders'), withLib), t('Added by users')) +
+    '</div>' +
+    '<p class="adm-note">' + esc(tf('Averages are over the {n} accounts with anything in their library.', { n: withLib })) + '</p>' +
+    '<div class="adm-grid">' +
+      barList(t('Most popular brewing methods'), tally(inRange.map(function (r) { return r.method; })),
+        { unit: t('recipes'), empty: t('No recipes in this period.') }) +
+      barList(t('Most active users'), topUsers, { unit: t('recipes'), limit: 6, empty: t('No recipes in this period.') }) +
+    '</div>';
+}
+function rangeLabel(range) {
+  return ADMIN_RANGES.filter(function (r) { return r[0] === range; })[0][1];
+}
+
+function adminUsersHTML(users) {
+  return '<div class="adm-filters">' +
+      '<label class="search-pill adm-search">' + ICON.search +
+        '<input id="admQ" type="search" placeholder="' + esc(t('Search name or email')) + '" value="' + esc(adminView.q) + '" autocomplete="off" /></label>' +
+      '<label class="adm-sort"><span>' + esc(t('Sort')) + '</span>' +
+        '<select class="inp" id="admSort">' +
+          [['active', 'Last active'], ['new', 'Newest'], ['recipes', 'Most recipes'], ['coffees', 'Most coffees'], ['items', 'Most items']]
+            .map(function (o) { return '<option value="' + o[0] + '"' + (adminView.sort === o[0] ? ' selected' : '') + '>' + esc(t(o[1])) + '</option>'; }).join('') +
+        '</select></label>' +
+    '</div>' +
+    '<div class="adm-joined"><span>' + esc(t('Joined')) + '</span>' + rangeSegs(adminView.joined, 'joined') + '</div>' +
+    '<div id="admList">' + adminUserListHTML(users) + '</div>';
+}
+function adminUserListHTML(users) {
+  var q = adminView.q.trim().toLowerCase(), since = rangeStart(adminView.joined);
+  var list = users.filter(function (u) {
+    if (adminView.joined !== 'all' && !(u.createdAt != null && u.createdAt >= since)) return false;
+    return !q || (u.name + ' ' + u.email).toLowerCase().indexOf(q) !== -1;
+  });
+  var key = {
+    active: function (u) { return u.lastActive || 0; },
+    'new': function (u) { return u.createdAt || 0; },
+    recipes: function (u) { return u.recipes.length; },
+    coffees: function (u) { return u.coffees.length; },
+    items: adminItems
+  }[adminView.sort] || function () { return 0; };
+  list.sort(function (a, b) { return key(b) - key(a) || adminName(a).localeCompare(adminName(b)); });
+  if (!list.length) return '<p class="adm-empty">' + esc(t('No accounts match.')) + '</p>';
+  var shown = list.slice(0, 200);
+  return '<p class="adm-count">' + esc(list.length === 1 ? t('1 account') : tf('{n} accounts', { n: fmtInt(list.length) })) + '</p>' +
+    '<ul class="adm-users">' + shown.map(function (u) {
+      return '<li><a class="adm-user" href="#/admin/u/' + encodeURIComponent(u.uid) + '">' +
+        '<span class="adm-user-id"><b>' + esc(adminName(u)) + '</b>' +
+          (u.email && u.name ? '<small>' + esc(u.email) + '</small>' : '') + '</span>' +
+        '<span class="adm-user-dates"><small>' + esc(t('Joined')) + ' ' + esc(fmtDate(u.createdAt)) + '</small>' +
+          '<small>' + esc(t('Active')) + ' ' + esc(u.lastActive ? agoLabel(u.lastActive) : '—') + '</small></span>' +
+        '<span class="adm-user-n">' +
+          [[u.recipes.length, 'recipes'], [u.coffees.length, 'coffees'], [u.roasters.length, 'roasters'], [u.grinders.length, 'grinders']]
+            .map(function (x) { return '<span><b>' + x[0] + '</b>' + esc(t(x[1])) + '</span>'; }).join('') +
+        '</span>' + ICON.chevRight + '</a></li>';
+    }).join('') + '</ul>' +
+    (list.length > shown.length ? '<p class="adm-note">' + esc(tf('Showing the first {n} — search to narrow it down.', { n: shown.length })) + '</p>' : '');
+}
+
+function adminUserHTML(u) {
+  var back = '<a class="adm-back" href="#/admin">' + ICON.back + esc(t('All accounts')) + '</a>';
+  if (!u) {
+    return back + emptyState({ art: ES_ART.search(), title: t('Account not found'), copy: t('It may have been removed.') });
+  }
+  var recipes = adminRecipes([u]);
+  var buckets = adminBuckets('365');
+  var recent = recipes.filter(function (r) { return r.at != null; }).sort(function (a, b) { return b.at - a.at; }).slice(0, 6);
+  return back +
+    '<div class="adm-head"><h1>' + esc(adminName(u)) + '</h1>' +
+      (u.email && u.name ? '<p>' + esc(u.email) + '</p>' : '') + '</div>' +
+    '<div class="adm-stats">' +
+      statCard(t('Joined'), fmtDate(u.createdAt), '', true) +
+      statCard(t('Last active'), u.lastActive ? agoLabel(u.lastActive) : '—', '', true) +
+      statCard(t('Active days'), fmtInt(u.days.length), t('Last 120 days')) +
+    '</div>' +
+    '<div class="adm-stats">' +
+      statCard(t('Recipes'), fmtInt(u.recipes.length)) +
+      statCard(t('Coffees'), fmtInt(u.coffees.length)) +
+      statCard(t('Roasters'), fmtInt(u.roasters.length)) +
+      statCard(t('Grinders'), fmtInt(u.grinders.length), t('Added by them')) +
+      statCard(t('Brewing equipment'), fmtInt(u.methods.length), t('Added by them')) +
+      statCard(t('Recipe styles'), fmtInt(u.styles.length), t('Added by them')) +
+    '</div>' +
+    '<div class="adm-grid">' +
+      columnChart(t('Recipes created'), buckets, countInto(buckets, recipes.map(function (r) { return r.at; }).filter(function (v) { return v != null; }))) +
+      barList(t('Brewing methods'), tally(recipes.map(function (r) { return r.method; })), { unit: t('recipes') }) +
+    '</div>' +
+    '<section class="adm-chart"><div class="adm-chart-head"><h3>' + esc(t('Latest recipes')) + '</h3></div>' +
+      (recent.length ? '<ul class="adm-recent">' + recent.map(function (r) {
+        return '<li><span>' + esc(r.coffee || '—') + '<small>' + esc(r.method || '—') + '</small></span><time>' + esc(fmtDate(r.at)) + '</time></li>';
+      }).join('') + '</ul>' : '<p class="adm-empty">' + esc(t('No recipes yet.')) + '</p>') +
+    '</section>';
+}
+
+function adminContentHTML(users) {
+  var since = rangeStart(adminView.range);
+  var recipes = adminRecipes(users);
+  var inRange = recipes.filter(function (r) { return r.at != null && r.at >= since; });
+  var withLib = users.filter(function (u) { return u.recipes.length || u.coffees.length; }).length || users.length;
+  var all = function (k) { return users.reduce(function (a, u) { return a.concat(u[k]); }, []); };
+  var coffees = all('coffees'), roasters = all('roasters');
+  var field = function (k) { return coffees.map(function (c) { return c[k]; }); };
+  var filled = function (k) { return coffees.filter(function (c) { return looseKey(c[k]); }).length; };
+
+  // Roasters by how many accounts have them, then by how many entries.
+  var roasterUsers = {};
+  users.forEach(function (u) {
+    var seen = {};
+    u.roasters.forEach(function (r) {
+      var k = looseKey(r.name);
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      if (!roasterUsers[k]) roasterUsers[k] = { label: String(r.name).trim(), value: 0 };
+      roasterUsers[k].value++;
+    });
+  });
+  var roasterRows = Object.keys(roasterUsers).map(function (k) { return roasterUsers[k]; })
+    .sort(function (a, b) { return b.value - a.value || a.label.localeCompare(b.label); });
+
+  var recent = recipes.filter(function (r) { return r.at != null; }).sort(function (a, b) { return b.at - a.at; }).slice(0, 8);
+
+  return rangeSegs(adminView.range, 'range') +
+    '<h2 class="adm-sec">' + esc(t('Recipes')) + '</h2>' +
+    '<div class="adm-stats">' +
+      statCard(t('Total recipes'), fmtInt(recipes.length)) +
+      statCard(t('In this period'), fmtInt(inRange.length), t(rangeLabel(adminView.range))) +
+      statCard(t('Recipes per user'), avg(recipes.length, withLib)) +
+    '</div>' +
+    '<div class="adm-grid">' +
+      barList(t('Most popular brewing methods'), tally(inRange.map(function (r) { return r.method; })), { unit: t('recipes'), empty: t('No recipes in this period.') }) +
+      '<section class="adm-chart"><div class="adm-chart-head"><h3>' + esc(t('Recently created')) + '</h3></div>' +
+        (recent.length ? '<ul class="adm-recent">' + recent.map(function (r) {
+          return '<li><span>' + esc(r.coffee || '—') + '<small>' + esc((r.method || '—') + ' · ' + adminName(r.user)) + '</small></span>' +
+            '<time>' + esc(fmtDate(r.at)) + '</time></li>';
+        }).join('') + '</ul>' : '<p class="adm-empty">' + esc(t('No recipes yet.')) + '</p>') +
+      '</section>' +
+    '</div>' +
+
+    '<h2 class="adm-sec">' + esc(t('Coffees')) + '</h2>' +
+    '<div class="adm-stats">' +
+      statCard(t('Registered coffees'), fmtInt(coffees.length)) +
+      statCard(t('With an origin'), fmtInt(filled('origin'))) +
+      statCard(t('With a process'), fmtInt(filled('process'))) +
+      statCard(t('With a variety'), fmtInt(filled('varietal'))) +
+    '</div>' +
+    '<div class="adm-grid adm-grid-3">' +
+      barList(t('Origins'), tally(field('origin')), { unit: t('coffees') }) +
+      barList(t('Processes'), tally(field('process')), { unit: t('coffees') }) +
+      barList(t('Varieties'), tally(field('varietal')), { unit: t('coffees') }) +
+    '</div>' +
+
+    '<h2 class="adm-sec">' + esc(t('Roasters')) + '</h2>' +
+    '<div class="adm-stats">' +
+      statCard(t('Registered roasters'), fmtInt(roasters.length)) +
+      statCard(t('Different roasters'), fmtInt(roasterRows.length), t('Same name counted once')) +
+    '</div>' +
+    '<div class="adm-grid">' +
+      barList(t('Most registered roasters'), roasterRows, { unit: t('accounts') }) +
+      barList(t('Coffees per roaster'), tally(coffees.map(function (c) { return c.roaster; })), { unit: t('coffees') }) +
+    '</div>' +
+
+    '<h2 class="adm-sec">' + esc(t('Grinders and equipment')) + '</h2>' +
+    '<div class="adm-stats">' +
+      statCard(t('Grinders added by users'), fmtInt(all('grinders').length)) +
+      statCard(t('Equipment added by users'), fmtInt(all('methods').length)) +
+    '</div>' +
+    '<div class="adm-grid">' +
+      barList(t('Most used grinders'), tally(recipes.map(function (r) { return r.grinder; })), { unit: t('recipes') }) +
+      barList(t('Most used brewing equipment'), tally(recipes.map(function (r) { return r.method; })), { unit: t('recipes') }) +
+    '</div>' +
+    '<p class="adm-note">' + esc(t('“Most used” counts every recipe that names the grinder or equipment, built-in ones included.')) + '</p>';
+}
+
+/* ---- controls ---- */
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-adm]');
+  if (!b) return;
+  var what = b.getAttribute('data-adm'), v = b.getAttribute('data-v');
+  if (what === 'tab') adminView.tab = v;
+  else if (what === 'range') adminView.range = v;
+  else if (what === 'joined') adminView.joined = v;
+  else if (what === 'retry') { admin.error = ''; adminWatch(); }
+  else return;
+  ev.preventDefault();
+  render();
+});
+document.addEventListener('input', function (ev) {
+  if (ev.target.id !== 'admQ') return;
+  adminView.q = ev.target.value.slice(0, 120);
+  var box = document.getElementById('admList');
+  if (box && admin.data) box.innerHTML = adminUserListHTML(adminUsers(admin.data));
+});
+document.addEventListener('change', function (ev) {
+  if (ev.target.id !== 'admSort') return;
+  adminView.sort = ev.target.value;
+  var box = document.getElementById('admList');
+  if (box && admin.data) box.innerHTML = adminUserListHTML(adminUsers(admin.data));
+});
+
+// One tooltip for every column: on hover, and on keyboard focus.
+(function () {
+  var tip = null;
+  function show(el) {
+    if (!tip) { tip = document.createElement('div'); tip.className = 'adm-tip'; tip.setAttribute('aria-hidden', 'true'); document.body.appendChild(tip); }
+    tip.textContent = el.getAttribute('data-tip');
+    var r = el.getBoundingClientRect();
+    tip.style.left = Math.round(r.left + r.width / 2) + 'px';
+    tip.style.top = Math.round(r.top) + 'px';
+    tip.classList.add('on');
+  }
+  function hide() { if (tip) tip.classList.remove('on'); }
+  ['pointerover', 'focusin'].forEach(function (e) {
+    document.addEventListener(e, function (ev) {
+      var el = ev.target.closest && ev.target.closest('.adm [data-tip]');
+      if (el) show(el); else hide();
+    });
+  });
+  document.addEventListener('scroll', hide, true);
+})();
 
 /* ---- recipe (F4) ----
    Dose stepper. Scales this brew without touching the saved recipe: the
@@ -7336,7 +8046,7 @@ function saveEntity(m) {
         return (ro.name || '').trim().toLowerCase() === typed.toLowerCase();
       })[0];
       if (!match) {
-        match = { id: uid('roa'), name: typed, location: '' };
+        match = { id: uid('roa'), name: typed, location: '', createdAt: Date.now() };
         coll('roaster').push(match);
       }
       d.roasterId = match.id;
@@ -7349,6 +8059,7 @@ function saveEntity(m) {
     for (var k in d) if (Object.prototype.hasOwnProperty.call(d, k)) existing[k] = d[k];
   } else {
     d.id = uid(m.type.slice(0, 3));
+    d.createdAt = Date.now();
     coll(m.type).push(d);
   }
   save();
@@ -8228,7 +8939,10 @@ function boot() {
   window.Brew.onAuthChange(function (user) {
     if (unsubscribeLibrary) { unsubscribeLibrary(); unsubscribeLibrary = null; }
 
+    adminUnwatch();
     if (!user) {
+      adminRole = null;
+      admin.data = null;
       currentUser = null;
       state = null;
       authPhase = 'signedOut';
@@ -8238,6 +8952,14 @@ function boot() {
 
     currentUser = user;
     authPhase = 'ready';
+    adminRole = null;
+    admin = { data: null, error: '', unsub: null, logged: {} };   // a new account starts clean
+    if (window.Brew.touchProfile) window.Brew.touchProfile(user);
+    if (window.Brew.getAdminRole) window.Brew.getAdminRole(user.uid).then(function (role) {
+      if (currentUser !== user) return;
+      adminRole = role;
+      if (location.hash === '#/account' || onAdminPage()) render();
+    });
     window.Brew.loadLibrary(user.uid).then(function (data) {
       var needsSeed = !data || (data.pristine && data.seedVersion !== SEED_VERSION);
       var ready = needsSeed ? initialLibraryFor(user) : Promise.resolve(data);

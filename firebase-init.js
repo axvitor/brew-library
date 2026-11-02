@@ -43,6 +43,15 @@
   function libraryRef(userId) {
     return db.collection('libraries').doc(userId);
   }
+  function profileRef(userId) {
+    return db.collection('profiles').doc(userId);
+  }
+
+  // Local calendar day, "2026-11-02" — the unit activity is counted in.
+  function dayKey(d) {
+    function two(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate());
+  }
 
   window.Brew = {
     // Popup rather than redirect: a redirect round-trips through
@@ -77,6 +86,75 @@
       }, function (err) {
         console.error('Library sync error', err);
       });
+    },
+
+    /* The account's profile: what the admin dashboard lists. Written at
+       most once a day per device — the name and email Google gave, when
+       the account was made, when it was last used (the server's clock,
+       which the rules insist on) and the days it was used, kept to the
+       last 120 so the document stays small. */
+    touchProfile: function (user) {
+      var today = dayKey(new Date());
+      var mark = 'brewSeen:' + user.uid;
+      try { if (localStorage.getItem(mark) === today) return Promise.resolve(); } catch (e) {}
+      var ref = profileRef(user.uid);
+      return ref.get().then(function (snap) {
+        var days = (snap.exists && snap.data().activeDays) || [];
+        if (days.indexOf(today) === -1) days.push(today);
+        days = days.sort().slice(-120);
+        // Fixed once written — the rules refuse to move it.
+        var created = snap.exists && snap.data().createdAt;
+        if (typeof created !== 'number') created = Date.parse(user.metadata && user.metadata.creationTime);
+        return ref.set({
+          name: String(user.displayName || '').slice(0, 200),
+          email: user.email || '',
+          createdAt: isFinite(created) ? created : Date.now(),
+          lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+          activeDays: days
+        });
+      }).then(function () {
+        try { localStorage.setItem(mark, today); } catch (e) {}
+      }).catch(function (err) {
+        console.warn('Profile not updated', err.code || err);
+      });
+    },
+
+    /* The account's admin role, or null. Only decides whether the app
+       shows the way in — the data behind it is guarded by the rules,
+       which check the same document on every request. */
+    getAdminRole: function (userId) {
+      return db.collection('admins').doc(userId).get().then(function (snap) {
+        return snap.exists ? (snap.data().role || null) : null;
+      }).catch(function () { return null; });
+    },
+
+    /* Every library and profile, live. Fails with permission-denied for
+       anyone the rules don't list as an admin. Returns an unsubscribe. */
+    watchAdminData: function (onData, onError) {
+      var libs = null, profiles = null;
+      function emit() { if (libs && profiles) onData({ libraries: libs, profiles: profiles }); }
+      function collect(snap) {
+        var out = {};
+        snap.forEach(function (doc) {
+          var d = doc.data();
+          if (d.lastActive && d.lastActive.toMillis) d.lastActive = d.lastActive.toMillis();
+          out[doc.id] = d;
+        });
+        return out;
+      }
+      var a = db.collection('libraries').onSnapshot(function (s) { libs = collect(s); emit(); }, onError);
+      var b = db.collection('profiles').onSnapshot(function (s) { profiles = collect(s); emit(); }, onError);
+      return function () { a(); b(); };
+    },
+
+    // An entry in the admin audit log: who looked at what, and when.
+    logAdmin: function (userId, action, target) {
+      return db.collection('adminLog').add({
+        by: userId,
+        action: String(action).slice(0, 40),
+        target: String(target || '').slice(0, 128),
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function (err) { console.warn('Admin log not written', err.code || err); });
     }
   };
 

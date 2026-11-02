@@ -3276,3 +3276,106 @@ body:has(.gate-screen){padding-bottom:0}
   color:var(--text-body);font:var(--weight-regular) 13px/1.3 var(--font-text);text-align:left;cursor:pointer;
 }
 .scan-line:hover{border-color:var(--text-accent);color:var(--text-title)}
+
+/* ==========================================================
+   Admin dashboard
+   ----------------------------------------------------------
+   The app's own cards and type, laid out wider and denser: it is a
+   page for reading numbers, not for brewing. A small "Admin" eyebrow
+   in the accent marks it as the back office. Charts are one measure
+   each, in the brew orange, on a hairline baseline. */
+.adm{padding:26px 0 48px;display:flex;flex-direction:column;gap:16px}
+.adm-head h1{font:var(--weight-regular) clamp(28px,4.2vw,var(--text-display-2))/var(--leading-tight) var(--font-display);letter-spacing:var(--tracking-display)}
+.adm-head h1::before{content:"Admin";display:block;margin-bottom:6px;font:var(--weight-medium) 12px/1 var(--font-text);letter-spacing:.08em;text-transform:uppercase;color:var(--text-accent)}
+.adm-head h1:lang(pt)::before{content:"Administração"}
+.adm-head p{margin-top:8px;color:var(--text-muted);font:var(--type-body-sm);max-width:60ch}
+.adm-tabs,.adm-range{max-width:640px}
+.adm-short{display:none}
+@media(max-width:560px){ .adm-range .adm-long{display:none} .adm-range .adm-short{display:inline} }
+.adm-sec{margin-top:14px;font:var(--weight-medium) 15px/1.3 var(--font-text);color:var(--text-title)}
+.adm-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.adm-stat{
+  display:flex;flex-direction:column;gap:4px;padding:14px 16px;min-width:0;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);border-radius:18px;
+}
+.adm-stat .k{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted)}
+.adm-stat .v{font:var(--weight-light) 26px/1.1 var(--font-text);letter-spacing:-0.02em;color:var(--text-title);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-stat .v.is-text{font-size:17px;line-height:1.3;letter-spacing:0;white-space:normal}
+.adm-stat .s{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-faint)}
+.adm-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:861px){
+  .adm-grid{grid-template-columns:1fr 1fr}
+  .adm-grid-3{grid-template-columns:repeat(3,1fr)}
+}
+.adm-chart{
+  display:flex;flex-direction:column;gap:12px;padding:16px 18px 18px;min-width:0;
+  background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);border-radius:18px;
+}
+.adm-chart-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.adm-chart-head h3{font:var(--weight-medium) 14px/1.3 var(--font-text);color:var(--text-title)}
+.adm-chart-total{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);white-space:nowrap}
+.adm-plot{position:relative;height:132px;border-bottom:var(--border-w-hairline) solid var(--border-default)}
+.adm-max{position:absolute;top:-2px;left:0;font:var(--weight-regular) 11px/1 var(--font-text);color:var(--text-faint);font-variant-numeric:tabular-nums}
+.adm-cols{position:absolute;inset:14px 0 0;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:2px;align-items:end}
+.adm-col{position:relative;height:100%;display:flex;align-items:flex-end;outline:none;cursor:default}
+.adm-col i{display:block;width:100%;max-width:28px;margin:0 auto;background:var(--accent-timer);border-radius:4px 4px 0 0;transition:opacity var(--dur-fast) var(--ease-standard)}
+.adm-cols:hover .adm-col i{opacity:.55}
+.adm-cols .adm-col:hover i,.adm-col:focus-visible i{opacity:1}
+.adm-col:focus-visible{box-shadow:0 0 0 2px var(--focus-ring, var(--text-accent));border-radius:4px}
+.adm-axis{display:flex;justify-content:space-between;gap:8px;font:var(--weight-regular) 11px/1.2 var(--font-text);color:var(--text-faint)}
+.adm-bars{list-style:none;display:flex;flex-direction:column;gap:8px;margin:0;padding:0}
+.adm-bars li > a,.adm-bars li{color:inherit}
+.adm-bars li > a,.adm-bars li:not(:has(> a)){display:grid;grid-template-columns:minmax(0,38%) 1fr auto;align-items:center;gap:10px}
+.adm-bars li > a{border-radius:8px}
+.adm-bars li > a:hover .adm-bar-l{color:var(--text-accent)}
+.adm-bar-l{display:flex;flex-direction:column;min-width:0;font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-title)}
+.adm-bar-l,.adm-bar-l small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-bar-l small{font-size:11px;color:var(--text-faint)}
+.adm-bar-t{height:8px;background:var(--surface-sunken);border-radius:4px;overflow:hidden}
+.adm-bar-t i{display:block;height:100%;background:var(--accent-timer);border-radius:4px}
+.adm-bar-v{min-width:2ch;text-align:right;font:var(--weight-regular) 13px/1 var(--font-text);color:var(--text-body);font-variant-numeric:tabular-nums}
+.adm-empty{font:var(--type-body-sm);color:var(--text-muted)}
+.adm-note{font:var(--weight-regular) 12px/1.45 var(--font-text);color:var(--text-faint);max-width:70ch}
+.adm-loading{padding:40px 0;color:var(--text-muted);font:var(--type-body-sm)}
+.adm-tip{
+  position:fixed;z-index:200;pointer-events:none;transform:translate(-50%,calc(-100% - 8px));
+  padding:6px 10px;border-radius:8px;background:var(--text-title);color:var(--bg-app);
+  font:var(--weight-medium) 12px/1.3 var(--font-text);white-space:nowrap;opacity:0;transition:opacity var(--dur-fast) var(--ease-standard);
+}
+.adm-tip.on{opacity:1}
+
+/* Users */
+.adm-filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.adm-search{flex:1 1 260px}
+.adm-search input{flex:1;min-width:0;background:none;border:0;outline:none;font:var(--type-body);color:var(--text-title)}
+.adm-sort{display:flex;align-items:center;gap:8px;font:var(--weight-regular) 13px/1 var(--font-text);color:var(--text-muted)}
+.adm-sort .inp{min-height:44px;width:auto}
+.adm-joined{display:flex;flex-direction:column;gap:6px}
+.adm-joined > span{font:var(--weight-regular) 12px/1 var(--font-text);color:var(--text-muted)}
+.adm-count{font:var(--weight-regular) 12px/1 var(--font-text);color:var(--text-muted);margin:4px 0 8px}
+.adm-users{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.adm-user{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"id go" "dates go" "n go";gap:6px 12px;align-items:center;
+  padding:14px 16px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline);border-radius:18px;color:var(--text-title);
+  transition:var(--transition-control);
+}
+.adm-user:hover{border-color:var(--border-default)}
+.adm-user > .ico{grid-area:go;width:18px;height:18px;color:var(--text-faint)}
+.adm-user-id{grid-area:id;display:flex;flex-direction:column;min-width:0}
+.adm-user-id b{font:var(--weight-medium) 15px/1.3 var(--font-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-user-id small,.adm-user-dates small{font:var(--weight-regular) 12px/1.35 var(--font-text);color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-user-dates{grid-area:dates;display:flex;gap:14px;flex-wrap:wrap}
+.adm-user-n{grid-area:n;display:flex;gap:16px;flex-wrap:wrap}
+.adm-user-n span{display:flex;align-items:baseline;gap:4px;font:var(--weight-regular) 12px/1 var(--font-text);color:var(--text-muted)}
+.adm-user-n b{font:var(--weight-light) 16px/1 var(--font-text);color:var(--text-title);font-variant-numeric:tabular-nums}
+@media(min-width:861px){
+  .adm-user{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto auto;grid-template-areas:"id dates n go"}
+}
+.adm-back{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;min-height:40px;font:var(--weight-medium) 14px/1 var(--font-text);color:var(--text-accent)}
+.adm-back .ico{width:16px;height:16px}
+.adm-recent{list-style:none;margin:0;padding:0}
+.adm-recent li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0}
+.adm-recent li + li{border-top:var(--border-w-hairline) solid var(--border-hairline)}
+.adm-recent span{display:flex;flex-direction:column;min-width:0;font:var(--weight-regular) 14px/1.3 var(--font-text);color:var(--text-title)}
+.adm-recent small{font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-recent time{flex:none;font:var(--weight-regular) 12px/1 var(--font-text);color:var(--text-faint)}
