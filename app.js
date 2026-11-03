@@ -887,7 +887,7 @@ var TRANSLATIONS = {
     'Nothing here yet': 'Nada aqui ainda',
     'Scan label': 'Escanear rótulo',
     'Try again': 'Tentar de novo',
-    'Fill the frame with the label itself, not the whole bag — the panel listing origin, process and notes. Small print needs a close, straight, evenly lit shot. Nothing leaves your device.': 'Enquadre o rótulo em si, não o pacote inteiro — o painel com origem, processo e notas. Letras pequenas exigem uma foto próxima, reta e bem iluminada. Nada sai do seu aparelho.',
+    'Fill the frame with the label itself, not the whole bag — the panel listing origin, process and notes. Small print needs a close, straight, evenly lit shot. Nothing leaves your device.': 'Enquadre apenas o rótulo com a área com origem, processo e notas, não a embalagem inteira. Letras pequenas exigem uma foto próxima, reta e bem iluminada. A imagem não sai do seu aparelho.',
     'Everything it read': 'Tudo o que foi lido',
     'Fill fields': 'Preencher campos',
     'Brew parameters': 'Parâmetros do preparo',
