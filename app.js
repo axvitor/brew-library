@@ -2269,30 +2269,29 @@ function comboHTML(type) {
   '</div>';
 }
 
-/* The last recipe you opened, for the home screen to hand back.
-
-   Deliberately local rather than part of the synced library: this is one
-   write every time any recipe is opened, where the library is otherwise
-   written only when something actually changes. Pushing that to Firestore
-   would turn ordinary browsing into a stream of writes for a fact that is
-   really about this device — what you had open on this phone, not what
-   the library knows. Only ever one entry; the previous one is replaced. */
+/* The last recipe you opened, for the home screen to hand back — the
+   same on every device. It lives in the library's settings, so it syncs
+   like everything else, and is written only when you open a different
+   recipe from last time: browsing one recipe again, or the page simply
+   repainting, writes nothing. Since libraries are stored one item per
+   document that write is one small settings document, not the whole
+   library. A copy from before it synced, kept in this browser, is still
+   read once there is nothing in the library yet. */
 var SEEN_KEY = 'brewLastSeen';
 
 function markSeen(id) {
-  try { localStorage.setItem(SEEN_KEY, JSON.stringify({ id: id, at: Date.now() })); }
-  catch (e) { /* private mode — the card just won't appear */ }
+  if (!state || (state.lastSeen && state.lastSeen.id === id)) return;
+  state.lastSeen = { id: id, at: Date.now() };
+  save({ keepPristine: true });
 }
 
 function lastSeen() {
-  var raw;
-  try { raw = localStorage.getItem(SEEN_KEY); } catch (e) { return null; }
-  if (!raw) return null;
-  var v;
-  try { v = JSON.parse(raw); } catch (e) { return null; }
+  var v = state && state.lastSeen;
+  if (!v || !v.id) {
+    try { v = JSON.parse(localStorage.getItem(SEEN_KEY) || 'null'); } catch (e) { v = null; }
+  }
   if (!v || !v.id) return null;
-  // The recipe may have been deleted, or belong to an account that has
-  // since signed out on this device.
+  // The recipe may have been deleted since.
   var r = recipeById(v.id);
   return r ? { recipe: r, at: v.at } : null;
 }
