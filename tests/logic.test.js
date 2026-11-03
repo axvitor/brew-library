@@ -137,3 +137,23 @@ test('AeroPress drawing: moments come from the steps, inverted ones included', (
   assert.equal(up.insertAt, 10);
   assert.equal(up.pressStart, 150);
 });
+
+test('brew drawings: pours take their own time, and brewer names are not steps', () => {
+  const { pourModel, immersionModel, aeroModel } = load(['pourModel', 'immersionModel', 'aeroModel']);
+  const plan = (steps, total) => ({
+    total, water: steps.reduce((a, s) => a + (s[2] || 0), 0),
+    segs: steps.map((s, i) => ({ start: s[0], end: i + 1 < steps.length ? steps[i + 1][0] : total, label: s[1], water: s[2] || 0, pour: s[3] || 0 }))
+  });
+
+  // Tetsu's pours give no seconds: about 6 g a second, not the whole 45 s step.
+  const tetsu = pourModel(plan([[0, 'Pour', 50], [45, 'Pour', 70], [90, 'Pour', 60]], 135), 15);
+  assert.deepEqual(tetsu.pours.map(q => Math.round(q.dur)), [8, 12, 10]);
+  const hoff = pourModel(plan([[0, 'Bloom', 50, 10], [45, 'Pour', 50, 10]], 155), 15);
+  assert.deepEqual(hoff.pours.map(q => q.dur), [10, 10], 'a step that says how long keeps it');
+
+  const fp = immersionModel(plan([[0, 'Add the coffee to the French press and pour the water', 500], [240, 'Break the crust'], [300, 'Press the plunger down slowly']], 330), 30, 500);
+  assert.equal(fp.pressStart, 300, '"French press" in the first step is not the press');
+
+  const odd = aeroModel(plan([[0, 'Pour', 50], [45, 'Pour', 50], [90, 'Press']], 150), 15, 100);
+  assert.ok(odd.insertAt <= odd.pressStart, 'the plunger goes in before the press');
+});

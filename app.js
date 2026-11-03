@@ -4037,7 +4037,7 @@ var TM_PAUSE = '<svg viewBox="0 0 24 24" class="ico ico-fill"><rect x="6.5" y="5
    skip and restart show exactly the right moment.
 
    Pour-over: each pour adds water at its own rate (over its `pour`
-   seconds, or across the whole step); the dry bed soaks up about twice
+   seconds, or at about 6 g a second when the step doesn't say); the dry bed soaks up about twice
    the dose first; what stands in the cone drains through the bed at
    k·√held, so a full cone runs fast and the end trickles. Drops fall from
    the tip into a glass server that fills, and steams once warm.
@@ -4070,7 +4070,7 @@ function pourModel(plan, dose) {
   plan.segs.forEach(function (sg) {
     if (!sg.water) return;
     var len = sg.end - sg.start;
-    pours.push({ at: sg.start, g: sg.water, dur: sg.pour ? Math.min(sg.pour, len) : len, upto: sg.upto });
+    pours.push({ at: sg.start, g: sg.water, dur: Math.min(sg.pour || Math.max(6, sg.water / 6), len), upto: sg.upto });
   });
   var water = plan.water, absorb = Math.min((Number(dose) || water / 16) * 2, pours.length ? pours[0].g * 0.8 : 0);
   var k = 0.29 * Math.sqrt(water / 250);
@@ -4291,7 +4291,8 @@ function aeroModel(plan, dose, water) {
   if (pressEnd - pressStart < 5) pressEnd = Math.min(plan.total, pressStart + 20);
   var M = {
     kind: 'aero', water: W, dose: Number(dose) || W / 16, pours: pours,
-    insertAt: ins ? ins.start : pours[pours.length - 1].at + pours[pours.length - 1].dur + 3,
+    // The plunger has to be in before the press, whatever order the steps imply.
+    insertAt: Math.min(ins ? ins.start : pours[pours.length - 1].at + pours[pours.length - 1].dur + 3, Math.max(0, pressStart - 2)),
     swirlAt: sw ? sw.start : -1, pressStart: pressStart, pressEnd: pressEnd
   };
   var invI = -1;
@@ -4544,8 +4545,11 @@ function immersionModel(plan, dose, water) {
     pours.push({ at: sg.start, g: sg.water, dur: sg.pour ? Math.min(sg.pour, len) : Math.min(15, len) });
   });
   if (!pours.length) pours.push({ at: 0, g: W, dur: 15 });
+  // The brewer's own name ("Add the coffee to the French press") isn't the press.
   function find(re) {
-    for (var i = 0; i < plan.segs.length; i++) if (re.test(plan.segs[i].label || '')) return plan.segs[i];
+    for (var i = 0; i < plan.segs.length; i++) {
+      if (re.test((plan.segs[i].label || '').replace(/french press|aeropress|prensa francesa/ig, ''))) return plan.segs[i];
+    }
     return null;
   }
   var st = find(/stir|break|crust|skim|mex|quebr|crosta/i), pr = find(/plunge|press|pression|empurr|desç|release|drain|liber/i);
