@@ -5885,6 +5885,15 @@ function coffeeSelectHTML(value) {
    put them in rather than re-sorting as you type — a list that rearranges
    itself mid-keystroke is unusable — and a hint flags any time that isn't
    later than the one above it, which is the case worth catching. */
+// Adding, removing or moving a step redraws only the step list, not the
+// whole page — rebuilding the page blinked it and replayed its entrance.
+// Falls back to a full repaint if the list isn't on screen.
+function repaintStyleSteps(m) {
+  var box = m && m.el && m.el.querySelector('#styleSteps');
+  if (!box) { renderModals(); return; }
+  box.innerHTML = styleStepsSectionHTML(m.draft);
+}
+
 function styleStepsSectionHTML(d) {
   var head = '<div class="form-sep-label">' + esc(t('Brewing steps')) + '</div>';
 
@@ -8232,7 +8241,7 @@ function openEntityForm(type, existing, onSaved, prefill) {
       if (type === 'coffee') body = scanBlockHTML() + body;
       // A style is the one entity that carries a process, not just facts —
       // so it gets the step builder under its plain fields.
-      if (type === 'style') body += styleStepsSectionHTML(d);
+      if (type === 'style') body += '<div id="styleSteps">' + styleStepsSectionHTML(d) + '</div>';
       var foot = '<button class="btn btn-ghost" data-action="close-modal">' + esc(t('Cancel')) + '</button>' +
         '<button class="btn btn-primary" data-action="save-entity">' +
           esc(d.id ? t('Save changes') : t('Add ' + def.label.toLowerCase())) + '</button>';
@@ -8890,7 +8899,7 @@ document.addEventListener('click', function (ev) {
       top.capture();
       if (!top.draft.steps) top.draft.steps = [];
       top.draft.steps.push({ t: '', label: '', water: '' });
-      renderModals();
+      repaintStyleSteps(top);
       focusLastStep(top, '.stepbuild-row');
       return;
 
@@ -8898,7 +8907,7 @@ document.addEventListener('click', function (ev) {
       top.capture();
       top.draft.steps.splice(Number(btn.getAttribute('data-i')), 1);
       if (!top.draft.steps.length) top.draft.steps.push({ t: '', label: '', water: '' });
-      renderModals();
+      repaintStyleSteps(top);
       return;
 
     case 'style-step-move':
@@ -8910,7 +8919,11 @@ document.addEventListener('click', function (ev) {
       var moved = mArr[mFrom];
       mArr[mFrom] = mArr[mTo];
       mArr[mTo] = moved;
-      renderModals();
+      repaintStyleSteps(top);
+      // Keep the moved step's arrow under the finger, so a step can be
+      // walked up or down with repeated taps.
+      var mBtn = top.el && top.el.querySelector('.stepbuild-row[data-i="' + mTo + '"] [data-action="style-step-move"][data-dir="' + btn.getAttribute('data-dir') + '"]');
+      if (mBtn && !mBtn.disabled) mBtn.focus();
       return;
 
     case 'rank-tab':
