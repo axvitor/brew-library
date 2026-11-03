@@ -3462,7 +3462,7 @@ body:has(.gate-screen){padding-bottom:0}
 .bdg[aria-expanded="true"] .bdg-stamp{transform:rotate(0deg) scale(1.04)}
 .st-ring{fill:none;stroke:currentColor;stroke-width:3}
 .st-thin{fill:none;stroke:currentColor;stroke-width:1.4}
-.st-text{fill:currentColor;font:800 9.5px var(--font-text);letter-spacing:1.5px}
+.st-text{fill:currentColor;font:800 9px var(--font-text);letter-spacing:1.4px}
 .st-ghost{fill:none;stroke:var(--border-strong);stroke-width:2.4;stroke-dasharray:3 6}
 .bdg-art{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .bdg-art .art-fill{fill:currentColor;fill-opacity:.28;stroke:none}

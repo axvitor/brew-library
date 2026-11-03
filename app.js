@@ -3252,10 +3252,10 @@ function journeyHTML() {
     var ring = [t(b.name), t(b.motto), 'Nº 0' + (i + 1), ''].join(' ★ ').trim().toUpperCase();
     var stamp = on
       ? '<svg viewBox="0 0 120 120" class="bdg-stamp" aria-hidden="true">' +
-          '<defs><path id="bdg-ring-' + b.id + '" d="M60 60 m-47 0 a47 47 0 1 1 94 0 a47 47 0 1 1 -94 0"/></defs>' +
+          '<defs><path id="bdg-ring-' + b.id + '" d="M60 60 m-44 0 a44 44 0 1 1 88 0 a44 44 0 1 1 -88 0"/></defs>' +
           '<circle cx="60" cy="60" r="57" class="st-ring"/>' + (b.id === 'pro' ? '<circle cx="60" cy="60" r="53" class="st-thin"/>' : '') +
           '<circle cx="60" cy="60" r="39" class="st-thin"/>' +
-          '<text class="st-text"><textPath href="#bdg-ring-' + b.id + '" textLength="290" lengthAdjust="spacingAndGlyphs">' +
+          '<text class="st-text"><textPath href="#bdg-ring-' + b.id + '" textLength="268" lengthAdjust="spacingAndGlyphs">' +
             esc(ring) + '</textPath></text>' + art + '</svg>'
       : '<svg viewBox="0 0 120 120" class="bdg-stamp" aria-hidden="true"><circle cx="60" cy="60" r="57" class="st-ghost"/>' + art + '</svg>';
     return '<button class="bdg' + (on ? ' on' : '') + (isNew ? ' is-new' : '') + '" data-action="badge-info" data-id="' + b.id + '" ' +
