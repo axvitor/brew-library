@@ -3738,28 +3738,42 @@ function renderDetail(id, keepScroll) {
 // Times here are free-form ("3:15", "~0:28", "3:10–3:15"), so take the first
 // m:ss found — for a range that's the lower bound, which is the one worth
 // counting up to.
-/* A time typed as digits only: the last two are the seconds, so 345 shows
-   3:45 as it's typed and nobody has to find the colon on a phone keypad.
-   One or two digits stay as typed, which still reads as seconds. A
-   leading ~ (an approximate time) is kept. Leaving the field carries
-   seconds past 59 into the minutes: 390 becomes 6:30, not 3:90. */
-function formatTyped(v) {
-  var raw = String(v || ''), approx = /^\s*~/.test(raw) ? '~' : '';
-  var digits = raw.replace(/\D/g, '').replace(/^0+(?=\d{3})/, '').slice(0, 4);
-  if (digits.length < 3) return approx + digits;
-  return approx + Number(digits.slice(0, -2)) + ':' + digits.slice(-2);
+/* A time typed as digits only, filling m:ss from the right like a
+   microwave, colon always there: 3 → 0:03, 34 → 0:34, 345 → 3:45,
+   1230 → 12:30. Nobody has to find the colon on a phone keypad. A leading
+   ~ (an approximate time) is kept. Leaving the field carries seconds past
+   59 into the minutes (3:90 → 4:30). */
+function timeDigits(v) {
+  return String(v || '').replace(/\D/g, '').replace(/^0+/, '').slice(0, 4);
+}
+function formatTyped(approx, digits) {
+  if (!digits) return '';
+  var p = ('000' + digits).slice(-Math.max(3, digits.length));
+  return approx + Number(p.slice(0, -2)) + ':' + p.slice(-2);
 }
 function typedTime(input) {
   if (!input) return;
-  input.addEventListener('input', function () {
-    var next = formatTyped(input.value);
-    if (next !== input.value) input.value = next;
+  var last = timeDigits(input.value);
+  input.addEventListener('input', function (ev) {
+    var approx = /^\s*~/.test(input.value) ? '~' : '';
+    var digits = timeDigits(input.value);
+    // A delete that only took the colon still takes the last digit, or
+    // the colon would come straight back.
+    if (ev.inputType && ev.inputType.indexOf('delete') === 0 && digits === last) digits = digits.slice(0, -1);
+    last = digits;
+    var typing = !ev.inputType || ev.inputType.indexOf('delete') !== 0;
+    // A first 0 shows as 0:00, so the key press doesn't look ignored.
+    var next = formatTyped(approx, digits) || (typing && /\d/.test(input.value) ? approx + '0:00' : approx);
+    if (next !== input.value) {
+      input.value = next;
+      input.setSelectionRange(next.length, next.length);
+    }
   });
   input.addEventListener('blur', function () {
     var m = input.value.match(/^(~?)(\d+):(\d\d)$/);
     if (!m || Number(m[3]) < 60) return;
-    var total = Number(m[2]) * 60 + Number(m[3]);
-    input.value = m[1] + mmss(total);
+    input.value = m[1] + mmss(Number(m[2]) * 60 + Number(m[3]));
+    last = timeDigits(input.value);
   });
 }
 
