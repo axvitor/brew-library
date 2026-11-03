@@ -766,15 +766,6 @@ var TRANSLATIONS = {
     'Pro barista': 'Barista profissional',
     'Explorer': 'Explorador',
     'Moka': 'Moka',
-    'Save your first recipe.': 'Salve sua primeira receita.',
-    'Save an espresso recipe.': 'Salve uma receita de espresso.',
-    'Steep one, French press style.': 'Faça uma por infusão, como na prensa francesa.',
-    'Brew one through a dripper.': 'Passe uma num coador.',
-    'Brew one in a moka pot.': 'Prepare uma na cafeteira italiana.',
-    'Make a slow, cold steep.': 'Faça uma infusão lenta e gelada.',
-    'Press one through an AeroPress.': 'Prepare uma na AeroPress.',
-    'A recipe on every kind of method.': 'Uma receita em cada tipo de método.',
-    'Brew beans from two countries.': 'Use grãos de dois países.',
     'Unlocks with the first recipe you save — any coffee, any method.': 'Desbloqueia com a primeira receita que você salvar — qualquer café, qualquer método.',
     'Unlocks with a recipe on a method whose type is {type}.': 'Desbloqueia com uma receita num método do tipo {type}.',
     'Unlocks once you have a recipe on each of the six kinds of method the app knows.': 'Desbloqueia quando você tiver uma receita em cada um dos seis tipos de método que o app conhece.',
@@ -2040,6 +2031,8 @@ function renderPage(arriving) {
   // keeps your place; arriving starts at the top.
   // Leaving the dashboard stops its live reads of every account.
   if (hash.indexOf('#/admin') !== 0) adminUnwatch();
+  // A badge's card stays open only while its page does.
+  if (hash !== '#/account') journey.pop = '';
   if (m) renderDetail(decodeURIComponent(m[1]), !arriving);
   else if (hash.indexOf('#/admin') === 0) renderAdmin(hash);
   else if (hash === '#/account') renderAccount();
@@ -3025,8 +3018,10 @@ function renderAccount() {
       row('reset', ICON.trash, t('Reset library…'), '', true) +
     '</div>' +
   '</div>';
-  window.scrollTo(0, 0);
+  // A badge's card open means a repaint of this page, not an arrival.
+  if (!journey.pop) window.scrollTo(0, 0);
   Array.prototype.forEach.call(view.querySelectorAll('.segs'), function (box) { tabsLens(box); });
+  if (journey.pop) placeBadgePop();
 }
 
 /* ==========================================================
@@ -3140,15 +3135,15 @@ function countryName(code) {
 }
 
 var BADGES = [
-  { id: 'first', name: 'First recipe', short: 'Save your first recipe.' },
-  { id: 'espresso', type: 'Espresso', name: 'Espresso', short: 'Save an espresso recipe.' },
-  { id: 'immersion', type: 'Immersion', name: 'Immersion', short: 'Steep one, French press style.' },
-  { id: 'pourover', type: 'Pour over', name: 'Pour over', short: 'Brew one through a dripper.' },
-  { id: 'moka', type: 'Moka pot', name: 'Moka', short: 'Brew one in a moka pot.' },
-  { id: 'coldbrew', type: 'Cold brew', name: 'Cold brew', short: 'Make a slow, cold steep.' },
-  { id: 'aeropress', type: 'AeroPress', name: 'AeroPress', short: 'Press one through an AeroPress.' },
-  { id: 'pro', name: 'Pro barista', short: 'A recipe on every kind of method.' },
-  { id: 'explorer', name: 'Explorer', short: 'Brew beans from two countries.' }
+  { id: 'first', name: 'First recipe' },
+  { id: 'espresso', type: 'Espresso', name: 'Espresso' },
+  { id: 'immersion', type: 'Immersion', name: 'Immersion' },
+  { id: 'pourover', type: 'Pour over', name: 'Pour over' },
+  { id: 'moka', type: 'Moka pot', name: 'Moka' },
+  { id: 'coldbrew', type: 'Cold brew', name: 'Cold brew' },
+  { id: 'aeropress', type: 'AeroPress', name: 'AeroPress' },
+  { id: 'pro', name: 'Pro barista' },
+  { id: 'explorer', name: 'Explorer' }
 ];
 
 // What the library adds up to: recipes by kind of method and by country.
@@ -3238,7 +3233,7 @@ function badgeMedal(b, on) {
     (on ? '' : '<span class="bdg-lock">' + ICON_LOCK + '</span>') + '</span>';
 }
 
-var journey = { sel: '', seenTimer: 0 };
+var journey = { sel: '', seenTimer: 0, pop: '' };
 
 function journeyHTML() {
   if (!state) return '';
@@ -3251,10 +3246,11 @@ function journeyHTML() {
     var on = !!got[b.id], isNew = on && !got[b.id].seen;
     if (isNew) anyNew = true;
     return '<button class="bdg' + (on ? ' on' : '') + (isNew ? ' is-new' : '') + '" data-action="badge-info" data-id="' + b.id + '" ' +
+      'aria-haspopup="dialog" aria-expanded="' + (journey.pop === b.id ? 'true' : 'false') + '" ' +
       'style="--b:var(--bdg-' + b.id + ')" aria-label="' + esc(t(b.name) + ' — ' + (on ? t('Unlocked') : t('Locked'))) + '">' +
       badgeMedal(b, on) +
-      '<span class="bdg-name">' + esc(t(b.name)) + (isNew ? ' <em class="bdg-new">' + esc(t('New')) + '</em>' : '') + '</span>' +
-      '<span class="bdg-desc">' + esc(t(b.short)) + '</span></button>';
+      '<span class="bdg-name">' + esc(t(b.name)) + '</span>' +
+      (isNew ? '<em class="bdg-new">' + esc(t('New')) + '</em>' : '') + '</button>';
   }).join('');
   // The pop plays once: a moment after the page shows it, it's marked seen
   // (on every device), and the next repaint draws it settled.
@@ -3396,8 +3392,8 @@ function badgeDetailBody(b) {
   }[b.id] || tf('Unlocks with a recipe on a method whose type is {type}.', { type: t(b.type) });
 
   var status;
-  if (got) status = '<p class="bdg-status on">' + esc(tf('Unlocked on {date}', { date: fmtDate(got.at) })) + '</p>';
-  else status = '<p class="bdg-status">' + esc(t('Locked')) + '</p>';
+  if (got) status = '<span class="bdg-status on">' + esc(tf('Unlocked on {date}', { date: fmtDate(got.at) })) + '</span>';
+  else status = '<span class="bdg-status">' + ICON_LOCK + esc(t('Locked')) + '</span>';
 
   var next = '';
   if (b.id === 'first' && !got) next = t('Add a recipe with the + button.');
@@ -3427,24 +3423,67 @@ function badgeDetailBody(b) {
     }
     if (s.noCountry) parts.push('<p class="bdg-hint">' + esc(tf('Recipes using a coffee with no country: {n}. Set the country on those coffees to count them.', { n: s.noCountry })) + '</p>');
   }
-  return '<div class="bdg-detail' + (got ? ' on' : '') + '" style="--b:var(--bdg-' + b.id + ')">' +
-    badgeMedal(b, !!got) + status +
+  return '<div class="bdg-detail' + (got ? ' on' : '') + '">' +
+    '<div class="bdg-pop-head"><h3>' + esc(t(b.name)) + '</h3>' + status + '</div>' +
     '<p class="bdg-about">' + esc(about) + '</p>' +
     (next ? '<p class="bdg-next">' + esc(next) + '</p>' : '') +
     parts.join('') +
   '</div>';
 }
 
+/* A badge's help opens as a small card pointing at it, over the badges
+   below, rather than a whole sheet. Tapping the badge again, anywhere
+   outside, or Escape closes it. It is drawn into the page, so a repaint
+   (a sync landing) draws it again where it was. */
 function openBadge(id) {
-  var b = BADGES.filter(function (x) { return x.id === id; })[0];
-  if (!b) return;
-  openModal({
-    render: function () {
-      return sheet({ title: t(b.name), body: badgeDetailBody(b), narrow: true,
-        foot: '<button class="btn btn-primary" data-action="close-modal">' + esc(t('Done')) + '</button>' });
-    }
-  });
+  journey.pop = journey.pop === id ? '' : id;
+  placeBadgePop(true);
 }
+
+function closeBadgePop() {
+  if (!journey.pop) return;
+  journey.pop = '';
+  placeBadgePop();
+}
+
+function placeBadgePop(reveal) {
+  var host = view.querySelector('.journey');
+  if (!host) return;
+  var old = host.querySelector('.bdg-pop');
+  if (old) old.remove();
+  [].forEach.call(host.querySelectorAll('.bdg'), function (el) {
+    el.setAttribute('aria-expanded', el.getAttribute('data-id') === journey.pop ? 'true' : 'false');
+  });
+  var b = BADGES.filter(function (x) { return x.id === journey.pop; })[0];
+  var tile = b && host.querySelector('.bdg[data-id="' + b.id + '"]');
+  if (!tile) { journey.pop = ''; return; }
+  var pop = document.createElement('div');
+  pop.className = 'bdg-pop';
+  pop.setAttribute('role', 'dialog');
+  pop.setAttribute('aria-label', t(b.name));
+  pop.style.setProperty('--b', 'var(--bdg-' + b.id + ')');
+  pop.innerHTML = badgeDetailBody(b);
+  host.appendChild(pop);
+  var hr = host.getBoundingClientRect(), tr = tile.getBoundingClientRect();
+  pop.style.top = (tr.bottom - hr.top + 10) + 'px';
+  pop.style.setProperty('--ax', Math.round(tr.left + tr.width / 2 - hr.left) + 'px');
+  if (!reveal) return;
+  // Keep the whole card clear of the floating nav.
+  var nav = document.getElementById('appNav');
+  var limit = nav && !nav.hidden && getComputedStyle(nav).position === 'fixed' && nav.getBoundingClientRect().top < window.innerHeight
+    ? nav.getBoundingClientRect().top : window.innerHeight;
+  var by = pop.getBoundingClientRect().bottom - (limit - 12);
+  if (by > 0) window.scrollBy({ top: by, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+}
+
+document.addEventListener('click', function (ev) {
+  if (!journey.pop || !ev.target.closest) return;
+  if (ev.target.closest('.bdg-pop, .bdg')) return;
+  closeBadgePop();
+});
+document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape' && journey.pop && !stack.length) closeBadgePop();
+});
 
 /* ==========================================================
    Admin dashboard
