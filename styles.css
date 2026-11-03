@@ -2745,9 +2745,9 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 .hc-txt .mt{font:var(--weight-regular) 13px/1.35 var(--font-text);color:var(--text-muted)}
 .hc-fav{flex:none;color:var(--accent-favorite);display:flex}
 .hc-fav svg{width:16px;height:16px}
-.hc-strip{display:flex;border-top:var(--border-w-hairline) solid var(--border-hairline);padding-top:12px}
+.hc-strip{display:flex;border-top:var(--border-w-hairline) solid color-mix(in srgb,var(--border-hairline) 50%,transparent);padding-top:12px}
 .hc-cell{flex:1 1 0;display:flex;flex-direction:column;gap:2px;min-width:0}
-.hc-cell + .hc-cell{padding-left:16px;border-left:var(--border-w-hairline) solid var(--border-hairline)}
+.hc-cell + .hc-cell{padding-left:16px;border-left:var(--border-w-hairline) solid color-mix(in srgb,var(--border-hairline) 50%,transparent)}
 .hc-cell:not(:last-child){padding-right:16px}
 /* One size and weight for every value — 16px light. Coffee and water are
    sized to their longest value (999g, 9999g at 16px light measure 38.5 and
