@@ -2346,7 +2346,8 @@ function greetingKey() {
 function repaintFilters() {
   if (filterTarget === filters) renderHome();
   else renderModals();
-  liftOpenCombo();
+  if (openCombo) liftOpenCombo();
+  else if (phoneWidth.matches) dropLift();
 }
 
 /* On a phone the Filters page's open dropdown moves up under the floating
@@ -5365,10 +5366,20 @@ function renderModals() {
    three options. Scroll the field's label up to just under the floating
    head instead, so the list gets the rest of the screen. The last fields
    can't scroll that far on their own, so the body borrows room at its
-   foot — kept until the form closes, since handing it back after a pick
-   would drag the whole form down under your finger. Returns the height
-   left under the field once it has arrived. */
+   foot. When the list closes — a pick, or a tap elsewhere — dropLift()
+   takes the page back to where it was and hands that room back. Returns
+   the height left under the field once it has arrived.
+
+   Where the page started is kept on the open page (the modal), not on
+   the scrolling element: the Filters page is rebuilt on every keystroke,
+   and its scroller with it. Moving straight from one dropdown to another
+   keeps the first starting point. */
+function liftHost() { return stack[stack.length - 1] || liftHost.page; }
+liftHost.page = {};
 function liftField(scroller, box, field, list) {
+  var host = liftHost();
+  if (!host._lift) host._lift = { from: scroller.scrollTop };
+  clearTimeout(host._lift.timer);
   var label = box.querySelector('label') || field;
   var sb = scroller.getBoundingClientRect();
   var head = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 8;
@@ -5401,6 +5412,27 @@ function liftField(scroller, box, field, list) {
   }
   return floor - (fieldBottom - moved) - 12;
 }
+function dropLift() {
+  var host = liftHost(), st = host._lift;
+  if (!st) return;
+  var root = host.el || document;
+  var scroller = root.querySelector('.sheet-body');
+  if (!scroller) { host._lift = null; return; }
+  var smooth = !reduceMotion.matches;
+  scroller.scrollTo({ top: st.from, behavior: smooth ? 'smooth' : 'auto' });
+  // The borrowed room goes once the page is back, not before: taking it
+  // away mid-scroll would snap the page up to the new bottom.
+  clearTimeout(st.timer);
+  st.timer = setTimeout(function () {
+    if (host._lift !== st) return;
+    host._lift = null;
+    var sc = root.querySelector('.sheet-body');
+    if (!sc) return;
+    sc.style.paddingBottom = '';
+    delete sc.dataset.basePad;
+    delete sc.dataset.extraPad;
+  }, smooth ? 450 : 0);
+}
 
 // A text field with suggestions (Roaster in the coffee form) gets the same
 // lift, so the browser's suggestion list has room to open under it.
@@ -5409,6 +5441,11 @@ document.addEventListener('focusin', function (ev) {
   if (!phoneWidth.matches || el.tagName !== 'INPUT' || !el.getAttribute('list')) return;
   var scroller = el.closest('.sheet-body');
   if (scroller) liftField(scroller, el.closest('.field') || el, el);
+});
+document.addEventListener('focusout', function (ev) {
+  var el = ev.target;
+  if (!phoneWidth.matches || el.tagName !== 'INPUT' || !el.getAttribute('list')) return;
+  dropLift();
 });
 
 // You pressed "Add step" because you have a step to write — put the cursor in
@@ -5698,9 +5735,11 @@ function enhanceSelect(sel) {
     list.style.maxHeight = Math.max(160, liftField(scroller, box, field, list)) + 'px';
   }
   function close() {
+    var wasOpen = !list.hidden;
     wrap.classList.remove('drop-up');
     list.style.maxHeight = '';
     list.hidden = true;
+    if (wasOpen && phoneWidth.matches) dropLift();
     field.classList.remove('open');
     input.setAttribute('aria-expanded', 'false');
     // Locked again, so the next tap opens the list without a keyboard.
@@ -5935,8 +5974,13 @@ function styleStepsSectionHTML(d) {
           'aria-label="' + esc(tf('Move step {n} earlier', { n: i + 1 })) + '"' + (i === 0 ? ' disabled' : '') + '>' + ICON.chevUp + '</button>' +
         '<button type="button" class="iconbtn" data-action="style-step-move" data-i="' + i + '" data-dir="1" ' +
           'aria-label="' + esc(tf('Move step {n} later', { n: i + 1 })) + '"' + (i === last ? ' disabled' : '') + '>' + ICON.chevDown + '</button>' +
-        '<button type="button" class="iconbtn danger" data-action="style-step-del" data-i="' + i + '" ' +
-          'aria-label="' + esc(tf('Remove step {n}', { n: i + 1 })) + '">' + ICON.close + '</button>' +
+        // A lone step can't be removed — the builder always keeps one row
+        // to write in — so it shows no delete; its place is kept so the
+        // arrows stay where they are.
+        (last === 0
+          ? '<span class="iconbtn stepbuild-nodel" aria-hidden="true"></span>'
+          : '<button type="button" class="iconbtn danger" data-action="style-step-del" data-i="' + i + '" ' +
+              'aria-label="' + esc(tf('Remove step {n}', { n: i + 1 })) + '">' + ICON.close + '</button>') +
       '</span>' +
     '</li>';
   }).join('');

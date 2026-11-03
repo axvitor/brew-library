@@ -1432,6 +1432,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:34px;
 .stepbuild .inp{min-height:40px;font-size:14px;padding:0 12px}
 .stepbuild-tools{grid-area:tools;display:flex;align-items:center;gap:2px;margin-top:5px}
 .stepbuild-tools .iconbtn{width:30px;height:30px}
+.stepbuild-nodel{visibility:hidden}
 .iconbtn:disabled{opacity:.3;pointer-events:none}
 .stepbuild-warn{display:flex;align-items:flex-start;gap:6px;margin-top:12px;color:var(--state-error)}
 .stepbuild-warn .ico{width:14px;height:14px;flex:none;margin-top:2px}
