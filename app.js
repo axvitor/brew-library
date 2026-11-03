@@ -2346,6 +2346,21 @@ function greetingKey() {
 function repaintFilters() {
   if (filterTarget === filters) renderHome();
   else renderModals();
+  liftOpenCombo();
+}
+
+/* On a phone the Filters page's open dropdown moves up under the floating
+   head, with its list given the rest of the screen — the same as the
+   recipe form's dropdowns. The page is rebuilt on every keystroke, so this
+   runs after each repaint; once the field is in place it moves nothing. */
+function liftOpenCombo() {
+  if (!openCombo || !phoneWidth.matches) return;
+  var input = document.getElementById('f-combo-' + openCombo);
+  var scroller = input && input.closest('.sheet-body');
+  if (!scroller) return;
+  var list = input.closest('.combo').querySelector('.combo-list');
+  var below = liftField(scroller, input.closest('.field') || input, input.closest('.combo-field') || input, list);
+  if (list) list.style.maxHeight = Math.max(160, below) + 'px';
 }
 
 /* ---- filters page ----
@@ -5350,12 +5365,18 @@ function renderModals() {
    foot — kept until the form closes, since handing it back after a pick
    would drag the whole form down under your finger. Returns the height
    left under the field once it has arrived. */
-function liftField(scroller, box, field) {
+function liftField(scroller, box, field, list) {
   var label = box.querySelector('label') || field;
   var sb = scroller.getBoundingClientRect();
   var head = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 8;
   var by = label.getBoundingClientRect().top - sb.top - head;
+  // An open list counts towards the scrollable length even though it is
+  // positioned over the page, so it's left out while the room is measured:
+  // otherwise the room vanishes once the list is cut to fit, and the field
+  // stops short of the top.
+  if (list) list.style.display = 'none';
   var room = scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
+  if (list) list.style.display = '';
   if (by > room) {
     if (!scroller.dataset.basePad) scroller.dataset.basePad = getComputedStyle(scroller).paddingBottom;
     var extra = (+scroller.dataset.extraPad || 0) + Math.ceil(by - room);
@@ -5363,12 +5384,19 @@ function liftField(scroller, box, field) {
     scroller.style.paddingBottom = 'calc(' + scroller.dataset.basePad + ' + ' + extra + 'px)';
   }
   // Down to the floating Cancel / Save bar, not under it.
-  var foot = (scroller.closest('.page, .sheet') || scroller.parentNode).querySelector('.sheet-foot');
+  var host = scroller.parentNode, foot = null;
+  while (host && host !== document.body && !(foot = host.querySelector('.sheet-foot'))) host = host.parentNode;
   var floor = foot ? Math.min(sb.bottom, foot.getBoundingClientRect().top) : sb.bottom;
+  // Where the field will end up: measured before scrolling, and moved by
+  // as far as the page can actually go — a smooth scroll hasn't started
+  // yet when this returns, an instant one already has.
+  var fieldBottom = field.getBoundingClientRect().bottom;
+  var maxTop = scroller.scrollHeight - scroller.clientHeight;
+  var moved = Math.min(scroller.scrollTop + by, maxTop) - scroller.scrollTop;
   if (Math.abs(by) >= 2) {
     scroller.scrollTo({ top: scroller.scrollTop + by, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
   }
-  return floor - (field.getBoundingClientRect().bottom - by) - 12;
+  return floor - (fieldBottom - moved) - 12;
 }
 
 // A text field with suggestions (Roaster in the coffee form) gets the same
@@ -5660,7 +5688,7 @@ function enhanceSelect(sel) {
     }
   }
   function lift(scroller) {
-    list.style.maxHeight = Math.max(160, liftField(scroller, box, field)) + 'px';
+    list.style.maxHeight = Math.max(160, liftField(scroller, box, field, list)) + 'px';
   }
   function close() {
     wrap.classList.remove('drop-up');
@@ -9031,7 +9059,7 @@ document.addEventListener('input', function (ev) {
     openCombo = ev.target.id.slice('f-combo-'.length);
     comboQuery = ev.target.value;
     var mpos = ev.target.selectionStart;
-    renderHome();
+    repaintFilters();
     var mAgain = document.getElementById('f-combo-' + openCombo);
     if (mAgain) { mAgain.focus(); mAgain.setSelectionRange(mpos, mpos); }
   }
@@ -9045,7 +9073,7 @@ document.addEventListener('focusin', function (ev) {
   if (openCombo === type) return;
   openCombo = type;
   comboQuery = '';
-  renderHome();
+  repaintFilters();
   var mf = document.getElementById('f-combo-' + type);
   if (mf) mf.focus();
 });
@@ -9057,7 +9085,7 @@ document.addEventListener('click', function (ev) {
   if (ev.target.closest('.combo')) return;
   openCombo = null;
   comboQuery = '';
-  renderHome();
+  repaintFilters();
 });
 
 document.addEventListener('change', function (ev) {
@@ -9072,7 +9100,7 @@ document.addEventListener('keydown', function (ev) {
   if (ev.key === 'Escape' && openCombo) {
     openCombo = null;
     comboQuery = '';
-    renderHome();
+    repaintFilters();
     return;
   }
   if (ev.key === 'Escape' && stack.length) { closeModal(); return; }
