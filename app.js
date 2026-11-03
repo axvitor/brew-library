@@ -3149,8 +3149,8 @@ var BADGES = [
   { id: 'moka', type: 'Moka pot', name: 'Moka', motto: 'On the stove' },
   { id: 'coldbrew', type: 'Cold brew', name: 'Cold brew', motto: 'Twelve hours' },
   { id: 'aeropress', type: 'AeroPress', name: 'AeroPress', motto: 'Plunge & press' },
-  { id: 'pro', name: 'Pro barista', motto: 'Every method' },
-  { id: 'explorer', name: 'Explorer', motto: 'Two origins' }
+  { id: 'explorer', name: 'Explorer', motto: 'Two origins' },
+  { id: 'pro', name: 'Pro barista', motto: 'Every method' }
 ];
 
 // What the library adds up to: recipes by kind of method and by country.
