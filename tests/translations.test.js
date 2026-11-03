@@ -54,6 +54,15 @@ test('no English written straight into placeholders, labels or titles', () => {
   assert.deepEqual(raw, [], 'Wrap these in esc(t(…)) and add a translation');
 });
 
+test('no English sentences written straight into the markup', () => {
+  // '<p class="hint">Some words here…</p>' or ICON.x + 'Some words…</p>'
+  // should be esc(t('Some words here…')). Matches three or more words of
+  // prose that sit directly in a markup string, outside any t(…).
+  const prose = /(?:>|\+ ')([A-Z][a-z]+(?: [a-z’']+){2,}[^<'"]*)<\//g;
+  const found = [...APP.matchAll(prose)].map(m => m[1]);
+  assert.deepEqual(found, [], 'Wrap these in esc(t(…)) and add a translation');
+});
+
 test('translations keep their {placeholders}', () => {
   // tf('Delete “{name}”?') must still have {name} in Portuguese, or the
   // name silently disappears from the sentence.

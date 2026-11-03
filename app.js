@@ -754,6 +754,8 @@ var TRANSLATIONS = {
     'Move step {n} earlier': 'Mover a etapa {n} para cima',
     'Move step {n} later': 'Mover a etapa {n} para baixo',
     'Remove step {n}': 'Remover a etapa {n}',
+    'This style’s steps come from its built-in formula and rescale to each recipe’s dose and water automatically — there’s nothing to write by hand.': 'As etapas deste estilo vêm da sua fórmula e se ajustam à dose e à água de cada receita — não há nada a escrever à mão.',
+    'Some times run backwards — reorder the steps so the brew reads start to finish.': 'Alguns tempos voltam para trás — reordene as etapas para o preparo seguir do início ao fim.',
     'How did it taste?': 'Como ficou o sabor?',
     'Sour': 'Azedo',
     'Balanced': 'Equilibrado',
@@ -3789,31 +3791,35 @@ function formatTyped(approx, digits) {
   var p = ('000' + digits).slice(-Math.max(3, digits.length));
   return approx + Number(p.slice(0, -2)) + ':' + p.slice(-2);
 }
-function typedTime(input) {
-  if (!input) return;
-  var last = timeDigits(input.value);
-  input.addEventListener('input', function (ev) {
-    var approx = /^\s*~/.test(input.value) ? '~' : '';
-    var digits = timeDigits(input.value);
-    // A delete that only took the colon still takes the last digit, or
-    // the colon would come straight back.
-    if (ev.inputType && ev.inputType.indexOf('delete') === 0 && digits === last) digits = digits.slice(0, -1);
-    last = digits;
-    var typing = !ev.inputType || ev.inputType.indexOf('delete') !== 0;
-    // A first 0 shows as 0:00, so the key press doesn't look ignored.
-    var next = formatTyped(approx, digits) || (typing && /\d/.test(input.value) ? approx + '0:00' : approx);
-    if (next !== input.value) {
-      input.value = next;
-      input.setSelectionRange(next.length, next.length);
-    }
-  });
-  input.addEventListener('blur', function () {
-    var m = input.value.match(/^(~?)(\d+):(\d\d)$/);
-    if (!m || Number(m[3]) < 60) return;
-    input.value = m[1] + mmss(Number(m[2]) * 60 + Number(m[3]));
-    last = timeDigits(input.value);
-  });
-}
+/* Every time box — a recipe's total brew time, a style's step times —
+   carries data-time and is handled here, once for the whole page, so rows
+   rebuilt after adding or moving a step need nothing wired up again. The
+   digits as last seen are kept on the box itself. */
+document.addEventListener('input', function (ev) {
+  var input = ev.target;
+  if (!input.hasAttribute || !input.hasAttribute('data-time')) return;
+  var approx = /^\s*~/.test(input.value) ? '~' : '';
+  var digits = timeDigits(input.value);
+  // A delete that only took the colon still takes the last digit, or
+  // the colon would come straight back.
+  if (ev.inputType && ev.inputType.indexOf('delete') === 0 && digits === input.dataset.digits) digits = digits.slice(0, -1);
+  input.dataset.digits = digits;
+  var typing = !ev.inputType || ev.inputType.indexOf('delete') !== 0;
+  // A first 0 shows as 0:00, so the key press doesn't look ignored.
+  var next = formatTyped(approx, digits) || (typing && /\d/.test(input.value) ? approx + '0:00' : approx);
+  if (next !== input.value) {
+    input.value = next;
+    input.setSelectionRange(next.length, next.length);
+  }
+});
+document.addEventListener('focusout', function (ev) {
+  var input = ev.target;
+  if (!input.hasAttribute || !input.hasAttribute('data-time')) return;
+  var m = input.value.match(/^(~?)(\d+):(\d\d)$/);
+  if (!m || Number(m[3]) < 60) return;
+  input.value = m[1] + mmss(Number(m[2]) * 60 + Number(m[3]));
+  input.dataset.digits = timeDigits(input.value);
+});
 
 function secondsOf(v) {
   var s = String(v == null ? '' : v);
@@ -5855,8 +5861,7 @@ function styleStepsSectionHTML(d) {
   var head = '<div class="form-sep-label">' + esc(t('Brewing steps')) + '</div>';
 
   if (hasFormula(d.id)) {
-    return head + '<p class="hint" style="margin:0">This style\'s steps come from its built-in formula and ' +
-      'rescale to each recipe\'s dose and water automatically — there\'s nothing to write by hand.</p>';
+    return head + '<p class="hint" style="margin:0">' + esc(t('This style’s steps come from its built-in formula and rescale to each recipe’s dose and water automatically — there’s nothing to write by hand.')) + '</p>';
   }
 
   if (!d.steps || !d.steps.length) d.steps = [{ t: '', label: '', water: '' }];
@@ -5868,7 +5873,7 @@ function styleStepsSectionHTML(d) {
     return '<li class="stepbuild-row" data-i="' + i + '">' +
       '<span class="stepbuild-mark">' + (i + 1) + '</span>' +
       '<input class="inp stepbuild-t" data-s="t" value="' + esc(s.t || '') + '" ' +
-        'placeholder="0:45" inputmode="numeric" aria-label="' + esc(tf('Step {n} time', { n: i + 1 })) + '" />' +
+        'placeholder="0:45" inputmode="numeric" autocomplete="off" data-time aria-label="' + esc(tf('Step {n} time', { n: i + 1 })) + '" />' +
       '<input class="inp stepbuild-l" data-s="label" value="' + esc(s.label || '') + '" ' +
         'placeholder="' + esc(t('What to do at this point')) + '" aria-label="' + esc(t('Step')) + ' ' + (i + 1) + '" />' +
       '<input class="inp stepbuild-w" data-s="water" value="' + esc(s.water ? s.water : '') + '" ' +
@@ -5888,7 +5893,7 @@ function styleStepsSectionHTML(d) {
     '<p class="hint" style="margin:0 0 14px">' + esc(t('Every recipe on this style follows these steps, so you only write them once. Give each pour the water it adds — recipes scale the pours to their own water.')) + '</p>' +
     '<ol class="stepbuild">' + rows + '</ol>' +
     (stepsOutOfOrder(d.steps)
-      ? '<p class="hint stepbuild-warn">' + ICON.arrowDown + 'Some times run backwards — reorder the steps so the brew reads start to finish.</p>'
+      ? '<p class="hint stepbuild-warn">' + ICON.arrowDown + esc(t('Some times run backwards — reorder the steps so the brew reads start to finish.')) + '</p>'
       : '') +
     '<div class="steps-tools">' +
       '<button type="button" class="btn btn-ghost btn-sm" data-action="style-step-add">' + ICON.plus + esc(t('Add step')) + '</button>' +
@@ -5977,7 +5982,7 @@ function buildRecipeForm(m) {
       '<div class="field"><label for="f-temp">' + esc(t('Temperature (°C)')) + '</label>' +
         '<input class="inp" id="f-temp" value="' + esc(d.temp) + '" placeholder="94" inputmode="decimal" /></div>' +
       '<div class="field"><label for="f-time">' + esc(t('Total brew time')) + '</label>' +
-        '<input class="inp" id="f-time" value="' + esc(d.brewTime) + '" placeholder="3:30" inputmode="numeric" autocomplete="off" /></div>' +
+        '<input class="inp" id="f-time" value="' + esc(d.brewTime) + '" placeholder="3:30" inputmode="numeric" autocomplete="off" data-time /></div>' +
     '</div>' +
     '<div class="field"><label>' + esc(t('Ratio')) + '</label>' +
       '<div class="inp" style="display:flex;align-items:center;background:var(--surface-sunken);border-style:dashed">' +
@@ -6008,7 +6013,6 @@ function buildRecipeForm(m) {
   function upd() { out.textContent = ratio(dose.value, water.value); }
   dose.addEventListener('input', upd);
   water.addEventListener('input', upd);
-  typedTime(el.querySelector('#f-time'));
 
   enhanceSelects(el);
   return el;
