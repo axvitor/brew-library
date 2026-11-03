@@ -3273,8 +3273,9 @@ function journeyHTML() {
       '<div class="jr-head"><span class="section-title">' + esc(t('Badges')) + '</span>' +
         '<span class="jr-count">' + esc(tf('{n} of {total} unlocked', { n: n, total: BADGES.length })) + '</span></div>' +
       '<div class="bdg-grid">' + tiles + '</div>' +
-    '</div>' +
-    originsHTML(s);
+    '</div>';
+  // The origins map (originsHTML) is off the page for now; its code and
+  // world-map.js stay for when it comes back.
 }
 
 /* ---- the origins map ---- */

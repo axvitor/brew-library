@@ -157,11 +157,11 @@ recipes saved before these existed count too.
   They live in the library's settings document, so they sync like the rest;
   what a library already qualified for the first time it was counted
   unlocked quietly, and anything earned since gets a toast and a pop.
-- **Coffee origins** — a world map of where the beans in your recipes grew.
-  A coffee's country is its **Country** field; until one is picked, the
-  field follows the Origin ("Huila, Colombia", "Cerrado Mineiro",
-  "Carmo de Minas - MG"), so coffees saved before it still count. The
-  outlines are in `world-map.js`, loaded only when the Account page opens.
+- **Coffee origins** — a coffee's country is its **Country** field; until
+  one is picked, the field follows the Origin ("Huila, Colombia",
+  "Cerrado Mineiro", "Carmo de Minas - MG"), so coffees saved before it
+  still count towards Explorer. A world map of those countries
+  (`originsHTML`, outlines in `world-map.js`) is built but off the page for now.
 
 ## Your data
 
