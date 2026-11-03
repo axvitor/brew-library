@@ -741,6 +741,8 @@ var TRANSLATIONS = {
     'Account menu': 'Menu da conta',
     'Back to top': 'Voltar ao topo',
     'Synced across your signed-in devices.': 'Sincronizado nos seus dispositivos.',
+    'What worked, what to change next time…': 'O que funcionou, o que mudar na próxima vez…',
+    '1,200 m': '1.200 m',
     // --- home ---
     'Your brewing library': 'Sua biblioteca de preparos',
     'recipe': 'receita',
@@ -5790,7 +5792,7 @@ function buildRecipeForm(m) {
         }).join('') +
       '</div></div>' +
     '<div class="field"><label for="f-notes">' + esc(t('Personal notes')) + '</label>' +
-      '<textarea class="inp" id="f-notes" placeholder="What worked, what to change next time…">' + esc(d.notes) + '</textarea></div>' +
+      '<textarea class="inp" id="f-notes" placeholder="' + esc(t('What worked, what to change next time…')) + '">' + esc(d.notes) + '</textarea></div>' +
     '<div class="field"><label for="f-name">' + esc(t('Custom title (optional)')) + '</label>' +
       '<input class="inp" id="f-name" value="' + esc(d.name) + '" placeholder="' + esc(t('Defaults to the coffee name')) + '" /></div>';
 
