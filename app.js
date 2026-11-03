@@ -14,7 +14,7 @@ var state = null;
 // Bump whenever the built-in starter library below changes. A stored library
 // that is still untouched starter data picks the new version up automatically;
 // once you edit anything, your data is yours and is never replaced.
-var SEED_VERSION = 6;
+var SEED_VERSION = 7;
 
 // The one account that starts with the full 101-recipe starter library.
 // Everyone else invited to the app starts blank — your personal coffee list
@@ -55,12 +55,18 @@ function save(opts) {
 
 // Reuses the built-in grinders/methods/styles (generic, reusable across
 // anyone) but starts with no coffees or recipes — those are personal.
+// The methods a new account starts with. The rest of seed()'s methods are
+// the owner's own kit (particular baskets, a particular drip machine).
+var GENERAL_METHODS = { 'me-v60': 1, 'me-origami': 1, 'me-aeropress': 1, 'me-moka': 1, 'me-espresso': 1 };
+
 function emptyLibrary() {
   var base = seed();
   return {
     version: 1, seedVersion: SEED_VERSION, pristine: true,
     coffees: [], recipes: [], roasters: [],
-    grinders: base.grinders, methods: base.methods, styles: base.styles
+    grinders: base.grinders,
+    methods: base.methods.filter(function (me) { return GENERAL_METHODS[me.id]; }),
+    styles: base.styles
   };
 }
 
@@ -116,7 +122,7 @@ function builtinStyles() {
       ] },
     // Figures are his published Ultimate Pour Over at a 20 g dose — the pours
     // are cumulative totals, not per-pour amounts.
-    { id: 'st-hedrick-v60', name: 'Lance Hendrick V60', author: 'Lance Hendrick',
+    { id: 'st-hedrick-v60', name: 'Lance Hedrick V60', author: 'Lance Hedrick',
       notes: 'Catch-all pour over that suits any dripper and any roast. Level the bed before blooming, ' +
         'and pour slowly — aggressive pours over-agitate the grounds and push the cup bitter. ' +
         'Water 100°C for light roasts, 92°C medium, 85°C dark.',
@@ -133,7 +139,7 @@ function builtinStyles() {
 /* Bump when a new built-in style is added. Tracked per library so the
    backfill runs exactly once: a style the user then deletes stays deleted
    rather than reappearing on every load. */
-var BUILTIN_STYLES_VERSION = 3;
+var BUILTIN_STYLES_VERSION = 4;
 
 function seed() {
   var coffees = [
@@ -436,9 +442,13 @@ function normalizeLibrary(lib) {
     });
     // Renames of built-in styles, applied only where the old name is still
     // in place — if you renamed it yourself, that is your name for it.
-    [['st-hoffmann', 'James Hoffmann', 'James Hoffmann V60']].forEach(function (ren) {
+    [['st-hoffmann', 'James Hoffmann', 'James Hoffmann V60'],
+     ['st-hedrick-v60', 'Lance Hendrick V60', 'Lance Hedrick V60']].forEach(function (ren) {
       var st = lib.styles.filter(function (x) { return x.id === ren[0]; })[0];
       if (st && st.name === ren[1]) st.name = ren[2];
+    });
+    lib.styles.forEach(function (st) {
+      if (st.id === 'st-hedrick-v60' && st.author === 'Lance Hendrick') st.author = 'Lance Hedrick';
     });
 
     /* The Hoffmann AeroPress schedule used to hide inside the V60 style,
@@ -3029,7 +3039,7 @@ function adminLog(action, target) {
 var BUILTIN_IDS = null;
 function builtinIds() {
   if (BUILTIN_IDS) return BUILTIN_IDS;
-  var base = emptyLibrary();
+  var base = seed();
   BUILTIN_IDS = {};
   base.grinders.concat(base.methods, base.styles, builtinStyles())
     .forEach(function (e) { BUILTIN_IDS[e.id] = true; });

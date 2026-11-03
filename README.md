@@ -53,8 +53,8 @@ Five **reusable entities** live independently of the recipes that reference them
 | Roaster | derived from the coffees already in your library |
 | Coffee | three example coffees — edit or delete them |
 | Grinder | KINGrinder, Starseeker, Timemore C2 |
-| Brewing method | V60, Origami, AeroPress, Timemore B75, Moka Pot, Espresso, Espresso — DEX basket, Espresso — 3Bomber (18g basket), Filtro Oster |
-| Recipe style | James Hoffmann, Tetsu Kasuya (Sweet / Acid / Strength), Espresso, Lance Hedrick — Ultimate |
+| Brewing method | V60, Origami, AeroPress, Moka Pot, Espresso (the owner's library also has Timemore B75, Espresso — DEX basket, Espresso — 3Bomber (18g basket) and Filtro Oster) |
+| Recipe style | James Hoffmann (V60, AeroPress), Tetsu Kasuya (Sweet / Acid / Strength), Espresso, AeroPress (Inverted), Lance Hedrick V60 |
 
 Manage all four under **Library** in the header, or add one inline with the `+` button
 next to any selector in the recipe form. A recipe stores only the *id* of each entity,
