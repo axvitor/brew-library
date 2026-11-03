@@ -771,7 +771,7 @@ var TRANSLATIONS = {
     'Two origins': 'Duas origens',
     'Not yet': 'Ainda não',
     'First recipe': 'Primeira receita',
-    'Pro barista': 'Barista profissional',
+    'Pro barista': 'Barista Pro',
     'Explorer': 'Explorador',
     'Moka': 'Moka',
     'Unlocks with the first recipe you save — any coffee, any method.': 'Desbloqueia com a primeira receita que você salvar — qualquer café, qualquer método.',
