@@ -1,0 +1,11 @@
+{
+  "name": "brew-library",
+  "private": true,
+  "description": "Coffee recipes, brew timer and label scanner. A static site: nothing to build or install.",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
