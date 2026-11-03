@@ -9017,6 +9017,14 @@ function boot() {
         state = normalizeLibrary(remote);
         render();
       });
+    }).catch(function (err) {
+      // Loading, or moving an old library to per-item storage, failed.
+      // Nothing was lost — the old document stays until a move completes —
+      // so a reload simply tries again.
+      console.error('Library load failed', err);
+      if (currentUser !== user) return;
+      authPhase = 'error';
+      render();
     });
   });
 }

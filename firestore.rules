@@ -28,10 +28,30 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // A library is its settings document plus one document per item
+    // under it (recipes/{id}, coffees/{id}, …) and a backup of the old
+    // single-document layout. The settings document may no longer carry
+    // the item arrays: that stops an out-of-date copy of the app from
+    // writing the old layout back over the new one.
     match /libraries/{uid} {
       allow read: if isSelf(uid) || isAdmin();
-      allow write: if isSelf(uid);
+      allow write: if isSelf(uid)
+        && !request.resource.data.keys().hasAny(['coffees', 'recipes', 'roasters', 'grinders', 'methods', 'styles']);
+
+      match /{kind}/{id} {
+        allow read: if isSelf(uid);
+        allow write: if isSelf(uid)
+          && kind in ['coffees', 'recipes', 'roasters', 'grinders', 'methods', 'styles', 'backup'];
+      }
     }
+
+    // Admins read every account's items in one query per kind.
+    match /{path=**}/coffees/{id}  { allow read: if isAdmin(); }
+    match /{path=**}/recipes/{id}  { allow read: if isAdmin(); }
+    match /{path=**}/roasters/{id} { allow read: if isAdmin(); }
+    match /{path=**}/grinders/{id} { allow read: if isAdmin(); }
+    match /{path=**}/methods/{id}  { allow read: if isAdmin(); }
+    match /{path=**}/styles/{id}   { allow read: if isAdmin(); }
 
     // One per account, written by the app once a day: the name and email
     // the sign-in carries (the email must be the token's own), when the
