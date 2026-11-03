@@ -3056,10 +3056,11 @@ body:has(.gate-screen){padding-bottom:0}
 
 /* ---------- timer: the brew drawing ----------
    One canvas, drawn by app.js from the brew model; it keeps the cone's
-   proportions and steps back when the brew is done. */
+   proportions and leaves once the brew is done. */
 .tm-anim{display:flex;justify-content:center;margin-top:clamp(4px,1.5vh,14px)}
 .tm-anim canvas{display:block;height:min(280px,32vh);aspect-ratio:300/310;width:auto;max-width:100%}
-.sheet-timer.is-done .tm-anim canvas{height:min(160px,18vh)}
+/* Done: the brewer goes, leaving the Enjoy your cup card on its own. */
+.sheet-timer.is-done .tm-anim{display:none}
 .sheet-timer.is-done .timer-next{display:none}
 .is-shot .timer-next{display:none}
 .is-single .timer-next{display:none}
