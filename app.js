@@ -3738,6 +3738,31 @@ function renderDetail(id, keepScroll) {
 // Times here are free-form ("3:15", "~0:28", "3:10–3:15"), so take the first
 // m:ss found — for a range that's the lower bound, which is the one worth
 // counting up to.
+/* A time typed as digits only: the last two are the seconds, so 345 shows
+   3:45 as it's typed and nobody has to find the colon on a phone keypad.
+   One or two digits stay as typed, which still reads as seconds. A
+   leading ~ (an approximate time) is kept. Leaving the field carries
+   seconds past 59 into the minutes: 390 becomes 6:30, not 3:90. */
+function formatTyped(v) {
+  var raw = String(v || ''), approx = /^\s*~/.test(raw) ? '~' : '';
+  var digits = raw.replace(/\D/g, '').replace(/^0+(?=\d{3})/, '').slice(0, 4);
+  if (digits.length < 3) return approx + digits;
+  return approx + Number(digits.slice(0, -2)) + ':' + digits.slice(-2);
+}
+function typedTime(input) {
+  if (!input) return;
+  input.addEventListener('input', function () {
+    var next = formatTyped(input.value);
+    if (next !== input.value) input.value = next;
+  });
+  input.addEventListener('blur', function () {
+    var m = input.value.match(/^(~?)(\d+):(\d\d)$/);
+    if (!m || Number(m[3]) < 60) return;
+    var total = Number(m[2]) * 60 + Number(m[3]);
+    input.value = m[1] + mmss(total);
+  });
+}
+
 function secondsOf(v) {
   var s = String(v == null ? '' : v);
   var m = s.match(/(\d+):([0-5]\d)/);
@@ -5775,7 +5800,7 @@ function buildRecipeForm(m) {
       '<div class="field"><label for="f-temp">' + esc(t('Temperature (°C)')) + '</label>' +
         '<input class="inp" id="f-temp" value="' + esc(d.temp) + '" placeholder="94" inputmode="decimal" /></div>' +
       '<div class="field"><label for="f-time">' + esc(t('Total brew time')) + '</label>' +
-        '<input class="inp" id="f-time" value="' + esc(d.brewTime) + '" placeholder="3:30" /></div>' +
+        '<input class="inp" id="f-time" value="' + esc(d.brewTime) + '" placeholder="3:30" inputmode="numeric" autocomplete="off" /></div>' +
     '</div>' +
     '<div class="field"><label>' + esc(t('Ratio')) + '</label>' +
       '<div class="inp" style="display:flex;align-items:center;background:var(--surface-sunken);border-style:dashed">' +
@@ -5806,6 +5831,7 @@ function buildRecipeForm(m) {
   function upd() { out.textContent = ratio(dose.value, water.value); }
   dose.addEventListener('input', upd);
   water.addEventListener('input', upd);
+  typedTime(el.querySelector('#f-time'));
 
   enhanceSelects(el);
   return el;
