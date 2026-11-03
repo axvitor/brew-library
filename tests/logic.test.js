@@ -108,3 +108,32 @@ test('dashboard periods cover the range end to end, and count into the right one
   assert.equal(counts[0], 1, 'one on the first day');
   assert.equal(counts.reduce((a, b) => a + b, 0), 3, 'before the range and in the future are left out');
 });
+
+test('AeroPress drawing: moments come from the steps, inverted ones included', () => {
+  const { aeroModel } = load(['aeroModel']);
+  const plan = (steps, total) => ({
+    total, water: steps.reduce((a, s) => a + (s[2] || 0), 0),
+    segs: steps.map((s, i) => ({ start: s[0], end: i + 1 < steps.length ? steps[i + 1][0] : total, label: s[1], water: s[2] || 0 }))
+  });
+
+  const inv = aeroModel(plan([
+    [0, 'Flip the AeroPress upside down, seat the plunger a few rings in, then add the coffee.'],
+    [15, 'Pour in all the water and stir well to saturate every ground.'],
+    [60, 'Wet the filter, screw on the cap, then let it steep undisturbed.'],
+    [90, 'Flip upright onto your mug.'],
+    [105, 'Press slowly and evenly — about 30 seconds.']
+  ], 150), 15, 225);
+  assert.equal(inv.inverted, true);
+  assert.equal(inv.pours[0].at, 15, 'the water goes in at the step that pours it');
+  assert.equal(inv.pressStart, 105, '"AeroPress" in the first step is not the press');
+  assert.equal(inv.capAt, 60);
+  assert.equal(inv.flipAt, 90);
+  assert.ok(inv.flipEnd > inv.flipAt && inv.flipEnd <= inv.pressStart);
+
+  const up = aeroModel(plan([
+    [0, 'Pour all the water', 200], [10, 'Insert the plunger'], [120, 'Swirl gently'], [150, 'Press gently']
+  ], 180), 11, 200);
+  assert.equal(up.inverted, undefined, 'an upright recipe stays upright');
+  assert.equal(up.insertAt, 10);
+  assert.equal(up.pressStart, 150);
+});

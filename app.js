@@ -4263,32 +4263,148 @@ function drawPourAnim(ctx, tt, M, col, still) {
    down, the coffee streams through the cap into the mug, and the plunger
    ends with a hiss of air on the puck. The moments come from the
    recipe's steps — read from their wording, falling back to sensible
-   defaults — so the drawing follows whatever schedule the recipe has. */
+   defaults — so the drawing follows whatever schedule the recipe has.
+
+   Inverted: a step that turns it upside down means it stands on its
+   plunger, open end up, until a later step flips it onto the mug. */
 function aeroModel(plan, dose, water) {
   var W = plan.water || Number(water) || 200;
+  function find(re, from) {
+    for (var i = from || 0; i < plan.segs.length; i++) if (re.test(plan.segs[i].label || '')) return plan.segs[i];
+    return null;
+  }
   var pours = [];
   plan.segs.forEach(function (sg) {
     if (!sg.water) return;
     var len = sg.end - sg.start;
     pours.push({ at: sg.start, g: sg.water, dur: sg.pour ? Math.min(sg.pour, len) : Math.min(10, len) });
   });
-  if (!pours.length) pours.push({ at: 0, g: W, dur: 10 });
-  function find(re) {
-    for (var i = 0; i < plan.segs.length; i++) if (re.test(plan.segs[i].label || '')) return plan.segs[i];
-    return null;
+  if (!pours.length) {
+    // Written steps carry no grams: the water goes in at the step that pours it.
+    var wsg = find(/\bpour|water|despej|água|agua/i);
+    pours.push(wsg ? { at: wsg.start, g: W, dur: Math.min(10, wsg.end - wsg.start) } : { at: 0, g: W, dur: 10 });
   }
-  var ins = find(/plunger|seal|êmbolo|tampe/i), sw = find(/swirl|stir|gir|mex/i), pr = find(/press|pression|empurr/i);
+  // "\bpress", so "AeroPress" in a step's wording isn't taken for the press.
+  var ins = find(/plunger|seal|êmbolo|tampe/i), sw = find(/swirl|stir|gir|mex/i), pr = find(/\bpress|pression|empurr/i);
   var last = plan.segs[plan.segs.length - 1];
   var pressStart = pr ? pr.start : last.start, pressEnd = pr ? Math.min(pr.end, pr.start + 40) : plan.total;
   if (pressEnd - pressStart < 5) pressEnd = Math.min(plan.total, pressStart + 20);
-  return {
+  var M = {
     kind: 'aero', water: W, dose: Number(dose) || W / 16, pours: pours,
     insertAt: ins ? ins.start : pours[pours.length - 1].at + pours[pours.length - 1].dur + 3,
     swirlAt: sw ? sw.start : -1, pressStart: pressStart, pressEnd: pressEnd
   };
+  var invI = -1;
+  plan.segs.forEach(function (sg, i) { if (invI < 0 && /upside|invert|cabeça para baixo/i.test(sg.label || '')) invI = i; });
+  if (invI >= 0) {
+    var fl = find(/flip|vire|virar/i, invI + 1), cap = find(/\bcap\b|tampa/i, invI + 1);
+    M.inverted = true;
+    M.insertAt = 0;
+    M.flipAt = fl ? fl.start : Math.max(0, pressStart - 2);
+    M.flipEnd = Math.min(M.flipAt + 1.2, Math.max(M.flipAt, pressStart));
+    M.capAt = cap && cap.start < M.flipAt ? cap.start : Math.max(0, M.flipAt - 3);
+  }
+  return M;
+}
+
+/* The inverted pose is the upright drawing turned half a turn about
+   (150, 146): the chamber lands where it stood, flange and cap on top,
+   plunger reaching down out of frame. The flip turns it back the other
+   half and sets it on the mug, where drawAeroAnim takes over. The brew
+   sits on the seal, so it is drawn in the turned frame too and rides the
+   flip with the chamber. */
+function drawAeroInverted(ctx, tt, M, col, still) {
+  var cL = 106, cR = 194, cTop = 40, cBot = 196, puckTop = 184, sealY = cTop + 12;
+  var poured = 0, pour = null;
+  M.pours.forEach(function (q) {
+    if (tt >= q.at + q.dur) poured += q.g;
+    else if (tt >= q.at) { poured += q.g * (tt - q.at) / q.dur; pour = q; }
+  });
+  var flip = M.flipEnd > M.flipAt ? animEase((tt - M.flipAt) / (M.flipEnd - M.flipAt)) : 0;
+  var turning = flip > 0;
+  var depth = Math.min(1, poured / (M.water * 1.15)) * (puckTop - cTop - 22);
+  var wet = Math.min(1, poured / Math.max(1, M.dose * 2));
+
+  // The mug waits off to one side and slides under for the flip.
+  var mL = 84, mR = 216, mTop = 214, mBot = 300;
+  ctx.save(); ctx.globalAlpha = flip;
+  ctx.translate((1 - flip) * 40, 0);
+  ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.beginPath(); animRoundRect(ctx, mL, mTop, mR - mL, mBot - mTop, 14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(mR, 232); ctx.bezierCurveTo(mR + 26, 232, mR + 26, 272, mR, 272); ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(150, 146); ctx.rotate(Math.PI * (1 - flip)); ctx.translate(-150, -146);
+
+  ctx.fillStyle = col.paper; ctx.fillRect(cL, cTop, cR - cL, cBot - cTop);
+  // The brew, resting on the seal: dry grounds first, then the slurry.
+  ctx.save(); ctx.beginPath(); ctx.rect(cL, cTop, cR - cL, cBot - cTop); ctx.clip();
+  var base = sealY + 4;
+  if (poured > 0.5) {
+    var swirlK = !turning && M.swirlAt >= 0 && tt >= M.swirlAt && tt < M.swirlAt + 4 ? Math.sin((tt - M.swirlAt) / 4 * Math.PI) : 0;
+    var amp = turning ? 0 : (pour ? 1.6 : 0.6) + swirlK * 4;
+    var surf = function (xx) { return base + depth + Math.sin(xx * 0.1 + tt * (4 + swirlK * 6)) * amp; };
+    var gl = ctx.createLinearGradient(0, base + depth, 0, base);
+    gl.addColorStop(0, 'rgba(122,80,48,.92)'); gl.addColorStop(1, 'rgba(46,26,15,.97)');
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.moveTo(cL, base);
+    for (var x = cL; x <= cR; x += 3) ctx.lineTo(x, surf(x));
+    ctx.lineTo(cR, base); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(217,185,143,.85)'; ctx.lineWidth = 2; ctx.beginPath();
+    for (x = cL + 2; x <= cR - 2; x += 3) ctx[x === cL + 2 ? 'moveTo' : 'lineTo'](x, surf(x));
+    ctx.stroke();
+    var fizz = turning ? 0 : Math.max(0, 1 - Math.max(0, tt - (M.pours[0].at + M.pours[0].dur)) / 20);
+    if (fizz > 0 && !still) {
+      for (var bi = 0; bi < 12; bi++) {
+        var life = 1.4 + animRnd(bi) * 1.2, ph = ((tt + animRnd(bi + 3) * life) % life) / life;
+        ctx.strokeStyle = 'rgba(217,185,143,' + (0.7 * fizz * (1 - ph)) + ')'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(animLerp(cL + 8, cR - 8, animRnd(bi + 21)), base + depth - 8 + ph * 4, 1.4 + ph * 2, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+  } else {
+    ctx.fillStyle = animMix('#9C7A5A', '#3A2418', animEase(wet));
+    ctx.fillRect(cL, base, cR - cL, cBot - puckTop);
+  }
+  ctx.restore();
+
+  // Walls, marks (upside down, as they are on a real one), highlight.
+  ctx.strokeStyle = col.glass; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cL, cTop); ctx.lineTo(cL, cBot); ctx.moveTo(cR, cTop); ctx.lineTo(cR, cBot); ctx.stroke();
+  ctx.lineWidth = 1; ctx.fillStyle = col.strong; ctx.font = '500 9px "Albert Sans", sans-serif';
+  for (var mk = 1; mk <= 4; mk++) {
+    var my = puckTop - mk * (puckTop - cTop - 22) / 4;
+    ctx.strokeStyle = col.strong; ctx.beginPath(); ctx.moveTo(cR - 10, my); ctx.lineTo(cR - 2, my); ctx.stroke();
+    ctx.fillText(String(mk), cR - 19, my + 3);
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fillRect(cL + 6, cTop + 6, 5, cBot - cTop - 16);
+
+  // Flange, and the cap once it is screwed on (it comes down from above).
+  ctx.fillStyle = col.card; ctx.strokeStyle = col.strong; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.beginPath(); animRoundRect(ctx, cL - 18, cBot, cR - cL + 36, 8, 3); ctx.fill(); ctx.stroke();
+  if (tt >= M.capAt) {
+    var capIn = animEase((tt - M.capAt) / 0.8);
+    ctx.fillStyle = col.sunken; ctx.globalAlpha = capIn;
+    ctx.beginPath(); animRoundRect(ctx, cL + 6, cBot + 8 + (1 - capIn) * 24, cR - cL - 12, 6, 2); ctx.fill(); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // The plunger, seated a few rings in.
+  ctx.fillStyle = col.card; ctx.strokeStyle = col.strong; ctx.lineWidth = 2;
+  ctx.beginPath(); animRoundRect(ctx, cL + 6, sealY - 150, cR - cL - 12, 150, 4); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); animRoundRect(ctx, cL - 4, sealY - 158, cR - cL + 8, 10, 4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col.dark ? '#2A2723' : '#3F3B36'; ctx.beginPath(); animRoundRect(ctx, cL + 1, sealY - 6, cR - cL - 2, 8, 3); ctx.fill();
+  ctx.restore();
+
+  // Kettle stream into the open top (screen y of the surface is 292 − its turned y).
+  if (pour && !turning) {
+    var into = tt - pour.at, k1 = animEase(into / 0.5) * (1 - animEase((into - pour.dur + 0.5) / 0.5));
+    var land = 150 + Math.sin(into * 2.2) * 18, top = 292 - (base + depth);
+    ctx.strokeStyle = col.water; ctx.lineCap = 'round'; ctx.lineWidth = 3.2 * k1;
+    ctx.beginPath(); ctx.moveTo(220, 0); ctx.bezierCurveTo(204, 12, land + 6, top - 40, land, top); ctx.stroke();
+  }
 }
 
 function drawAeroAnim(ctx, tt, M, col, still) {
+  if (M.inverted && tt < M.flipEnd) return drawAeroInverted(ctx, tt, M, col, still);
   var cL = 106, cR = 194, cTop = 40, cBot = 196, puckTop = 184;
   // Water poured so far.
   var poured = 0, pour = null;
