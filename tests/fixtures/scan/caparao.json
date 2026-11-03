@@ -16,7 +16,7 @@
   "expect": {
     "name": null,
     "roasterName": null,
-    "origin": "Caparaó",
+    "origin": "CAPARAÓ",
     "altitude": "1,000 m",
     "process": null,
     "roast": null,
@@ -24,12 +24,9 @@
     "notes": "Notas de frutas amarelas e cacau, doçura intensa"
   },
   "todo": [
-    "name",
-    "origin",
-    "roast",
     "notes"
   ],
-  "note": "The bag prints no coffee name at all — just the region, repeated, and the 'direto do produtor' tagline. Origin loses to a garbled sentence fragment that happens to mention Caparaó, instead of the clean 'CAPARAÓ' heading — resolveOrigin()'s scoring favours length over cleanliness here. Roast is invented from 'Acidez: Média' (this bag has no roast line at all) because ROAST_TERMS treats bare 'média' as Medium roast, colliding with medium acidity. Notes come out as a garbled, half-translated run-on rather than the clean Portuguese sentence the bag actually prints. Altitude is genuinely recoverable — one OCR pass keeps the leading digit ('1000m') even though the other drops it (both read 'média .000m').",
+  "note": "The bag prints no coffee name at all — just the region, repeated, and the 'direto do produtor' tagline, so no name is the right answer: taglines and OCR debris are rejected, and so is anything set much smaller than the biggest text. Origin is the clean 'CAPARAÓ' heading, not a garbled sentence that mentions it. No roast either: 'Acidez: Média' is the acidity, not the roast. Still to do: notes come out as a garbled, half-translated run-on rather than the clean Portuguese sentence the bag prints — its lines mix Portuguese and English. Altitude is genuinely recoverable — one OCR pass keeps the leading digit ('1000m') even though the other drops it (both read 'média .000m').",
   "text": [
     "à. IT ca o",
     "ro y o SE KA",

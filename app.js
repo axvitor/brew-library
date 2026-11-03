@@ -6861,7 +6861,18 @@ function labelAt(line) {
 }
 
 // Where a vocabulary term sits inside a string, so it can be lifted out.
-function findTermSpan(text, table) {
+/* "Média" and "Medium" are a roast level — and just as often the acidity,
+   body or sweetness printed beside it ("Acidez: Média", "Body: Medium"),
+   or a word inside the altitude ("Altitude média 1000m"). A term right
+   after one of those labels describes that attribute, not the roast. */
+var OTHER_ATTRIBUTES = /(acidez|acidity|corpo|body|docura|sweetness|amargor|bitterness|intensidade|intensity|finalizacao|aftertaste|finish|altitude|elevation|elevacao)\W*$/;
+function describesOtherAttribute(flat, at) {
+  return OTHER_ATTRIBUTES.test(flat.slice(Math.max(0, at - 24), at));
+}
+
+// skip(flat, at), when given, can turn down a match by what comes before
+// it — the search then carries on along the line.
+function findTermSpan(text, table, skip) {
   var flat = normKeepLen(text);
   for (var i = 0; i < table.length; i++) {
     var spellings = table[i][1];
@@ -6870,7 +6881,7 @@ function findTermSpan(text, table) {
       while (at !== -1) {
         var okL = at === 0 || !/[a-z0-9]/.test(flat.charAt(at - 1));
         var okR = !/[a-z0-9]/.test(flat.charAt(at + t.length));
-        if (okL && okR) return { start: at, end: at + t.length, value: table[i][0] };
+        if (okL && okR && !(skip && skip(flat, at))) return { start: at, end: at + t.length, value: table[i][0] };
         at = flat.indexOf(t, at + 1);
       }
     }
@@ -6956,6 +6967,12 @@ function looksLikeName(line) {
   if (!/[a-z]/.test(n)) return false;               // pure numbers / weights
   if (/\d+\s*(g|kg|gr|ml)\b/.test(n)) return false; // "250 g"
   if (NOT_A_NAME.indexOf(n) !== -1) return false;
+  // Marketing taglines set as large as a name: "Café direto do produtor",
+  // "Direto da fazenda".
+  if (/\bdireto d[oa]\b|\bdirect from\b|\bfarm to cup\b/.test(n)) return false;
+  // OCR debris set large: "caré —, (BA Moo". A real name can carry one
+  // odd character, not a scatter of them.
+  if (noiseCount(line) >= 2 && noiseCount(line) / n.length > 0.08) return false;
   // Exact match only: "Natural" and "Campo das Vertentes" are answers to
   // other fields, while a coffee genuinely called "Água Clara" survives.
   if (isBareVocabularyValue(n)) return false;
@@ -7003,8 +7020,17 @@ function parseLabel(data) {
   function resolveOrigin() {
     var best = null, bestScore = -Infinity;
     originCands.forEach(function (c) {
-      var score = (looksLikePlace(c) ? 500 : 0) + regionScore(c) * 10
-        - noiseCount(c) * 2 - (/\d/.test(c) ? 40 : 0) + c.length * 0.1;
+      // Origins are a few words — a town and state, a region. A sentence
+      // that merely mentions a region is the bag's story, not its origin,
+      // however clean: past five words each extra one counts against it.
+      // And the more of the line the region itself fills, the likelier it
+      // is the heading rather than debris around it: "CAPARAÓ" beats
+      // "E CAPARAÓ RAN AI".
+      var words = c.split(/\s+/).length, region = regionScore(c);
+      var share = region ? Math.min(1, region / scanNorm(c).length) : 0;
+      var score = (looksLikePlace(c) ? 500 : 0) + region * 10
+        - noiseCount(c) * 2 - (/\d/.test(c) ? 40 : 0) + c.length * 0.1
+        - Math.max(0, words - 5) * 30 + share * 40;
       if (score > bestScore) { bestScore = score; best = c; }
     });
     if (best) { found.origin = correctRegion(trimEdges(best)); why.origin = originWhy[best]; }
@@ -7202,10 +7228,10 @@ function parseLabel(data) {
      rather than across the whole text at once, so the words the bag printed
      can be lifted out and kept. Matching tells us the value is real; it is
      not licence to reword it. */
-  function findByVocabulary(field, table, reason) {
+  function findByVocabulary(field, table, reason, skip) {
     if (found[field]) return;
     for (var li = 0; li < lines.length; li++) {
-      var span = findTermSpan(lines[li], table);
+      var span = findTermSpan(lines[li], table, skip);
       if (!span) continue;
       put(field, trimEdges(lines[li].slice(span.start, span.end)), reason);
       return;
@@ -7213,7 +7239,7 @@ function parseLabel(data) {
   }
   findByVocabulary('process', PROCESS_TERMS, 'the label mentions this process');
   findByVocabulary('varietal', VARIETAL_TABLE, 'a recognised variety name on the label');
-  findByVocabulary('roast', ROAST_TERMS, 'the label mentions this roast level');
+  findByVocabulary('roast', ROAST_TERMS, 'the label mentions this roast level', describesOtherAttribute);
   for (var pi = 0; pi < lines.length; pi++) {
     // Skip anything tier 1 already carved up, or the un-split row comes
     // back and beats the clean half taken out of it.
@@ -7263,6 +7289,10 @@ function parseLabel(data) {
   var byPos = {};
   tall.forEach(function (l) { byPos[l.at] = l; });
   for (var t = 0; t < tall.length; t++) {
+    // A name is set large. Once the lines left are well under the biggest
+    // text on the bag, what remains is body copy and background debris —
+    // better no name than one of those.
+    if (tall[0].h && tall[t].h < tall[0].h * 0.6) break;
     var cand = trimEdges(tall[t].text.replace(/[|_~"'`]+/g, ''));
     if (!looksLikeName(cand)) continue;
     if (taken.indexOf(scanNorm(cand)) !== -1) continue;
