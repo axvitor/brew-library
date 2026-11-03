@@ -369,6 +369,7 @@ var ENTITIES = {
       { k: 'name', l: 'Name', ph: 'Ethiopia Guji', req: true },
       { k: 'roasterName', l: 'Roaster', ph: 'Start typing — reuses a roaster or creates it', kind: 'autocomplete' },
       { k: 'origin', l: 'Origin', ph: 'Region, country' },
+      { k: 'country', l: 'Country', kind: 'country' },
       { k: 'altitude', l: 'Altitude', ph: '1,200 m' },
       { k: 'process', l: 'Process', ph: 'Washed / Natural / Honey' },
       { k: 'roast', l: 'Roast level', ph: 'Light / Medium / Dark' },
@@ -751,6 +752,46 @@ var TRANSLATIONS = {
     'Account menu': 'Menu da conta',
     'Back to top': 'Voltar ao topo',
     'Synced across your signed-in devices.': 'Sincronizado nos seus dispositivos.',
+    // Coffee journey: badges and the origins map
+    'Badges': 'Conquistas',
+    '{n} of {total} unlocked': '{n} de {total} desbloqueadas',
+    'Badge unlocked: {name}': 'Conquista desbloqueada: {name}',
+    '{n} badges unlocked': '{n} conquistas desbloqueadas',
+    'Unlocked': 'Desbloqueada',
+    'Locked': 'Bloqueada',
+    'New': 'Nova',
+    'Unlocked on {date}': 'Desbloqueada em {date}',
+    'Not yet': 'Ainda não',
+    'First recipe': 'Primeira receita',
+    'Pro barista': 'Barista profissional',
+    'Explorer': 'Explorador',
+    'Moka': 'Moka',
+    'Save your first recipe.': 'Salve sua primeira receita.',
+    'Save an espresso recipe.': 'Salve uma receita de espresso.',
+    'Steep one, French press style.': 'Faça uma por infusão, como na prensa francesa.',
+    'Brew one through a dripper.': 'Passe uma num coador.',
+    'Brew one in a moka pot.': 'Prepare uma na cafeteira italiana.',
+    'Make a slow, cold steep.': 'Faça uma infusão lenta e gelada.',
+    'Press one through an AeroPress.': 'Prepare uma na AeroPress.',
+    'A recipe on every kind of method.': 'Uma receita em cada tipo de método.',
+    'Brew beans from two countries.': 'Use grãos de dois países.',
+    'Unlocks with the first recipe you save — any coffee, any method.': 'Desbloqueia com a primeira receita que você salvar — qualquer café, qualquer método.',
+    'Unlocks with a recipe on a method whose type is {type}.': 'Desbloqueia com uma receita num método do tipo {type}.',
+    'Unlocks once you have a recipe on each of the six kinds of method the app knows.': 'Desbloqueia quando você tiver uma receita em cada um dos seis tipos de método que o app conhece.',
+    'Unlocks once your recipes use beans from at least two countries. A coffee’s country is its Country field, or the country its origin names.': 'Desbloqueia quando suas receitas usarem grãos de pelo menos dois países. O país de um café é o campo País, ou o país que a origem cita.',
+    'Add a recipe with the + button.': 'Adicione uma receita pelo botão +.',
+    '{count} with this kind of method so far.': '{count} com este tipo de método até agora.',
+    'Save a recipe with your {method} to unlock it.': 'Salve uma receita com seu {method} para desbloquear.',
+    'None of your methods is a {type} yet. Add one under Library › Methods, then save a recipe with it.': 'Nenhum dos seus métodos é do tipo {type} ainda. Adicione um em Biblioteca › Métodos e salve uma receita com ele.',
+    '{n} of {total} kinds of method so far.': '{n} de {total} tipos de método até agora.',
+    '{n} of 2 countries so far.': '{n} de 2 países até agora.',
+    'Recipes using a coffee with no country: {n}. Set the country on those coffees to count them.': 'Receitas com café sem país: {n}. Defina o país desses cafés para contá-las.',
+    'Coffee origins': 'Origens dos cafés',
+    'country': 'país',
+    'countries': 'países',
+    'Country': 'País',
+    'Set a country on your coffees to see where your beans come from.': 'Defina o país dos seus cafés para ver de onde vêm seus grãos.',
+    'Tap a country to see its recipes.': 'Toque num país para ver as receitas.',
     'Filters': 'Filtros',
     'Favourites only': 'Só favoritos',
     'No matches': 'Nenhum resultado',
@@ -1990,6 +2031,7 @@ function renderPage(arriving) {
   // Signed in: back to the account's own appearance.
   applyTheme();
   if (authPhase === 'error') { renderFirebaseError(); return; }
+  checkBadges();
 
   var hash = location.hash || '#/';
   var m = hash.match(/^#\/r\/(.+)$/);
@@ -2949,6 +2991,8 @@ function renderAccount() {
       '</div>' +
     '</div>' +
 
+    journeyHTML() +
+
     '<div class="acc-group">' +
       '<div class="section-title">' + esc(t('Language')) + '</div>' +
       '<div class="segs">' +
@@ -2983,6 +3027,423 @@ function renderAccount() {
   '</div>';
   window.scrollTo(0, 0);
   Array.prototype.forEach.call(view.querySelectorAll('.segs'), function (box) { tabsLens(box); });
+}
+
+/* ==========================================================
+   Coffee journey — badges and the origins map
+   ----------------------------------------------------------
+   Both are counted from the library as it stands, so recipes saved
+   before this existed count, and nothing needs entering twice.
+
+   Badges, once earned, stay earned: state.badges holds each one with the
+   moment it unlocked, and that lives in the library's settings document,
+   so it syncs to every device like the rest. Editing or deleting a recipe
+   never takes a badge back — the progress shown under a badge does follow
+   the recipes as they are now. The first time a library is counted, what
+   it already qualifies for unlocks quietly; anything earned after that
+   gets the toast, and its pop the first time the profile shows it.
+
+   The map counts recipes by where their beans grew: a coffee's Country
+   field, or — for coffees saved before that field — a country its Origin
+   names ("Huila, Colombia", "Cerrado Mineiro", "Carmo de Minas - MG").
+   ========================================================== */
+
+// [ISO 3166 numeric, English, Portuguese, its names, regions that place it].
+// Keys are lower case without accents, matched as whole words.
+var ORIGIN_COUNTRIES = [
+  ['076', 'Brazil', 'Brasil', ['brasil', 'brazil', 'brasileiro', 'brazilian'],
+    ['minas gerais', 'sul de minas', 'cerrado mineiro', 'mantiqueira de minas', 'matas de minas', 'campo das vertentes',
+      'chapada diamantina', 'mogiana', 'alta mogiana', 'oeste da bahia', 'espirito santo', 'montanhas do espirito santo',
+      'caparao', 'jequitinhonha', 'chapada de minas', 'alto paranaiba', 'zona da mata', 'norte pioneiro', 'sao paulo',
+      'bahia', 'parana', 'rondonia', 'goias', 'carmo de minas', 'serra da canastra']],
+  ['170', 'Colombia', 'Colômbia', ['colombia', 'colombian', 'colombiano'],
+    ['huila', 'narino', 'cauca', 'tolima', 'antioquia', 'quindio', 'caldas', 'santander', 'risaralda', 'sierra nevada']],
+  ['231', 'Ethiopia', 'Etiópia', ['ethiopia', 'etiopia', 'ethiopian', 'etiope'],
+    ['yirgacheffe', 'yirgacheffee', 'yirgachefe', 'sidamo', 'sidama', 'guji', 'limu', 'harrar', 'harar', 'jimma', 'kaffa', 'gedeo', 'bench maji']],
+  ['404', 'Kenya', 'Quênia', ['kenya', 'quenia', 'kenyan', 'queniano'], ['kirinyaga', 'nyeri', 'kiambu', 'muranga', 'embu']],
+  ['646', 'Rwanda', 'Ruanda', ['rwanda', 'ruanda'], ['nyamasheke', 'huye', 'gakenke']],
+  ['108', 'Burundi', 'Burundi', ['burundi'], ['kayanza', 'ngozi']],
+  ['834', 'Tanzania', 'Tanzânia', ['tanzania'], ['kilimanjaro', 'mbeya', 'arusha']],
+  ['800', 'Uganda', 'Uganda', ['uganda'], ['mount elgon', 'bugisu', 'rwenzori']],
+  ['180', 'DR Congo', 'RD Congo', ['congo', 'drc'], ['kivu']],
+  ['454', 'Malawi', 'Malawi', ['malawi', 'malaui'], []],
+  ['894', 'Zambia', 'Zâmbia', ['zambia'], []],
+  ['716', 'Zimbabwe', 'Zimbábue', ['zimbabwe', 'zimbabue'], []],
+  ['120', 'Cameroon', 'Camarões', ['cameroon', 'camaroes'], []],
+  ['384', 'Ivory Coast', 'Costa do Marfim', ['ivory coast', 'costa do marfim', 'cote d ivoire'], []],
+  ['450', 'Madagascar', 'Madagascar', ['madagascar'], []],
+  ['887', 'Yemen', 'Iêmen', ['yemen', 'iemen', 'yemeni'], ['haraz', 'bani matar']],
+  ['320', 'Guatemala', 'Guatemala', ['guatemala'], ['antigua', 'huehuetenango', 'atitlan', 'coban', 'acatenango']],
+  ['340', 'Honduras', 'Honduras', ['honduras'], ['marcala', 'copan', 'santa barbara']],
+  ['188', 'Costa Rica', 'Costa Rica', ['costa rica'], ['tarrazu', 'west valley', 'naranjo', 'tres rios', 'central valley']],
+  ['222', 'El Salvador', 'El Salvador', ['el salvador', 'salvador'], ['santa ana', 'apaneca']],
+  ['558', 'Nicaragua', 'Nicarágua', ['nicaragua'], ['jinotega', 'matagalpa', 'nueva segovia']],
+  ['591', 'Panama', 'Panamá', ['panama'], ['boquete', 'chiriqui', 'volcan']],
+  ['484', 'Mexico', 'México', ['mexico', 'mexican'], ['chiapas', 'veracruz', 'oaxaca']],
+  ['604', 'Peru', 'Peru', ['peru', 'peruvian', 'peruano'], ['cajamarca', 'cusco', 'puno', 'junin']],
+  ['068', 'Bolivia', 'Bolívia', ['bolivia'], ['caranavi', 'yungas']],
+  ['218', 'Ecuador', 'Equador', ['ecuador', 'equador'], ['loja', 'pichincha']],
+  ['862', 'Venezuela', 'Venezuela', ['venezuela'], []],
+  ['388', 'Jamaica', 'Jamaica', ['jamaica'], ['blue mountain']],
+  ['214', 'Dominican Republic', 'República Dominicana', ['dominican republic', 'republica dominicana'], []],
+  ['192', 'Cuba', 'Cuba', ['cuba'], []],
+  ['332', 'Haiti', 'Haiti', ['haiti'], []],
+  ['630', 'Puerto Rico', 'Porto Rico', ['puerto rico', 'porto rico'], []],
+  ['840', 'United States', 'Estados Unidos', ['usa', 'hawaii', 'havai'], ['kona', 'kau', 'maui']],
+  ['360', 'Indonesia', 'Indonésia', ['indonesia'], ['sumatra', 'java', 'sulawesi', 'bali', 'flores', 'aceh', 'gayo', 'toraja', 'mandheling']],
+  ['598', 'Papua New Guinea', 'Papua-Nova Guiné', ['papua new guinea', 'papua nova guine', 'png'], []],
+  ['626', 'Timor-Leste', 'Timor-Leste', ['timor', 'timor leste', 'east timor'], []],
+  ['608', 'Philippines', 'Filipinas', ['philippines', 'filipinas'], []],
+  ['704', 'Vietnam', 'Vietnã', ['vietnam', 'vietna', 'viet nam'], ['dalat', 'da lat']],
+  ['418', 'Laos', 'Laos', ['laos'], []],
+  ['764', 'Thailand', 'Tailândia', ['thailand', 'tailandia'], ['chiang mai', 'chiang rai']],
+  ['104', 'Myanmar', 'Mianmar', ['myanmar', 'mianmar', 'burma'], []],
+  ['356', 'India', 'Índia', ['india'], ['karnataka', 'chikmagalur', 'kerala']],
+  ['524', 'Nepal', 'Nepal', ['nepal'], []],
+  ['156', 'China', 'China', ['china'], ['yunnan', 'pu er']],
+  ['158', 'Taiwan', 'Taiwan', ['taiwan'], ['alishan']],
+  ['036', 'Australia', 'Austrália', ['australia'], []]
+];
+
+function originKey(s) {
+  return ' ' + String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+}
+
+// The country an Origin names, as its code, or '' when it names none.
+// Country names win over regions, so "Antigua, Guatemala" is Guatemala
+// however the region list reads; a Brazilian town given with its state
+// ("Carmo de Minas - MG") is Brazil.
+function originCountry(text) {
+  var n = originKey(text);
+  if (!n.trim()) return '';
+  function has(keys) {
+    for (var i = 0; i < keys.length; i++) if (n.indexOf(' ' + keys[i] + ' ') >= 0) return true;
+    return false;
+  }
+  for (var i = 0; i < ORIGIN_COUNTRIES.length; i++) if (has(ORIGIN_COUNTRIES[i][3])) return ORIGIN_COUNTRIES[i][0];
+  if (new RegExp('(^|[\\s,\\-–—/(])(' + BR_STATES + ')\\)?\\s*$').test(String(text).trim())) return '076';
+  for (i = 0; i < ORIGIN_COUNTRIES.length; i++) if (has(ORIGIN_COUNTRIES[i][4])) return ORIGIN_COUNTRIES[i][0];
+  return '';
+}
+
+// A coffee's country: the one picked on the coffee, or the one its origin
+// names. 'none' is a deliberate "no country", which the origin doesn't override.
+function countryOfCoffee(c) {
+  if (!c || c.country === 'none') return '';
+  return c.country || originCountry(c.origin);
+}
+
+function countryName(code) {
+  var row = ORIGIN_COUNTRIES.filter(function (r) { return r[0] === code; })[0];
+  return row ? (LANG === 'pt' ? row[2] : row[1]) : code;
+}
+
+var BADGES = [
+  { id: 'first', name: 'First recipe', short: 'Save your first recipe.' },
+  { id: 'espresso', type: 'Espresso', name: 'Espresso', short: 'Save an espresso recipe.' },
+  { id: 'immersion', type: 'Immersion', name: 'Immersion', short: 'Steep one, French press style.' },
+  { id: 'pourover', type: 'Pour over', name: 'Pour over', short: 'Brew one through a dripper.' },
+  { id: 'moka', type: 'Moka pot', name: 'Moka', short: 'Brew one in a moka pot.' },
+  { id: 'coldbrew', type: 'Cold brew', name: 'Cold brew', short: 'Make a slow, cold steep.' },
+  { id: 'aeropress', type: 'AeroPress', name: 'AeroPress', short: 'Press one through an AeroPress.' },
+  { id: 'pro', name: 'Pro barista', short: 'A recipe on every kind of method.' },
+  { id: 'explorer', name: 'Explorer', short: 'Brew beans from two countries.' }
+];
+
+// What the library adds up to: recipes by kind of method and by country.
+function journeyStats(lib) {
+  var methods = {}, coffees = {}, out = { recipes: 0, types: {}, countries: {}, noCountry: 0, haveType: {} };
+  (lib.methods || []).forEach(function (me) {
+    methods[me.id] = me;
+    var ty = methodType(me);
+    if (ty) out.haveType[ty] = out.haveType[ty] || me.name;
+  });
+  (lib.coffees || []).forEach(function (c) { coffees[c.id] = c; });
+  (lib.recipes || []).forEach(function (r) {
+    out.recipes++;
+    var ty = methodType(methods[r.methodId]);
+    if (ty) out.types[ty] = (out.types[ty] || 0) + 1;
+    var c = coffees[r.coffeeId], cc = countryOfCoffee(c);
+    if (cc) out.countries[cc] = (out.countries[cc] || 0) + 1;
+    else if (c) out.noCountry++;
+  });
+  return out;
+}
+
+function badgeMet(b, s) {
+  if (b.id === 'first') return s.recipes > 0;
+  if (b.type) return !!s.types[b.type];
+  if (b.id === 'pro') return METHOD_TYPES.every(function (ty) { return s.types[ty]; });
+  if (b.id === 'explorer') return Object.keys(s.countries).length >= 2;
+  return false;
+}
+
+/* Adds whatever the library now qualifies for and hasn't been awarded,
+   once: an id already in state.badges is never awarded again. Returns the
+   badges new to this account. */
+function awardBadges(lib, now) {
+  var s = journeyStats(lib), first = !lib.badges || typeof lib.badges !== 'object', fresh = [];
+  if (first) lib.badges = {};
+  BADGES.forEach(function (b) {
+    if (lib.badges[b.id] || !badgeMet(b, s)) return;
+    lib.badges[b.id] = { at: now, seen: first };
+    if (!first) fresh.push(b);
+  });
+  return { changed: first || fresh.length > 0, fresh: fresh };
+}
+
+function checkBadges() {
+  if (!state || !currentUser || authPhase !== 'ready') return;
+  var res = awardBadges(state, Date.now());
+  if (!res.changed) return;
+  save({ keepPristine: true });
+  if (res.fresh.length === 1) toast(tf('Badge unlocked: {name}', { name: t(res.fresh[0].name) }));
+  else if (res.fresh.length) toast(tf('{n} badges unlocked', { n: res.fresh.length }));
+}
+
+var BADGE_ART = {
+  first: '<rect x="12" y="7" width="24" height="33" rx="3.5"/><path d="M17.5 14h13M17.5 19h9"/>' +
+    '<ellipse cx="24" cy="30" rx="5" ry="6.6" transform="rotate(-28 24 30)"/><path d="M21.4 25.4c2.8 2.2 2.4 6.6 5.2 9.2"/>' +
+    '<path d="M39.5 6v5M37 8.5h5"/>',
+  espresso: '<path d="M7 9h26"/><path d="M10 9v4.5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9"/><path d="M28 12h9.5a1.8 1.8 0 0 1 0 3.6H28"/>' +
+    '<path d="M16.5 18.5v5.5M21.5 18.5v5.5"/><path d="M10 27h18v3.5a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"/>' +
+    '<path d="M28 29h1.8a3.2 3.2 0 0 1 0 6.4H27"/><path d="M7 41h24"/>',
+  immersion: '<path d="M23 3.5v21"/><circle cx="23" cy="3.5" r="1.6"/><path d="M12 13h22"/>' +
+    '<path d="M14 13v24a2.5 2.5 0 0 0 2.5 2.5h13a2.5 2.5 0 0 0 2.5-2.5V13"/><path d="M15 24.5h16"/>' +
+    '<path d="M15 29h16v8H15z" class="art-fill"/><path d="M32 17h3.2a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H32"/><path d="M11 43h24"/>',
+  pourover: '<path d="M30.5 3.5c-1.6 2-3.6 4.6-4.6 8"/><path d="M9 12h30l-9.5 12.5h-11z"/><path d="M18.5 24.5v2.5h11v-2.5"/>' +
+    '<path d="M24 29.5v2.6"/><path d="M14 33.5h20l-2.4 9h-15.2z"/><path d="M15.5 38h17l-.9 4.5H16.4z" class="art-fill"/>',
+  moka: '<path d="M21 4.5h5"/><path d="M15 8h17l1.8 12.5H13.2z"/><path d="M15 8l-4.5-2.2"/><path d="M32 10.5h3.6l-2 10h-1.8"/>' +
+    '<path d="M12.5 22.5h22"/><path d="M13 24.5h21l-3 14H16z"/><path d="M18 43.5c0-2 1.6-2.6 1.6-4.4 1.4 1.2 2.4 2.4 2.4 4.4"/>' +
+    '<path d="M25 43.5c0-2 1.6-2.6 1.6-4.4 1.4 1.2 2.4 2.4 2.4 4.4"/>',
+  coldbrew: '<path d="M29.5 4.5l-2.4 15"/><path d="M12 12h24l-3.2 29H15.2z"/>' +
+    '<rect x="16.5" y="17.5" width="7.5" height="7.5" rx="1.6" transform="rotate(-12 20.25 21.25)"/>' +
+    '<rect x="23.5" y="23" width="7.5" height="7.5" rx="1.6" transform="rotate(10 27.25 26.75)"/>' +
+    '<path d="M14.2 31.5h19.6l-1 9.5H15.2z" class="art-fill"/><path d="M40 21v3M38.5 22.5h3"/>',
+  aeropress: '<path d="M13 4.5h22"/><path d="M17 4.5v9h14v-9"/><path d="M15 13.5h18v17H15z"/><path d="M28.5 19h2.5M28.5 24h2.5"/>' +
+    '<path d="M16 22h11v8.5H16z" class="art-fill"/><path d="M10.5 31h27"/><path d="M14 34h20v3.5a5 5 0 0 1-5 5H19a5 5 0 0 1-5-5z"/>' +
+    '<path d="M34 35.5h1.8a2.6 2.6 0 0 1 0 5.2H33.4"/>',
+  pro: '<circle cx="21" cy="25" r="13.5"/><circle cx="21" cy="25" r="9.5"/><path d="M34.5 21.5h2.8a3.5 3.5 0 0 1 0 7h-3.4"/>' +
+    '<path d="M21 32.5c-4.4-3.2-6.4-5.7-6.4-8.3a3.2 3.2 0 0 1 6.4-1 3.2 3.2 0 0 1 6.4 1c0 2.6-2 5.1-6.4 8.3z" class="art-fill"/>' +
+    '<path d="M21 17v15.5"/><path d="M39 4.5l1.3 3.2 3.2 1.3-3.2 1.3-1.3 3.2-1.3-3.2-3.2-1.3 3.2-1.3z"/>',
+  explorer: '<circle cx="21" cy="27" r="14"/><ellipse cx="21" cy="27" rx="6" ry="14"/><path d="M7 27h28M9 20h24M9 34h24"/>' +
+    '<path d="M36 3.5a6.5 6.5 0 0 1 6.5 6.5c0 4.8-6.5 11-6.5 11s-6.5-6.2-6.5-11A6.5 6.5 0 0 1 36 3.5z" class="art-pin"/>' +
+    '<path d="M36 6.8c-1.8 1.8-1.8 4.6 0 6.4"/>'
+};
+var ICON_LOCK = '<svg viewBox="0 0 24 24" class="ico"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+function badgeMedal(b, on) {
+  return '<span class="bdg-medal"><svg viewBox="0 0 48 48" class="bdg-art" aria-hidden="true">' + BADGE_ART[b.id] + '</svg>' +
+    (on ? '' : '<span class="bdg-lock">' + ICON_LOCK + '</span>') + '</span>';
+}
+
+var journey = { sel: '', seenTimer: 0 };
+
+function journeyHTML() {
+  if (!state) return '';
+  var s = journeyStats(state), got = state.badges || {};
+  var n = BADGES.filter(function (b) { return got[b.id]; }).length, anyNew = false;
+  var pips = BADGES.map(function (b) {
+    return '<i' + (got[b.id] ? ' class="on"' : '') + ' style="--b:var(--bdg-' + b.id + ')"></i>';
+  }).join('');
+  var tiles = BADGES.map(function (b) {
+    var on = !!got[b.id], isNew = on && !got[b.id].seen;
+    if (isNew) anyNew = true;
+    return '<button class="bdg' + (on ? ' on' : '') + (isNew ? ' is-new' : '') + '" data-action="badge-info" data-id="' + b.id + '" ' +
+      'style="--b:var(--bdg-' + b.id + ')" aria-label="' + esc(t(b.name) + ' — ' + (on ? t('Unlocked') : t('Locked'))) + '">' +
+      badgeMedal(b, on) +
+      '<span class="bdg-name">' + esc(t(b.name)) + (isNew ? ' <em class="bdg-new">' + esc(t('New')) + '</em>' : '') + '</span>' +
+      '<span class="bdg-desc">' + esc(t(b.short)) + '</span></button>';
+  }).join('');
+  // The pop plays once: a moment after the page shows it, it's marked seen
+  // (on every device), and the next repaint draws it settled.
+  if (anyNew && !journey.seenTimer) {
+    journey.seenTimer = setTimeout(function () {
+      journey.seenTimer = 0;
+      if (!state || !state.badges) return;
+      var changed = false;
+      Object.keys(state.badges).forEach(function (k) {
+        if (state.badges[k] && !state.badges[k].seen) { state.badges[k].seen = true; changed = true; }
+      });
+      if (changed) save({ keepPristine: true });
+    }, 2600);
+  }
+  return '<div class="acc-group journey">' +
+      '<div class="jr-head"><span class="section-title">' + esc(t('Badges')) + '</span>' +
+        '<span class="jr-count">' + esc(tf('{n} of {total} unlocked', { n: n, total: BADGES.length })) + '</span></div>' +
+      '<div class="jr-bar" role="progressbar" aria-valuemin="0" aria-valuemax="' + BADGES.length + '" aria-valuenow="' + n + '" ' +
+        'aria-label="' + esc(t('Badges')) + '">' + pips + '</div>' +
+      '<div class="bdg-grid">' + tiles + '</div>' +
+    '</div>' +
+    originsHTML(s);
+}
+
+/* ---- the origins map ---- */
+var worldLoad = null;
+function loadWorld() {
+  if (window.BREW_WORLD || worldLoad) return;
+  worldLoad = new Promise(function (resolve, reject) {
+    var own = document.querySelector('script[src*="app.js"]');
+    var v = own && /[?&]v=([^&]+)/.exec(own.getAttribute('src'));
+    var sc = document.createElement('script');
+    sc.src = 'world-map.js' + (v ? '?v=' + v[1] : '');
+    sc.onload = resolve;
+    sc.onerror = function () { worldLoad = null; reject(); };
+    document.head.appendChild(sc);
+  });
+  worldLoad.then(function () {
+    var box = document.getElementById('originsMap');
+    if (box && state) box.innerHTML = originsMapSVG(journeyStats(state));
+  }, function () {
+    var box = document.getElementById('originsMap');
+    if (box) box.classList.add('is-failed');
+  });
+}
+
+function recipesCount(n) { return n + ' ' + tPlural(n, 'recipe', 'recipes'); }
+
+function originsMapSVG(s) {
+  var W = window.BREW_WORLD;
+  if (!W) { loadWorld(); return ''; }
+  var max = 1;
+  Object.keys(s.countries).forEach(function (k) { max = Math.max(max, s.countries[k]); });
+  var off = '', on = '';
+  Object.keys(W.c).forEach(function (id) {
+    var n = s.countries[id];
+    if (!n) { off += '<path d="' + W.c[id] + '"/>'; return; }
+    on += '<path class="on' + (journey.sel === id ? ' sel' : '') + '" d="' + W.c[id] + '" data-iso="' + id + '" ' +
+      'style="--k:' + (0.55 + 0.45 * n / max).toFixed(2) + '" tabindex="0" role="button" ' +
+      'aria-label="' + esc(countryName(id) + ', ' + recipesCount(n)) + '"/>';
+  });
+  return '<svg viewBox="0 0 ' + W.w + ' ' + W.h + '" role="group" aria-label="' + esc(t('Coffee origins')) + '">' + off + on + '</svg>';
+}
+
+function originsInfo(s) {
+  var ids = Object.keys(s.countries);
+  if (journey.sel && s.countries[journey.sel]) {
+    return '<b>' + esc(countryName(journey.sel)) + '</b> · ' + esc(recipesCount(s.countries[journey.sel]));
+  }
+  if (!ids.length) return esc(t('Set a country on your coffees to see where your beans come from.'));
+  return esc(t('Tap a country to see its recipes.'));
+}
+
+function originsHTML(s) {
+  var ids = Object.keys(s.countries).sort(function (a, b) {
+    return s.countries[b] - s.countries[a] || countryName(a).localeCompare(countryName(b));
+  });
+  if (journey.sel && !s.countries[journey.sel]) journey.sel = '';
+  var chips = ids.map(function (id) {
+    return '<button class="om-chip' + (journey.sel === id ? ' sel' : '') + '" data-iso="' + id + '">' +
+      esc(countryName(id)) + ' <b>' + s.countries[id] + '</b></button>';
+  }).join('');
+  return '<div class="acc-group origins">' +
+    '<div class="jr-head"><span class="section-title">' + esc(t('Coffee origins')) + '</span>' +
+      '<span class="jr-count">' + esc(ids.length + ' ' + tPlural(ids.length, 'country', 'countries')) + '</span></div>' +
+    '<div class="om-card">' +
+      '<div class="om-map" id="originsMap">' + originsMapSVG(s) + '</div>' +
+      '<p class="om-info" id="originsInfo" aria-live="polite">' + originsInfo(s) + '</p>' +
+      (chips ? '<div class="om-chips">' + chips + '</div>' : '') +
+    '</div>' +
+  '</div>';
+}
+
+// Picking a country repaints only the map's own marks, not the page.
+function originsPick(id) {
+  if (!state) return;
+  journey.sel = id || '';
+  var s = journeyStats(state);
+  [].forEach.call(document.querySelectorAll('.origins [data-iso]'), function (el) {
+    el.classList.toggle('sel', el.getAttribute('data-iso') === journey.sel);
+  });
+  var info = document.getElementById('originsInfo');
+  if (info) info.innerHTML = originsInfo(s);
+}
+
+document.addEventListener('click', function (ev) {
+  var el = ev.target.closest && ev.target.closest('.origins [data-iso]');
+  if (el) originsPick(el.getAttribute('data-iso'));
+});
+document.addEventListener('keydown', function (ev) {
+  if (ev.key !== 'Enter' && ev.key !== ' ') return;
+  var el = ev.target.closest && ev.target.closest('.om-map [data-iso]');
+  if (el) { ev.preventDefault(); originsPick(el.getAttribute('data-iso')); }
+});
+document.addEventListener('pointerover', function (ev) {
+  if (ev.pointerType !== 'mouse') return;
+  var el = ev.target.closest && ev.target.closest('.om-map [data-iso]');
+  if (el) originsPick(el.getAttribute('data-iso'));
+});
+
+// The coffee form's Country follows its Origin until it's picked by hand.
+document.addEventListener('input', function (ev) {
+  if (!ev.target || ev.target.id !== 'e-origin') return;
+  var sel = document.getElementById('e-country');
+  if (sel && sel.hasAttribute('data-auto')) sel.value = originCountry(ev.target.value) || 'none';
+});
+document.addEventListener('change', function (ev) {
+  if (ev.target && ev.target.id === 'e-country') ev.target.removeAttribute('data-auto');
+});
+
+/* ---- a badge, up close ---- */
+function badgeDetailBody(b) {
+  var s = journeyStats(state), got = state.badges && state.badges[b.id];
+  var parts = [];
+  var about = {
+    first: t('Unlocks with the first recipe you save — any coffee, any method.'),
+    pro: t('Unlocks once you have a recipe on each of the six kinds of method the app knows.'),
+    explorer: t('Unlocks once your recipes use beans from at least two countries. A coffee’s country is its Country field, or the country its origin names.')
+  }[b.id] || tf('Unlocks with a recipe on a method whose type is {type}.', { type: t(b.type) });
+
+  var status;
+  if (got) status = '<p class="bdg-status on">' + esc(tf('Unlocked on {date}', { date: fmtDate(got.at) })) + '</p>';
+  else status = '<p class="bdg-status">' + esc(t('Locked')) + '</p>';
+
+  var next = '';
+  if (b.id === 'first' && !got) next = t('Add a recipe with the + button.');
+  if (b.type) {
+    var n = s.types[b.type] || 0;
+    if (n) next = tf('{count} with this kind of method so far.', { count: recipesCount(n) });
+    else if (s.haveType[b.type]) next = tf('Save a recipe with your {method} to unlock it.', { method: s.haveType[b.type] });
+    else next = tf('None of your methods is a {type} yet. Add one under Library › Methods, then save a recipe with it.', { type: t(b.type) });
+  }
+  if (b.id === 'pro') {
+    var done = METHOD_TYPES.filter(function (ty) { return s.types[ty]; }).length;
+    next = tf('{n} of {total} kinds of method so far.', { n: done, total: METHOD_TYPES.length });
+    parts.push('<ul class="bdg-checks">' + METHOD_TYPES.map(function (ty) {
+      var c = s.types[ty] || 0;
+      return '<li class="' + (c ? 'on' : '') + '"><span class="bdg-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="grow">' + esc(t(ty)) + '</span>' +
+        '<span class="acc-meta">' + esc(c ? recipesCount(c) : t('Not yet')) + '</span></li>';
+    }).join('') + '</ul>');
+  }
+  if (b.id === 'explorer') {
+    var ids = Object.keys(s.countries);
+    next = tf('{n} of 2 countries so far.', { n: Math.min(ids.length, 2) });
+    if (ids.length) {
+      parts.push('<ul class="bdg-checks">' + ids.map(function (id) {
+        return '<li class="on"><span class="bdg-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="grow">' + esc(countryName(id)) + '</span>' +
+          '<span class="acc-meta">' + esc(recipesCount(s.countries[id])) + '</span></li>';
+      }).join('') + '</ul>');
+    }
+    if (s.noCountry) parts.push('<p class="bdg-hint">' + esc(tf('Recipes using a coffee with no country: {n}. Set the country on those coffees to count them.', { n: s.noCountry })) + '</p>');
+  }
+  return '<div class="bdg-detail' + (got ? ' on' : '') + '" style="--b:var(--bdg-' + b.id + ')">' +
+    badgeMedal(b, !!got) + status +
+    '<p class="bdg-about">' + esc(about) + '</p>' +
+    (next ? '<p class="bdg-next">' + esc(next) + '</p>' : '') +
+    parts.join('') +
+  '</div>';
+}
+
+function openBadge(id) {
+  var b = BADGES.filter(function (x) { return x.id === id; })[0];
+  if (!b) return;
+  openModal({
+    render: function () {
+      return sheet({ title: t(b.name), body: badgeDetailBody(b), narrow: true,
+        foot: '<button class="btn btn-primary" data-action="close-modal">' + esc(t('Done')) + '</button>' });
+    }
+  });
 }
 
 /* ==========================================================
@@ -5701,6 +6162,9 @@ function crumbTrail(trail, depth) {
 function baseCrumbs() {
   if ((location.hash || '') === '#/library') {
     return [{ label: t('Library'), hash: '#/library' }];
+  }
+  if ((location.hash || '') === '#/account') {
+    return [{ label: t('Account'), hash: '#/account' }];
   }
   var out = [{ label: t('Recipes'), hash: '#/' }];
   var m = (location.hash || '').match(/^#\/r\/(.+)$/);
@@ -8466,6 +8930,18 @@ function openEntityForm(type, existing, onSaved, prefill) {
             opts.map(function (o) {
               return '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' + esc(t(o)) + '</option>';
             }).join('') + '</select>';
+        } else if (f.kind === 'country') {
+          // Where the beans grew, for the origins map and the Explorer
+          // badge. Until one is picked it follows what the Origin names
+          // (data-auto), typed or read off the bag.
+          var picked = d[f.k] || originCountry(d.origin) || 'none';
+          var byName = ORIGIN_COUNTRIES.map(function (row) { return row[0]; })
+            .sort(function (a, b) { return countryName(a).localeCompare(countryName(b), locale()); });
+          control = '<select class="inp" id="e-' + f.k + '" data-k="' + f.k + '"' + (d[f.k] ? '' : ' data-auto') + '>' +
+            '<option value="none"' + (picked === 'none' ? ' selected' : '') + '>' + esc(t('Not set')) + '</option>' +
+            byName.map(function (code) {
+              return '<option value="' + code + '"' + (code === picked ? ' selected' : '') + '>' + esc(countryName(code)) + '</option>';
+            }).join('') + '</select>';
         } else if (f.kind === 'ratio') {
           // Always one part coffee: the "1:" is fixed and only the water
           // side is typed. Stored whole ("1:16"), as recipes read it.
@@ -8516,6 +8992,8 @@ function readEntityForm(m, def) {
     var input = m.el.querySelector('[data-k="' + f.k + '"]');
     if (!input) return;
     var v = input.value.trim();
+    // Still following the origin: stored as unset, so the origin keeps deciding.
+    if (f.kind === 'country' && input.hasAttribute('data-auto')) v = '';
     if (f.kind === 'ratio') {
       // Whatever was typed or pasted ("16", "1:16", "15,5") becomes "1:16".
       v = v.replace(/^1\s*:\s*/, '').replace(',', '.');
@@ -8902,6 +9380,11 @@ document.addEventListener('click', function (ev) {
         b.classList.toggle('on', b === btn);
       });
       tabsLens(themeBox, themeFrom);
+      return;
+
+    case 'badge-info':
+      ev.preventDefault();
+      openBadge(id);
       return;
 
     case 'set-lang':

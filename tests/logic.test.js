@@ -157,3 +157,69 @@ test('brew drawings: pours take their own time, and brewer names are not steps',
   const odd = aeroModel(plan([[0, 'Pour', 50], [45, 'Pour', 50], [90, 'Press']], 150), 15, 100);
   assert.ok(odd.insertAt <= odd.pressStart, 'the plunger goes in before the press');
 });
+
+const JOURNEY = ['originKey', 'originCountry', 'countryOfCoffee', 'journeyStats', 'badgeMet', 'awardBadges',
+  'methodType', 'typeFromText', 'brewerFromName'];
+const JOURNEY_VARS = ['ORIGIN_COUNTRIES', 'BADGES', 'METHOD_TYPES', 'BREWER_TYPE', 'BR_STATES'];
+
+test('origins: the country a coffee’s origin names', () => {
+  const { originCountry, countryOfCoffee } = load(JOURNEY, {}, JOURNEY_VARS);
+  assert.equal(originCountry('Huila, Colombia'), '170');
+  assert.equal(originCountry('Ethiopia Guji'), '231');
+  assert.equal(originCountry('Etiópia'), '231', 'Portuguese, with its accent');
+  assert.equal(originCountry('Cerrado Mineiro'), '076', 'a Brazilian region');
+  assert.equal(originCountry('Carmo de Minas - MG'), '076', 'a town with its state');
+  assert.equal(originCountry('CAPARAÓ'), '076');
+  assert.equal(originCountry('Antigua, Guatemala'), '320');
+  assert.equal(originCountry('Tarrazú'), '188');
+  assert.equal(originCountry(''), '');
+  assert.equal(originCountry('Somewhere nice'), '');
+  assert.equal(originCountry('Javanese... no'), '', 'whole words only');
+  assert.equal(countryOfCoffee({ origin: 'Huila', country: '231' }), '231', 'the picked country wins');
+  assert.equal(countryOfCoffee({ origin: 'Huila', country: 'none' }), '', '"not set" on purpose stays unset');
+  assert.equal(countryOfCoffee({ origin: 'Huila' }), '170', 'no country picked: the origin decides');
+});
+
+test('badges: earned from the recipes there are, once, and kept', () => {
+  const { awardBadges, journeyStats } = load(JOURNEY, {}, JOURNEY_VARS);
+  const lib = {
+    methods: [{ id: 'v60', name: 'V60', kind: 'Pour over' }, { id: 'esp', name: 'Espresso', kind: 'Espresso' },
+      { id: 'aero', name: 'AeroPress', kind: 'Immersion' }, { id: 'fp', name: 'French press', kind: 'Immersion' },
+      { id: 'moka', name: 'Moka', kind: 'Moka pot' }, { id: 'cold', name: 'Toddy', kind: 'Cold brew' }],
+    coffees: [{ id: 'a', origin: 'Cerrado Mineiro' }, { id: 'b', origin: 'Huila, Colombia' }, { id: 'c', origin: '' }],
+    recipes: [{ id: 1, methodId: 'v60', coffeeId: 'a' }, { id: 2, methodId: 'aero', coffeeId: 'c' }]
+  };
+  const ids = () => Object.keys(lib.badges).sort();
+
+  // The first count: what the library already qualifies for, quietly.
+  let res = awardBadges(lib, 1000);
+  assert.deepEqual(ids(), ['aeropress', 'first', 'pourover']);
+  assert.deepEqual(res.fresh, [], 'nothing to announce for recipes made before badges');
+  assert.equal(lib.badges.first.seen, true);
+  assert.equal(journeyStats(lib).noCountry, 1, 'the coffee with no origin');
+
+  // An AeroPress is its own kind, not Immersion.
+  assert.equal(lib.badges.immersion, undefined);
+
+  // A new recipe from a second country: Explorer, announced.
+  lib.recipes.push({ id: 3, methodId: 'esp', coffeeId: 'b' });
+  res = awardBadges(lib, 2000);
+  assert.deepEqual(res.fresh.map(b => b.id).sort(), ['espresso', 'explorer']);
+  assert.equal(lib.badges.explorer.seen, false, 'new: the profile pops it once');
+
+  // Nothing new: nothing changes, nothing is awarded twice.
+  res = awardBadges(lib, 3000);
+  assert.equal(res.changed, false);
+  assert.equal(lib.badges.espresso.at, 2000);
+
+  // Deleting the recipes keeps what was earned.
+  lib.recipes = [];
+  res = awardBadges(lib, 4000);
+  assert.equal(res.changed, false);
+  assert.deepEqual(ids(), ['aeropress', 'espresso', 'explorer', 'first', 'pourover']);
+
+  // Every kind of method: Pro barista.
+  lib.recipes = ['v60', 'esp', 'aero', 'fp', 'moka', 'cold'].map((m, i) => ({ id: i, methodId: m, coffeeId: 'a' }));
+  res = awardBadges(lib, 5000);
+  assert.deepEqual(res.fresh.map(b => b.id).sort(), ['coldbrew', 'immersion', 'moka', 'pro']);
+});

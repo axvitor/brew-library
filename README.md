@@ -144,6 +144,25 @@ The Firestore security rules aren't covered: testing them needs the
 Firestore emulator, which needs Java. Check them in the console's Rules
 Playground after changing them.
 
+## Badges and coffee origins
+
+The Account page counts your coffee journey from the library as it is, so
+recipes saved before these existed count too.
+
+- **Badges** — nine, for a first recipe, one on each kind of method
+  (Espresso, Immersion, Pour over, Moka pot, Cold brew, AeroPress), one on
+  every kind (Pro barista), and beans from two countries (Explorer). Tap one
+  for what it takes and how far along you are. Once earned a badge stays
+  earned, with the date, even if the recipe behind it is edited or deleted.
+  They live in the library's settings document, so they sync like the rest;
+  what a library already qualified for the first time it was counted
+  unlocked quietly, and anything earned since gets a toast and a pop.
+- **Coffee origins** — a world map of where the beans in your recipes grew.
+  A coffee's country is its **Country** field; until one is picked, the
+  field follows the Origin ("Huila, Colombia", "Cerrado Mineiro",
+  "Carmo de Minas - MG"), so coffees saved before it still count. The
+  outlines are in `world-map.js`, loaded only when the Account page opens.
+
 ## Your data
 
 Signed-in users' libraries live in Firestore and sync in real time — add a recipe on
@@ -159,6 +178,7 @@ overwrite what's there.
 - `app.js` — data model, rendering, auth-gated boot, and every interaction
 - `firebase-init.js` — Firebase config + the `window.Brew` bridge (auth, Firestore reads/writes)
 - `firestore.rules` — security rules to paste into the Firebase console
+- `world-map.js` — country outlines for the origins map (Natural Earth 1:110m, public domain)
 - `.claude/serve.py` — local static server (required now, since sign-in needs http/https)
 - `.claude/serve-phone.py` — same, but reachable from a phone on the same Wi-Fi
 - `tests/` — automated tests (`npm test`); see **Tests** above
