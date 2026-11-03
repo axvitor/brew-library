@@ -2541,7 +2541,7 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
    glass. The close and quick-add buttons are glass circles. */
 .page-inner{position:relative;background:var(--bg-app);border:0}
 .page-head{background:var(--bg-app);border-bottom:0}
-.page .sheet-body{padding-bottom:110px}
+.page .sheet-body{padding-bottom:calc(110px + var(--kb,0px))}
 .page .sheet-foot.glass{
   position:absolute;left:12px;right:12px;z-index:5;
   bottom:calc(max(14px, env(safe-area-inset-bottom)) + var(--kb,0px));
@@ -3433,3 +3433,13 @@ body:has(.gate-screen){padding-bottom:0}
   .sheet-timer.is-done .tm-dial{animation:tmRise .45s var(--ease-out) .62s both}
   .tm-dial-tip > *{animation:tmRise .35s var(--ease-out) both}
 }
+
+/* iOS zooms the page into any text box set under 16px the moment it's
+   tapped — the step rows and the filter dropdowns' search were 14px. On a
+   phone every text box is 16px, so tapping one never zooms. */
+@media(max-width:640px){
+  .steprow .inp,.stepbuild .inp,.combo-input{font-size:16px}
+}
+/* Form pages: a focused field scrolls up clear of the floating Cancel /
+   Save bar, which itself rides above the keyboard (--kb). */
+.page .sheet-body{scroll-padding-bottom:calc(100px + var(--kb,0px))}

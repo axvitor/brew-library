@@ -5455,10 +5455,42 @@ function focusLastStep(m, rowSelector) {
   if (!m.el) return;
   var rows = m.el.querySelectorAll(rowSelector);
   if (!rows.length) return;
-  var input = rows[rows.length - 1].querySelector('input');
+  var row = rows[rows.length - 1], input = row.querySelector('input');
   if (!input) return;
-  input.focus();
-  if (input.scrollIntoView) input.scrollIntoView({ block: 'nearest' });
+  input.focus({ preventScroll: true });
+  revealAboveBars(row);
+}
+
+/* Brings an element into view above whatever covers the bottom of the
+   screen: the floating Cancel / Save bar and, on a phone, the keyboard.
+   The keyboard only finishes opening a moment after the focus that
+   summons it — and the bar rides up with it — so this measures again once
+   the visible area has stopped changing. */
+function revealAboveBars(el) {
+  var scroller = el.closest('.sheet-body');
+  if (!scroller) return;
+  var vv = window.visualViewport;
+  function run() {
+    if (!el.isConnected) return;
+    var r = el.getBoundingClientRect();
+    var bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+    var host = scroller.parentNode, foot = null;
+    while (host && host !== document.body && !(foot = host.querySelector('.sheet-foot'))) host = host.parentNode;
+    if (foot) bottom = Math.min(bottom, foot.getBoundingClientRect().top);
+    var top = scroller.getBoundingClientRect().top + (parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0);
+    var by = r.bottom - (bottom - 12);
+    if (by <= 0) { if (r.top < top) by = r.top - top; else return; }
+    scroller.scrollBy({ top: by, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+  }
+  run();
+  if (!vv) return;
+  var settle = 0;
+  function onResize() {
+    clearTimeout(settle);
+    settle = setTimeout(run, 60);
+  }
+  vv.addEventListener('resize', onResize);
+  setTimeout(function () { vv.removeEventListener('resize', onResize); }, 1200);
 }
 
 /* Forms are pages, not sheets. They are long, they nest — a recipe can
