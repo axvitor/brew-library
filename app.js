@@ -2394,7 +2394,7 @@ function openFilters() {
           '<div class="field"><label>' + esc(t('Brewing method')) + '</label>' + comboHTML('method') + '</div>' +
           '<div class="field"><label>' + esc(t('Recipe style')) + '</label>' + comboHTML('style') + '</div>' +
           '<div class="field"><label for="f-sort">' + esc(t('Sort')) + '</label>' +
-            '<select class="inp" id="f-sort" data-filter="sort">' +
+            '<select class="inp" id="f-sort" data-filter="sort" data-pick>' +
               '<option value="new"' + (m.draft.sort === 'new' ? ' selected' : '') + '>' + esc(t('Newest first')) + '</option>' +
               '<option value="old"' + (m.draft.sort === 'old' ? ' selected' : '') + '>' + esc(t('Oldest first')) + '</option>' +
               '<option value="rating"' + (m.draft.sort === 'rating' ? ' selected' : '') + '>' + esc(t('Top rated')) + '</option>' +
@@ -2410,7 +2410,10 @@ function openFilters() {
           esc(n ? t('Show') + ' ' + n + ' ' + tPlural(n, 'recipe', 'recipes') : t('No matches')) +
         '</button>';
 
-      return sheet({ title: t('Filters'), body: body, foot: foot, narrow: true });
+      // Sort wears the same dropdown as the five above, without the search.
+      var el = sheet({ title: t('Filters'), body: body, foot: foot, narrow: true });
+      enhanceSelects(el);
+      return el;
     }
   };
   openModal(m);
@@ -5557,13 +5560,17 @@ function fold(str) {
   return String(str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
+/* select[data-search] becomes the app's dropdown with typing to search;
+   select[data-pick] the same dropdown without it, for a short fixed list
+   such as Sort, where there is nothing worth searching. */
 function enhanceSelects(root) {
-  [].forEach.call(root.querySelectorAll('select[data-search]:not([data-enhanced])'), enhanceSelect);
+  [].forEach.call(root.querySelectorAll('select[data-search]:not([data-enhanced]), select[data-pick]:not([data-enhanced])'), enhanceSelect);
 }
 
 function enhanceSelect(sel) {
   sel.setAttribute('data-enhanced', '');
   sel.hidden = true;
+  var pickOnly = sel.hasAttribute('data-pick');
 
   var listId = sel.id + '-list';
   var wrap = document.createElement('div');
@@ -5608,7 +5615,7 @@ function enhanceSelect(sel) {
   function showValue() {
     input.value = current();
     input.placeholder = placeholder();
-    clear.hidden = !sel.value;
+    clear.hidden = pickOnly || !sel.value;
   }
 
   function paint() {
@@ -5637,7 +5644,7 @@ function enhanceSelect(sel) {
     // A <label> for the field rather than a clickable row: tapping it
     // focuses the field natively, which iOS treats as a real focus and
     // answers with the keyboard.
-    if (browsing) {
+    if (browsing && !pickOnly) {
       list.insertAdjacentHTML('afterbegin', '<label class="combo-hint" for="' + input.id + '">' +
         ICON.search + '<span>' + esc(t('Tap to search')) + '</span></label>');
     }
@@ -5730,6 +5737,8 @@ function enhanceSelect(sel) {
     open();
   }
   function search() {
+    // Nothing to type into: open the list for the arrow keys and Enter.
+    if (pickOnly) { browsing = false; input.readOnly = true; open(); return; }
     browsing = false;
     input.readOnly = false;
     open();
@@ -5738,6 +5747,12 @@ function enhanceSelect(sel) {
 
   box.addEventListener('pointerdown', function (ev) {
     touch = ev.pointerType === 'touch' || ev.pointerType === 'pen';
+    // Pick-only: a second tap on the open field closes it, as a native
+    // dropdown would, rather than switching to typing.
+    if (pickOnly) {
+      if (browsing && ev.target === input) { ev.preventDefault(); close(); }
+      return;
+    }
     // The second tap, on the field, its label, or the "Tap to search" row:
     // unlock now, so the focus this tap is about to cause is editable.
     if (browsing && (ev.target === input || ev.target.closest('label, .combo-hint'))) {
