@@ -741,6 +741,19 @@ var TRANSLATIONS = {
     'Account menu': 'Menu da conta',
     'Back to top': 'Voltar ao topo',
     'Synced across your signed-in devices.': 'Sincronizado nos seus dispositivos.',
+    'Filters': 'Filtros',
+    'Favourites only': 'Só favoritos',
+    'No matches': 'Nenhum resultado',
+    'Show': 'Mostrar',
+    'Rate': 'Avaliar',
+    'Toggle favourite': 'Favoritar',
+    'Devised by': 'Criado por',
+    'Add a brew time or pouring steps to time this one.': 'Adicione um tempo de preparo ou etapas para cronometrar esta receita.',
+    'Breadcrumb': 'Navegação',
+    'Step {n} time': 'Tempo da etapa {n}',
+    'Move step {n} earlier': 'Mover a etapa {n} para cima',
+    'Move step {n} later': 'Mover a etapa {n} para baixo',
+    'Remove step {n}': 'Remover a etapa {n}',
     'How did it taste?': 'Como ficou o sabor?',
     'Sour': 'Azedo',
     'Balanced': 'Equilibrado',
@@ -5395,10 +5408,10 @@ function sheet(opts) {
     '<div class="page-inner' + (opts.narrow ? ' narrow' : '') + '" role="dialog" aria-modal="true">' +
       '<div class="sheet-body">' +
         '<div class="page-head">' +
-          '<nav class="crumbs" aria-label="Breadcrumb"></nav>' +
+          '<nav class="crumbs" aria-label="' + esc(t('Breadcrumb')) + '"></nav>' +
           '<div class="page-title-row">' +
             '<h2>' + esc(opts.title) + '</h2>' +
-            '<button class="iconbtn glass" data-glass="4" data-action="close-modal" aria-label="Close">' + ICON.close + '</button>' +
+            '<button class="iconbtn glass" data-glass="4" data-action="close-modal" aria-label="' + esc(t('Close')) + '">' + ICON.close + '</button>' +
           '</div>' +
         '</div>' +
         opts.body +
@@ -5829,7 +5842,7 @@ function coffeeSelectHTML(value) {
   return '<div class="with-add">' +
     '<select class="inp" id="f-coffee-sel" data-role="coffee" data-search>' + opts + '</select>' +
     '<button type="button" class="addbtn" data-action="quick-add" data-type="coffee" ' +
-      'title="Add coffee">' + ICON.plus + '</button>' +
+      'title="' + esc(t('Add coffee')) + '">' + ICON.plus + '</button>' +
   '</div>';
 }
 
@@ -5855,18 +5868,18 @@ function styleStepsSectionHTML(d) {
     return '<li class="stepbuild-row" data-i="' + i + '">' +
       '<span class="stepbuild-mark">' + (i + 1) + '</span>' +
       '<input class="inp stepbuild-t" data-s="t" value="' + esc(s.t || '') + '" ' +
-        'placeholder="0:45" inputmode="numeric" aria-label="Step ' + (i + 1) + ' time" />' +
+        'placeholder="0:45" inputmode="numeric" aria-label="' + esc(tf('Step {n} time', { n: i + 1 })) + '" />' +
       '<input class="inp stepbuild-l" data-s="label" value="' + esc(s.label || '') + '" ' +
         'placeholder="' + esc(t('What to do at this point')) + '" aria-label="' + esc(t('Step')) + ' ' + (i + 1) + '" />' +
       '<input class="inp stepbuild-w" data-s="water" value="' + esc(s.water ? s.water : '') + '" ' +
         'placeholder="+ g" inputmode="decimal" aria-label="' + esc(t('Water added at step')) + ' ' + (i + 1) + ' (g)" />' +
       '<span class="stepbuild-tools">' +
         '<button type="button" class="iconbtn" data-action="style-step-move" data-i="' + i + '" data-dir="-1" ' +
-          'aria-label="Move step ' + (i + 1) + ' earlier"' + (i === 0 ? ' disabled' : '') + '>' + ICON.chevUp + '</button>' +
+          'aria-label="' + esc(tf('Move step {n} earlier', { n: i + 1 })) + '"' + (i === 0 ? ' disabled' : '') + '>' + ICON.chevUp + '</button>' +
         '<button type="button" class="iconbtn" data-action="style-step-move" data-i="' + i + '" data-dir="1" ' +
-          'aria-label="Move step ' + (i + 1) + ' later"' + (i === last ? ' disabled' : '') + '>' + ICON.chevDown + '</button>' +
+          'aria-label="' + esc(tf('Move step {n} later', { n: i + 1 })) + '"' + (i === last ? ' disabled' : '') + '>' + ICON.chevDown + '</button>' +
         '<button type="button" class="iconbtn danger" data-action="style-step-del" data-i="' + i + '" ' +
-          'aria-label="Remove step ' + (i + 1) + '">' + ICON.close + '</button>' +
+          'aria-label="' + esc(tf('Remove step {n}', { n: i + 1 })) + '">' + ICON.close + '</button>' +
       '</span>' +
     '</li>';
   }).join('');
@@ -5976,7 +5989,7 @@ function buildRecipeForm(m) {
     '<div class="field"><label>' + esc(t('Cup score')) + '</label>' +
       '<div class="rate" id="rateWrap">' +
         [1, 2, 3, 4, 5].map(function (i) {
-          return '<button type="button" class="' + (i <= (d.rating || 0) ? 'on' : '') + '" data-action="rate" data-v="' + i + '" aria-label="Rate ' + i + '">' +
+          return '<button type="button" class="' + (i <= (d.rating || 0) ? 'on' : '') + '" data-action="rate" data-v="' + i + '" aria-label="' + esc(t('Rate') + ' ' + i) + '">' +
             iconBean(i <= (d.rating || 0)) + '</button>';
         }).join('') +
       '</div></div>' +
