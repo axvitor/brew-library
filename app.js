@@ -4975,6 +4975,33 @@ function dialInHTML(r) {
     '</div>';
 }
 
+/* The brewer leaving at the end of a brew, and coming back for the next.
+   Leaving, it shrinks and fades while its height closes up, so the cup
+   card glides into its place instead of jumping; the card's own pieces
+   then rise in (CSS, keyed off .is-done). .is-leaving holds the brewer on
+   screen for the length of its exit, past the rule that hides it. */
+function timerAnimOut() {
+  var a = timer && timer.el.querySelector('.tm-anim');
+  if (!a || reduceMotion.matches || !a.animate || !a.offsetHeight) return;
+  var cs = getComputedStyle(a);
+  a.classList.add('is-leaving');
+  a.animate([
+    { height: a.offsetHeight + 'px', marginTop: cs.marginTop, opacity: 1, transform: 'scale(1)' },
+    { opacity: 0, transform: 'scale(.86)', offset: 0.55 },
+    { height: '0px', marginTop: '0px', opacity: 0, transform: 'scale(.86)' }
+  ], { duration: 520, easing: 'cubic-bezier(.3,.7,.25,1)' }).onfinish = done;
+  // Hidden pages (a locked phone) pause animations, and with them the
+  // finish event: let go of the brewer on time either way.
+  var timer2 = setTimeout(done, 650);
+  function done() { clearTimeout(timer2); a.classList.remove('is-leaving'); }
+}
+function timerAnimIn() {
+  var a = timer && timer.el.querySelector('.tm-anim');
+  if (!a || reduceMotion.matches || !a.animate) return;
+  a.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'scale(1)' }],
+    { duration: 380, easing: 'cubic-bezier(.3,.7,.25,1)' });
+}
+
 // Shows the recipe's cup score on the beans of the finished brew.
 function timerRatePaint() {
   if (!timer) return;
@@ -4992,6 +5019,7 @@ function timerRatePaint() {
 function timerFinish() {
   if (!timer) return;
   timerRun(false);
+  timerAnimOut();
   timer.sheet.classList.add('is-done');
   var plan = timer.plan;
   timer.el.querySelector('.timer-now-kicker').textContent = t('Done');
@@ -5095,7 +5123,9 @@ function timerReset(andRun) {
   timer.cueSeg = null;
   timer.warned = false;
   timer.dialAt = null;               // a new brew gets its own answer
+  var wasDone = timer.sheet.classList.contains('is-done');
   timer.sheet.classList.remove('is-done');
+  if (wasDone) timerAnimIn();
   timerPaint();
   if (resume) timerRun(true); else timerControls();
 }

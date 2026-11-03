@@ -3413,3 +3413,22 @@ body:has(.gate-screen){padding-bottom:0}
 /* Done, the card grows by the taste question and its advice: room to
    scroll it all up past the floating Brew again button. */
 .sheet-timer.is-done .timer-body{padding-bottom:200px}
+
+/* The finish: the cup drops in with a little give, then the words, the
+   beans and the taste question rise in one after another. */
+.sheet-timer.is-done .tm-anim.is-leaving{display:flex;overflow:hidden;transform-origin:50% 0}
+@media (prefers-reduced-motion: no-preference){
+  @keyframes tmCupIn{
+    0%{opacity:0;transform:translateY(-10px) scale(.6)}
+    60%{opacity:1;transform:translateY(2px) scale(1.06)}
+    100%{opacity:1;transform:none}
+  }
+  @keyframes tmRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .sheet-timer.is-done .tm-done-cup{animation:tmCupIn .6s cubic-bezier(.3,.7,.25,1) .18s both}
+  .sheet-timer.is-done .timer-now-kicker{animation:tmRise .45s var(--ease-out) .32s both}
+  .sheet-timer.is-done .timer-now-label{animation:tmRise .45s var(--ease-out) .38s both}
+  .sheet-timer.is-done .timer-now-sub{animation:tmRise .45s var(--ease-out) .44s both}
+  .sheet-timer.is-done .tm-rate{animation:tmRise .45s var(--ease-out) .52s both}
+  .sheet-timer.is-done .tm-dial{animation:tmRise .45s var(--ease-out) .62s both}
+  .tm-dial-tip > *{animation:tmRise .35s var(--ease-out) both}
+}
