@@ -741,6 +741,31 @@ var TRANSLATIONS = {
     'Account menu': 'Menu da conta',
     'Back to top': 'Voltar ao topo',
     'Synced across your signed-in devices.': 'Sincronizado nos seus dispositivos.',
+    'How did it taste?': 'Como ficou o sabor?',
+    'Sour': 'Azedo',
+    'Balanced': 'Equilibrado',
+    'Bitter': 'Amargo',
+    '1–2 clicks': '1–2 cliques',
+    '2–3 clicks': '2–3 cliques',
+    'half a step': 'meio passo',
+    '1 step': '1 passo',
+    'a little': 'um pouco',
+    'Dialled in — keep these settings.': 'No ponto — mantenha estes ajustes.',
+    'Grind {step} finer next time.': 'Na próxima, moa {step} mais fino.',
+    'Grind {step} coarser next time.': 'Na próxima, moa {step} mais grosso.',
+    'Or let the shot run 2–3 s longer.': 'Ou deixe a extração correr 2–3 s a mais.',
+    'Or stop the shot 2–3 s earlier.': 'Ou pare a extração 2–3 s antes.',
+    'Or steep 30 s longer.': 'Ou deixe em infusão 30 s a mais.',
+    'Or steep 30 s less.': 'Ou deixe em infusão 30 s a menos.',
+    'Or start with hotter water in the base.': 'Ou comece com água mais quente na base.',
+    'Or take it off the heat sooner.': 'Ou tire do fogo mais cedo.',
+    'Or brew 1–2 °C hotter.': 'Ou use a água 1–2 °C mais quente.',
+    'Or brew 1–2 °C cooler.': 'Ou use a água 1–2 °C mais fria.',
+    'Sour usually means the water pulled too little from the coffee.': 'Azedo costuma indicar que a água extraiu pouco do café.',
+    'Bitter usually means it pulled too much.': 'Amargo costuma indicar que extraiu demais.',
+    'Now: {grind}': 'Agora: {grind}',
+    'Dialling in': 'Ajuste fino',
+    'Last cup': 'Última xícara',
     'What worked, what to change next time…': 'O que funcionou, o que mudar na próxima vez…',
     '1,200 m': '1.200 m',
     // --- home ---
@@ -3703,6 +3728,7 @@ function renderDetail(id, keepScroll) {
 
     (st && st.notes ? '<div class="rd-note"><span class="k">' + esc(t('About this style')) + '</span><p>' + esc(t(st.notes)) + '</p></div>' : '') +
     (r.notes ? '<div class="rd-note"><span class="k">' + esc(t('Personal notes')) + '</span><p>' + esc(r.notes) + '</p></div>' : '') +
+    dialInHTML(r) +
     (specs ? '<h2 class="rd-h2">' + esc(t('Details')) + '</h2><dl class="rd-specs">' + specs + '</dl>' : '') +
   '</div></div></div>' +
     // A sibling of .detail, not a child: .detail animates on entry, and an
@@ -4700,6 +4726,15 @@ function buildTimerEl(r, plan) {
                   'aria-label="' + esc(t('Rate') + ' ' + n) + '">' + iconBean(false) + '</button>';
               }).join('') +
             '</div>' +
+            '<div class="tm-dial">' +
+              '<span class="tm-dial-q" id="tmDialQ">' + esc(t('How did it taste?')) + '</span>' +
+              '<div class="tm-dial-opts" role="group" aria-labelledby="tmDialQ">' +
+                DIAL_TASTES.map(function (x) {
+                  return '<button type="button" data-action="dial-taste" data-v="' + x[0] + '" aria-pressed="false">' + esc(t(x[1])) + '</button>';
+                }).join('') +
+              '</div>' +
+              '<div class="tm-dial-tip" role="status" aria-live="polite"></div>' +
+            '</div>' +
           '</div>' +
           '<div class="timer-next"><span class="nt"></span><span class="nx"></span></div>' +
           '<p class="sr-only timer-announce" role="status" aria-live="polite"></p>' +
@@ -4856,6 +4891,90 @@ function timerPaint() {
   timer.sheet.classList.add('pulse');
 }
 
+/* ---- dialling in ----
+   After a brew, one question — sour, balanced or bitter — and one change
+   to try next. Sour cups are usually under-extracted and bitter ones
+   over-extracted, and grind is the change that moves extraction most, so
+   that comes first, sized to the grinder's own unit; the second option
+   is the one that suits the method (shot time, water temperature, steep
+   time). Each answer is kept on the recipe (the last 20), so its page can
+   show how the dialling-in has gone. Answering again for the same brew
+   corrects that answer rather than adding another. */
+var DIAL_TASTES = [['sour', 'Sour'], ['balanced', 'Balanced'], ['bitter', 'Bitter']];
+var DIAL_KEEP = 20;
+
+function grindStep(gr, ty) {
+  var unit = String((gr && gr.unit) || '').toLowerCase(), shot = ty === 'Espresso';
+  if (/click|clique/.test(unit)) return t(shot ? '1–2 clicks' : '2–3 clicks');
+  if (/dial|number|n[uú]mero|step|passo|mark|marca|setting/.test(unit)) return t(shot ? 'half a step' : '1 step');
+  return t('a little');
+}
+function dialAdvice(r, taste) {
+  if (taste === 'balanced') return { main: t('Dialled in — keep these settings.'), alt: '', why: '' };
+  var ty = methodType(findIn('method', r.methodId)), up = taste === 'sour';
+  var alt = ty === 'Espresso' ? (up ? 'Or let the shot run 2–3 s longer.' : 'Or stop the shot 2–3 s earlier.')
+    : ty === 'Immersion' || ty === 'AeroPress' || ty === 'Cold brew' ? (up ? 'Or steep 30 s longer.' : 'Or steep 30 s less.')
+    : ty === 'Moka pot' ? (up ? 'Or start with hotter water in the base.' : 'Or take it off the heat sooner.')
+    : (up ? 'Or brew 1–2 °C hotter.' : 'Or brew 1–2 °C cooler.');
+  return {
+    main: tf(up ? 'Grind {step} finer next time.' : 'Grind {step} coarser next time.', { step: grindStep(findIn('grinder', r.grinderId), ty) }),
+    alt: t(alt),
+    why: t(up ? 'Sour usually means the water pulled too little from the coffee.' : 'Bitter usually means it pulled too much.')
+  };
+}
+function dialAdviceHTML(r, taste) {
+  var a = dialAdvice(r, taste);
+  return '<p class="dial-main">' + esc(a.main) + '</p>' +
+    (r.grindSize && taste !== 'balanced' ? '<p class="dial-now">' + esc(tf('Now: {grind}', { grind: r.grindSize })) + '</p>' : '') +
+    (a.alt ? '<p class="dial-alt">' + esc(a.alt) + '</p>' : '') +
+    (a.why ? '<p class="dial-why">' + esc(a.why) + '</p>' : '');
+}
+function recordTaste(r, taste) {
+  var log = Array.isArray(r.dialIn) ? r.dialIn.slice() : [];
+  var entry = { at: Date.now(), taste: taste, grind: r.grindSize || '', dose: r.dose, water: r.water, temp: r.temp, time: r.brewTime || '' };
+  var same = timer && timer.dialAt ? log.filter(function (e) { return e.at === timer.dialAt; })[0] : null;
+  if (same) { same.taste = taste; }
+  else { log.push(entry); if (timer) timer.dialAt = entry.at; }
+  r.dialIn = log.slice(-DIAL_KEEP);
+  save();
+}
+function timerDialPaint() {
+  if (!timer) return;
+  var r = recipeById(timer.id);
+  var mine = r && timer.dialAt && (r.dialIn || []).filter(function (e) { return e.at === timer.dialAt; })[0];
+  var taste = mine ? mine.taste : '';
+  [].forEach.call(timer.el.querySelectorAll('.tm-dial-opts button'), function (b) {
+    var on = b.getAttribute('data-v') === taste;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  var tip = timer.el.querySelector('.tm-dial-tip');
+  if (tip) tip.innerHTML = taste && r ? dialAdviceHTML(r, taste) : '';
+  // The advice lands low on the card, under the floating Brew again
+  // button; bring it up into view once there is something to read.
+  if (tip && taste && tip.lastElementChild) {
+    tip.lastElementChild.scrollIntoView({ block: 'nearest', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+  }
+}
+
+// The recipe page's record of it: the last cup's advice, then the latest few.
+function dialInHTML(r) {
+  var log = Array.isArray(r.dialIn) ? r.dialIn : [];
+  if (!log.length) return '';
+  var last = log[log.length - 1];
+  var label = function (k) { return t((DIAL_TASTES.filter(function (x) { return x[0] === k; })[0] || ['', ''])[1]); };
+  return '<h2 class="rd-h2">' + esc(t('Dialling in')) + '</h2>' +
+    '<div class="rd-dial">' +
+      '<div class="rd-dial-last"><span class="k">' + esc(t('Last cup')) + ' · ' + esc(label(last.taste)) + ' · ' + esc(agoLabel(last.at)) + '</span>' +
+        dialAdviceHTML(r, last.taste) + '</div>' +
+      (log.length > 1 ? '<ol class="rd-dial-log">' + log.slice(-6).reverse().map(function (e) {
+        return '<li><span class="rd-dial-t is-' + esc(e.taste) + '">' + esc(label(e.taste)) + '</span>' +
+          '<span class="rd-dial-g">' + esc(e.grind || '—') + '</span>' +
+          '<time>' + esc(new Date(e.at).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })) + '</time></li>';
+      }).join('') + '</ol>' : '') +
+    '</div>';
+}
+
 // Shows the recipe's cup score on the beans of the finished brew.
 function timerRatePaint() {
   if (!timer) return;
@@ -4881,6 +5000,7 @@ function timerFinish() {
     plan.water ? plan.water + ' g' : '', timer.ratio || ''].filter(Boolean).join(' · ');
   timer.sheet.classList.remove('is-pouring');
   timerRatePaint();
+  timerDialPaint();
   var say = timer.el.querySelector('.timer-announce');
   if (say) say.textContent = t('Brew complete.');
   timerControls();
@@ -4974,6 +5094,7 @@ function timerReset(andRun) {
   timer.seg = -1;
   timer.cueSeg = null;
   timer.warned = false;
+  timer.dialAt = null;               // a new brew gets its own answer
   timer.sheet.classList.remove('is-done');
   timerPaint();
   if (resume) timerRun(true); else timerControls();
@@ -8694,6 +8815,14 @@ document.addEventListener('click', function (ev) {
       rankTab = btn.getAttribute('data-tab') || 'coffee';
       renderRanking(true);
       tabsLens(document.querySelector('.rk-tabs'), rkFrom);
+      return;
+
+    case 'dial-taste':
+      ev.preventDefault();
+      var dr2 = timer && recipeById(timer.id);
+      if (!dr2) return;
+      recordTaste(dr2, btn.getAttribute('data-v'));
+      timerDialPaint();
       return;
 
     case 'rate-recipe':

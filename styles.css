@@ -3379,3 +3379,36 @@ body:has(.gate-screen){padding-bottom:0}
 .adm-recent span{display:flex;flex-direction:column;min-width:0;font:var(--weight-regular) 14px/1.3 var(--font-text);color:var(--text-title)}
 .adm-recent small{font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adm-recent time{flex:none;font:var(--weight-regular) 12px/1 var(--font-text);color:var(--text-faint)}
+
+/* ---------- dialling in ----------
+   After a brew: how it tasted, as three pills under the cup score, and
+   the one change to try next. On the recipe page the same advice sits in
+   a note card, with the latest tastings under it. */
+.tm-dial{display:none}
+.sheet-timer.is-done .tm-dial{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;margin-top:8px;padding-top:12px;border-top:var(--border-w-hairline) solid var(--border-hairline)}
+.tm-dial-q{font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted)}
+.tm-dial-opts{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.tm-dial-opts button{
+  min-height:40px;padding:0 16px;border-radius:var(--radius-full);
+  border:var(--border-w-hairline) solid var(--border-default);background:var(--surface-card);
+  font:var(--weight-medium) 14px/1 var(--font-text);color:var(--text-title);transition:var(--transition-control);
+}
+.tm-dial-opts button:hover{border-color:var(--text-accent)}
+.tm-dial-opts button.on{background:var(--accent-timer);border-color:var(--accent-timer);color:#FFFFFF}
+.tm-dial-tip:empty{display:none}
+.tm-dial-tip,.rd-dial-last{display:flex;flex-direction:column;gap:3px}
+.dial-main{margin:0;font:var(--weight-medium) 15px/1.4 var(--font-text);color:var(--text-title)}
+.dial-now,.dial-alt{margin:0;font:var(--weight-regular) 13px/1.45 var(--font-text);color:var(--text-body)}
+.dial-why{margin:2px 0 0;font:var(--weight-regular) 12px/1.45 var(--font-text);color:var(--text-muted)}
+.rd-dial{margin-top:12px;padding:16px 18px;border-radius:20px;background:var(--surface-card);border:var(--border-w-hairline) solid var(--border-hairline)}
+.rd-dial-last .k{font:var(--weight-regular) 12px/1.3 var(--font-text);color:var(--text-muted);margin-bottom:4px}
+.rd-dial-log{list-style:none;margin:14px 0 0;padding:0}
+.rd-dial-log li{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:var(--border-w-hairline) solid var(--border-hairline)}
+.rd-dial-t{flex:none;min-width:84px;font:var(--weight-medium) 13px/1.2 var(--font-text);color:var(--text-title)}
+.rd-dial-g{flex:1;min-width:0;font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-dial-log time{flex:none;font:var(--weight-regular) 12px/1 var(--font-text);color:var(--text-faint)}
+/* Scrolled-to content clears the floating controls at the bottom. */
+.sheet-timer{scroll-padding-bottom:150px}
+/* Done, the card grows by the taste question and its advice: room to
+   scroll it all up past the floating Brew again button. */
+.sheet-timer.is-done .timer-body{padding-bottom:200px}
