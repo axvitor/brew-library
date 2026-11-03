@@ -761,6 +761,14 @@ var TRANSLATIONS = {
     'Locked': 'Bloqueada',
     'New': 'Nova',
     'Unlocked on {date}': 'Desbloqueada em {date}',
+    'Pressure brew': 'Sob pressão',
+    'Steep & wait': 'Infusão e espera',
+    'Slow & steady': 'Devagar e sempre',
+    'On the stove': 'No fogão',
+    'Twelve hours': 'Doze horas',
+    'Plunge & press': 'Desça e pressione',
+    'Every method': 'Todos os métodos',
+    'Two origins': 'Duas origens',
     'Not yet': 'Ainda não',
     'First recipe': 'Primeira receita',
     'Pro barista': 'Barista profissional',
@@ -3134,15 +3142,15 @@ function countryName(code) {
 }
 
 var BADGES = [
-  { id: 'first', name: 'First recipe' },
-  { id: 'espresso', type: 'Espresso', name: 'Espresso' },
-  { id: 'immersion', type: 'Immersion', name: 'Immersion' },
-  { id: 'pourover', type: 'Pour over', name: 'Pour over' },
-  { id: 'moka', type: 'Moka pot', name: 'Moka' },
-  { id: 'coldbrew', type: 'Cold brew', name: 'Cold brew' },
-  { id: 'aeropress', type: 'AeroPress', name: 'AeroPress' },
-  { id: 'pro', name: 'Pro barista' },
-  { id: 'explorer', name: 'Explorer' }
+  { id: 'first', name: 'First recipe', motto: 'Brew Library' },
+  { id: 'espresso', type: 'Espresso', name: 'Espresso', motto: 'Pressure brew' },
+  { id: 'immersion', type: 'Immersion', name: 'Immersion', motto: 'Steep & wait' },
+  { id: 'pourover', type: 'Pour over', name: 'Pour over', motto: 'Slow & steady' },
+  { id: 'moka', type: 'Moka pot', name: 'Moka', motto: 'On the stove' },
+  { id: 'coldbrew', type: 'Cold brew', name: 'Cold brew', motto: 'Twelve hours' },
+  { id: 'aeropress', type: 'AeroPress', name: 'AeroPress', motto: 'Plunge & press' },
+  { id: 'pro', name: 'Pro barista', motto: 'Every method' },
+  { id: 'explorer', name: 'Explorer', motto: 'Two origins' }
 ];
 
 // What the library adds up to: recipes by kind of method and by country.
@@ -3227,33 +3235,33 @@ var BADGE_ART = {
 };
 var ICON_LOCK = '<svg viewBox="0 0 24 24" class="ico"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
-function fmtShortDate(ms) {
-  return new Date(ms).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
 var journey = { sel: '', seenTimer: 0, pop: '' };
 
 function journeyHTML() {
   if (!state) return '';
   var s = journeyStats(state), got = state.badges || {};
   var n = BADGES.filter(function (b) { return got[b.id]; }).length, anyNew = false;
-  // Each badge is a bag label on a hang-tag: its number, the drawing, the
-  // name, the day it was earned and a stripe of its colour. Locked, it is
-  // the tag's dashed outline. A slight tilt each, as if hung by hand.
-  var TILT = [-2, 1.5, -1, 2, -1.5, 1, -2.5, 1.5, -1];
+  // Each badge is a roaster's stamp in the accent ink: its name and motto
+  // around the ring, the drawing inside, tilted as if pressed by hand.
+  // Locked, only the dotted outline of where it will land.
+  var TILT = [-7, 5, 4, -3, -9, 6, 8, -2, -5];
   var tiles = BADGES.map(function (b, i) {
     var on = !!got[b.id], isNew = on && !got[b.id].seen;
     if (isNew) anyNew = true;
-    var no = (i < 9 ? '0' : '') + (i + 1);
-    return '<button class="bdg' + (on ? ' on' : '') + (isNew ? ' is-new' : '') + (b.id === 'pro' ? ' is-reserve' : '') + '" ' +
-      'data-action="badge-info" data-id="' + b.id + '" ' +
+    var art = '<svg viewBox="0 0 48 48" x="38" y="38" width="44" height="44" class="bdg-art">' + BADGE_ART[b.id] + '</svg>';
+    var ring = [t(b.name), t(b.motto), 'Nº 0' + (i + 1), ''].join(' ★ ').trim().toUpperCase();
+    var stamp = on
+      ? '<svg viewBox="0 0 120 120" class="bdg-stamp" aria-hidden="true">' +
+          '<defs><path id="bdg-ring-' + b.id + '" d="M60 60 m-47 0 a47 47 0 1 1 94 0 a47 47 0 1 1 -94 0"/></defs>' +
+          '<circle cx="60" cy="60" r="57" class="st-ring"/>' + (b.id === 'pro' ? '<circle cx="60" cy="60" r="53" class="st-thin"/>' : '') +
+          '<circle cx="60" cy="60" r="39" class="st-thin"/>' +
+          '<text class="st-text"><textPath href="#bdg-ring-' + b.id + '" textLength="290" lengthAdjust="spacingAndGlyphs">' +
+            esc(ring) + '</textPath></text>' + art + '</svg>'
+      : '<svg viewBox="0 0 120 120" class="bdg-stamp" aria-hidden="true"><circle cx="60" cy="60" r="57" class="st-ghost"/>' + art + '</svg>';
+    return '<button class="bdg' + (on ? ' on' : '') + (isNew ? ' is-new' : '') + '" data-action="badge-info" data-id="' + b.id + '" ' +
       'aria-haspopup="dialog" aria-expanded="' + (journey.pop === b.id ? 'true' : 'false') + '" ' +
-      'style="--b:var(--bdg-' + b.id + ');--tilt:' + (on ? TILT[i] : 0) + 'deg" aria-label="' + esc(t(b.name) + ' — ' + (on ? t('Unlocked') : t('Locked'))) + '">' +
-      '<span class="bdg-hole" aria-hidden="true"></span>' +
-      '<span class="bdg-no">Nº ' + no + '</span>' +
-      '<svg viewBox="0 0 48 48" class="bdg-art" aria-hidden="true">' + BADGE_ART[b.id] + '</svg>' +
-      '<span class="bdg-name">' + esc(t(b.name)) + '</span>' +
-      '<span class="bdg-when">' + esc(on ? fmtShortDate(got[b.id].at) : t('Locked')) + '</span>' +
+      'style="--tilt:' + (on ? TILT[i] : 0) + 'deg" aria-label="' + esc(t(b.name) + ' — ' + (on ? t('Unlocked') : t('Locked'))) + '">' +
+      stamp + '<span class="bdg-name">' + esc(t(b.name)) + '</span>' +
       (isNew ? '<em class="bdg-new">' + esc(t('New')) + '</em>' : '') + '</button>';
   }).join('');
   // The pop plays once: a moment after the page shows it, it's marked seen
@@ -3459,7 +3467,7 @@ function placeBadgePop(reveal) {
   pop.className = 'bdg-pop';
   pop.setAttribute('role', 'dialog');
   pop.setAttribute('aria-label', t(b.name));
-  pop.style.setProperty('--b', 'var(--bdg-' + b.id + ')');
+  pop.style.setProperty('--b', 'var(--text-accent)');
   pop.innerHTML = badgeDetailBody(b);
   host.appendChild(pop);
   var hr = host.getBoundingClientRect(), tr = tile.getBoundingClientRect();

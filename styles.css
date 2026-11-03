@@ -3445,71 +3445,40 @@ body:has(.gate-screen){padding-bottom:0}
 .page .sheet-body{scroll-padding-bottom:calc(100px + var(--kb,0px))}
 
 /* ---- Coffee journey: badges and the origins map (Account) ----
-   Each badge carries its own coffee-toned hue in --b; locked ones drop it
-   for the sunken neutral. The newly earned pop plays once, then settles
-   into the plain unlocked look. */
-:root{
-  --bdg-first:#DA6328;--bdg-espresso:#D19A6E;--bdg-immersion:#C9A46B;--bdg-pourover:#8FB3C9;--bdg-moka:#F08A7A;
-  --bdg-coldbrew:#86B8E6;--bdg-aeropress:#AFC28E;--bdg-pro:#E0A84A;--bdg-explorer:#7FC59A;
-}
-:root[data-theme="light"]{
-  --bdg-first:#C84A16;--bdg-espresso:#7A4426;--bdg-immersion:#8A6532;--bdg-pourover:#3E6B85;--bdg-moka:#B0402F;
-  --bdg-coldbrew:#2F6FA3;--bdg-aeropress:#5D7040;--bdg-pro:#A9741C;--bdg-explorer:#2F7D4F;
-}
+   Stamps in the accent ink; locked ones are a dotted outline. The newly
+   earned stamp lands once, then settles. */
 .jr-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:2px}
 .jr-head .section-title{margin-bottom:0}
 .jr-count{font:var(--weight-regular) 13px/1.3 var(--font-text);color:var(--text-muted);white-space:nowrap}
 .journey{position:relative}
 .bdg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px}
 .bdg{
-  position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;padding:20px 6px 16px;overflow:hidden;
-  text-align:center;border-radius:10px;background:transparent;color:var(--text-faint);
-  box-shadow:inset 0 0 0 1.5px var(--border-default);
-  transform:rotate(var(--tilt,0deg));transition:transform var(--dur-fast) var(--ease-standard);
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:6px 2px 4px;
+  text-align:center;color:var(--text-accent);
 }
-.bdg:not(.on){box-shadow:none;outline:1.5px dashed var(--border-strong);outline-offset:-1.5px}
-.bdg:active{transform:rotate(var(--tilt,0deg)) scale(.97)}
-.bdg.on{background:#EFE6D6;color:#2A231C;box-shadow:0 8px 16px -10px rgba(0,0,0,.6)}
-:root[data-theme="light"] .bdg.on{box-shadow:inset 0 0 0 1px rgba(42,35,28,.12),0 8px 16px -10px rgba(42,35,28,.45)}
-.bdg.is-reserve.on{background:#2A231C;color:#E8BE6A;box-shadow:inset 0 0 0 1.5px #B58128,0 8px 16px -10px rgba(0,0,0,.6)}
-.bdg.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:var(--b)}
-.bdg.is-reserve.on::after{background:#B58128}
-.bdg[aria-expanded="true"]{transform:rotate(0deg) translateY(-2px)}
-.bdg-hole{
-  position:absolute;top:7px;left:calc(50% - 5px);width:10px;height:10px;border-radius:50%;
-  background:var(--bg-app);box-shadow:0 0 0 2px var(--border-strong);
-}
-.bdg.on .bdg-hole{box-shadow:0 0 0 2px #C9BBA4}
-.bdg.is-reserve.on .bdg-hole{box-shadow:0 0 0 2px #B58128}
-.bdg-no{font:800 9px/1 var(--font-text);letter-spacing:.14em}
-.bdg-art{width:38px;height:38px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.bdg:not(.on){color:var(--text-faint)}
+.bdg:active{transform:scale(.97)}
+.bdg-stamp{width:92px;height:92px;max-width:100%;transform:rotate(var(--tilt,0deg));transition:transform var(--dur-fast) var(--ease-standard)}
+.bdg[aria-expanded="true"] .bdg-stamp{transform:rotate(0deg) scale(1.04)}
+.st-ring{fill:none;stroke:currentColor;stroke-width:3}
+.st-thin{fill:none;stroke:currentColor;stroke-width:1.4}
+.st-text{fill:currentColor;font:800 9.5px var(--font-text);letter-spacing:1.5px}
+.st-ghost{fill:none;stroke:var(--border-strong);stroke-width:2.4;stroke-dasharray:3 6}
+.bdg-art{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .bdg-art .art-fill{fill:currentColor;fill-opacity:.28;stroke:none}
 .bdg-art .art-pin{fill:none}
-.bdg:not(.on) .bdg-art{opacity:.7}
-.bdg-name{
-  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  font:800 10.5px/1.2 var(--font-text);letter-spacing:.08em;text-transform:uppercase;
-}
+.bdg:not(.on) .bdg-art{opacity:.55}
+.bdg-name{max-width:100%;font:var(--weight-semibold) 12px/1.25 var(--font-text);color:var(--text-title);overflow-wrap:anywhere}
 .bdg:not(.on) .bdg-name{color:var(--text-muted)}
-.bdg-when{font:var(--weight-regular) 10px/1.2 var(--font-text);color:#6B5F50}
-.bdg:not(.on) .bdg-when{color:var(--text-faint);letter-spacing:.06em}
-.bdg.is-reserve.on .bdg-when{color:#C9A86A}
 .bdg-new{
-  position:absolute;top:5px;right:5px;padding:1px 5px;border-radius:var(--radius-full);
-  background:var(--b);color:#FFFFFF;font:var(--weight-semibold) 9px/1.4 var(--font-text);font-style:normal;
+  position:absolute;top:0;right:4px;padding:1px 6px;border-radius:var(--radius-full);
+  background:var(--text-accent);color:var(--bg-app);font:var(--weight-semibold) 10px/1.4 var(--font-text);font-style:normal;
 }
 
-@keyframes bdgPop{0%{transform:translateY(-14px) rotate(-10deg) scale(.85);opacity:0}60%{transform:translateY(2px) rotate(calc(var(--tilt,0deg) + 4deg));opacity:1}100%{transform:rotate(var(--tilt,0deg))}}
-@keyframes bdgShine{from{background-position:130% 0}to{background-position:-40% 0}}
-.bdg.is-new{animation:bdgPop .8s cubic-bezier(.2,.8,.25,1.15) .15s both}
-.bdg.is-new::before{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%) no-repeat;background-size:250% 100%;
-  animation:bdgShine 1s ease .8s both;
-}
-@media (prefers-reduced-motion:reduce){
-  .bdg.is-new,.bdg.is-new::before{animation:none}
-}
+/* Newly earned: the stamp comes down and lands, once. */
+@keyframes stampIn{0%{transform:scale(1.6) rotate(-20deg);opacity:0}55%{transform:scale(.94) rotate(var(--tilt,0deg));opacity:1}100%{transform:rotate(var(--tilt,0deg))}}
+.bdg.is-new .bdg-stamp{animation:stampIn .55s cubic-bezier(.3,.7,.3,1.2) .2s both}
+@media (prefers-reduced-motion:reduce){.bdg.is-new .bdg-stamp{animation:none}}
 
 /* A badge's help: a card under the badge, pointing at it */
 .bdg-pop{
