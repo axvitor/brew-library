@@ -782,7 +782,6 @@ var TRANSLATIONS = {
     'countries': 'países',
     'Country': 'País',
     'Set a country on your coffees to see where your beans come from.': 'Defina o país dos seus cafés para ver de onde vêm seus grãos.',
-    'Tap a country to see its recipes.': 'Toque num país para ver as receitas.',
     'Filters': 'Filtros',
     'Favourites only': 'Só favoritos',
     'No matches': 'Nenhum resultado',
@@ -3228,9 +3227,8 @@ var BADGE_ART = {
 };
 var ICON_LOCK = '<svg viewBox="0 0 24 24" class="ico"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
-function badgeMedal(b, on) {
-  return '<span class="bdg-medal"><svg viewBox="0 0 48 48" class="bdg-art" aria-hidden="true">' + BADGE_ART[b.id] + '</svg>' +
-    (on ? '' : '<span class="bdg-lock">' + ICON_LOCK + '</span>') + '</span>';
+function fmtShortDate(ms) {
+  return new Date(ms).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 var journey = { sel: '', seenTimer: 0, pop: '' };
@@ -3239,17 +3237,23 @@ function journeyHTML() {
   if (!state) return '';
   var s = journeyStats(state), got = state.badges || {};
   var n = BADGES.filter(function (b) { return got[b.id]; }).length, anyNew = false;
-  var pips = BADGES.map(function (b) {
-    return '<i' + (got[b.id] ? ' class="on"' : '') + ' style="--b:var(--bdg-' + b.id + ')"></i>';
-  }).join('');
-  var tiles = BADGES.map(function (b) {
+  // Each badge is a bag label on a hang-tag: its number, the drawing, the
+  // name, the day it was earned and a stripe of its colour. Locked, it is
+  // the tag's dashed outline. A slight tilt each, as if hung by hand.
+  var TILT = [-2, 1.5, -1, 2, -1.5, 1, -2.5, 1.5, -1];
+  var tiles = BADGES.map(function (b, i) {
     var on = !!got[b.id], isNew = on && !got[b.id].seen;
     if (isNew) anyNew = true;
-    return '<button class="bdg' + (on ? ' on' : '') + (isNew ? ' is-new' : '') + '" data-action="badge-info" data-id="' + b.id + '" ' +
+    var no = (i < 9 ? '0' : '') + (i + 1);
+    return '<button class="bdg' + (on ? ' on' : '') + (isNew ? ' is-new' : '') + (b.id === 'pro' ? ' is-reserve' : '') + '" ' +
+      'data-action="badge-info" data-id="' + b.id + '" ' +
       'aria-haspopup="dialog" aria-expanded="' + (journey.pop === b.id ? 'true' : 'false') + '" ' +
-      'style="--b:var(--bdg-' + b.id + ')" aria-label="' + esc(t(b.name) + ' — ' + (on ? t('Unlocked') : t('Locked'))) + '">' +
-      badgeMedal(b, on) +
+      'style="--b:var(--bdg-' + b.id + ');--tilt:' + (on ? TILT[i] : 0) + 'deg" aria-label="' + esc(t(b.name) + ' — ' + (on ? t('Unlocked') : t('Locked'))) + '">' +
+      '<span class="bdg-hole" aria-hidden="true"></span>' +
+      '<span class="bdg-no">Nº ' + no + '</span>' +
+      '<svg viewBox="0 0 48 48" class="bdg-art" aria-hidden="true">' + BADGE_ART[b.id] + '</svg>' +
       '<span class="bdg-name">' + esc(t(b.name)) + '</span>' +
+      '<span class="bdg-when">' + esc(on ? fmtShortDate(got[b.id].at) : t('Locked')) + '</span>' +
       (isNew ? '<em class="bdg-new">' + esc(t('New')) + '</em>' : '') + '</button>';
   }).join('');
   // The pop plays once: a moment after the page shows it, it's marked seen
@@ -3268,8 +3272,6 @@ function journeyHTML() {
   return '<div class="acc-group journey">' +
       '<div class="jr-head"><span class="section-title">' + esc(t('Badges')) + '</span>' +
         '<span class="jr-count">' + esc(tf('{n} of {total} unlocked', { n: n, total: BADGES.length })) + '</span></div>' +
-      '<div class="jr-bar" role="progressbar" aria-valuemin="0" aria-valuemax="' + BADGES.length + '" aria-valuenow="' + n + '" ' +
-        'aria-label="' + esc(t('Badges')) + '">' + pips + '</div>' +
       '<div class="bdg-grid">' + tiles + '</div>' +
     '</div>' +
     originsHTML(s);
@@ -3321,7 +3323,7 @@ function originsInfo(s) {
     return '<b>' + esc(countryName(journey.sel)) + '</b> · ' + esc(recipesCount(s.countries[journey.sel]));
   }
   if (!ids.length) return esc(t('Set a country on your coffees to see where your beans come from.'));
-  return esc(t('Tap a country to see its recipes.'));
+  return '';
 }
 
 function originsHTML(s) {
@@ -3358,17 +3360,12 @@ function originsPick(id) {
 
 document.addEventListener('click', function (ev) {
   var el = ev.target.closest && ev.target.closest('.origins [data-iso]');
-  if (el) originsPick(el.getAttribute('data-iso'));
+  if (el) originsPick(el.getAttribute('data-iso') === journey.sel ? '' : el.getAttribute('data-iso'));
 });
 document.addEventListener('keydown', function (ev) {
   if (ev.key !== 'Enter' && ev.key !== ' ') return;
   var el = ev.target.closest && ev.target.closest('.om-map [data-iso]');
   if (el) { ev.preventDefault(); originsPick(el.getAttribute('data-iso')); }
-});
-document.addEventListener('pointerover', function (ev) {
-  if (ev.pointerType !== 'mouse') return;
-  var el = ev.target.closest && ev.target.closest('.om-map [data-iso]');
-  if (el) originsPick(el.getAttribute('data-iso'));
 });
 
 // The coffee form's Country follows its Origin until it's picked by hand.
