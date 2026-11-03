@@ -5458,15 +5458,32 @@ function focusLastStep(m, rowSelector) {
   var row = rows[rows.length - 1], input = row.querySelector('input');
   if (!input) return;
   input.focus({ preventScroll: true });
-  revealAboveBars(row);
+  revealAboveBars(row, stepToolsFor(row));
 }
 
-/* Brings an element into view above whatever covers the bottom of the
-   screen: the floating Cancel / Save bar and, on a phone, the keyboard.
+// The Add step button under a step list, when the row is that list's last:
+// writing the last step, the next one is the likely thing to add.
+function stepToolsFor(row) {
+  var list = row && row.parentNode;
+  if (!list || row !== list.lastElementChild) return null;
+  var tools = list.parentNode && list.parentNode.querySelector('.steps-tools');
+  return tools || null;
+}
+// Tapping into a step on a phone keeps it — and, on the last step, the
+// Add step button under it — above the keyboard and the floating bar.
+document.addEventListener('focusin', function (ev) {
+  if (!phoneWidth.matches) return;
+  var row = ev.target.closest && ev.target.closest('.stepbuild-row');
+  if (row) revealAboveBars(row, stepToolsFor(row));
+});
+
+/* Brings an element (and, room allowing, `also` below it) into view
+   above whatever covers the bottom of the screen: the floating Cancel /
+   Save bar and, on a phone, the keyboard.
    The keyboard only finishes opening a moment after the focus that
    summons it — and the bar rides up with it — so this measures again once
    the visible area has stopped changing. */
-function revealAboveBars(el) {
+function revealAboveBars(el, also) {
   var scroller = el.closest('.sheet-body');
   if (!scroller) return;
   var vv = window.visualViewport;
@@ -5478,7 +5495,14 @@ function revealAboveBars(el) {
     while (host && host !== document.body && !(foot = host.querySelector('.sheet-foot'))) host = host.parentNode;
     if (foot) bottom = Math.min(bottom, foot.getBoundingClientRect().top);
     var top = scroller.getBoundingClientRect().top + (parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0);
-    var by = r.bottom - (bottom - 12);
+    // Bring `also` (the Add step button) into view as well — but only if
+    // both fit; el itself never leaves the screen for it.
+    var end = r.bottom;
+    if (also && also.isConnected) {
+      var a = also.getBoundingClientRect();
+      if (a.bottom - r.top <= bottom - 12 - top) end = Math.max(end, a.bottom);
+    }
+    var by = end - (bottom - 12);
     if (by <= 0) { if (r.top < top) by = r.top - top; else return; }
     scroller.scrollBy({ top: by, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
   }
