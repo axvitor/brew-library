@@ -2841,14 +2841,8 @@ html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms 
 [data-theme="light"] .rd-dose-nums i .bean-mark{stroke:#8A5A36}
 [data-theme="light"] .rd-dose-nums i .ico:not(.bean-mark){stroke:#2F6A8C}
 
-/* Empty state cup and the loading steam. */
+/* Empty state cup. */
 .empty .cup{width:44px;height:44px;fill:none;stroke:var(--text-faint);stroke-width:1.3;stroke-linecap:round;margin-bottom:14px}
-.loading-card .steam{width:56px;height:56px;fill:none;stroke:#C9A27A;stroke-width:1.5;stroke-linecap:round;margin-bottom:16px}
-.loading-card .steam path{animation:steamRise 2.4s ease-in-out infinite}
-.loading-card .steam path:nth-child(2){animation-delay:.4s}
-.loading-card .steam path:nth-child(3){animation-delay:.8s}
-@keyframes steamRise{0%{opacity:0;transform:translateY(4px)}40%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
-@media (prefers-reduced-motion:reduce){.loading-card .steam path{animation:none}}
 
 /* ---------- timer: clock beside the water or dose ---------- */
 .tm-clock.is-split{flex-direction:row;justify-content:space-between;align-items:center;padding:clamp(8px,2vh,18px) 8px 0}
@@ -3545,3 +3539,34 @@ body:has(.gate-screen){padding-bottom:0}
 .om-chip.sel{background:var(--surface-accent);color:var(--text-accent)}
 .om-chip.sel b{color:var(--text-accent)}
 
+
+/* ---------- loading: skeletons ----------
+   The shape of what is coming, in sunken blocks with a slow sheen. */
+.skel{
+  display:block;border-radius:var(--radius-sm);
+  background:linear-gradient(90deg,var(--surface-sunken) 0%,color-mix(in srgb,var(--surface-sunken) 60%,var(--border-default)) 50%,var(--surface-sunken) 100%);
+  background-size:200% 100%;animation:skel 1.4s ease-in-out infinite;
+}
+@keyframes skel{from{background-position:100% 0}to{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+.skel-lines{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
+.skel-home .home-head .skel-lines{gap:10px}
+.skel-tabs{height:46px;margin-top:20px;border-radius:var(--radius-full)}
+.skel-sec{width:90px;height:14px;margin-top:24px}
+.skel-slide{height:190px;margin-top:10px;width:min(296px,78vw);border-radius:var(--radius-sheet)}
+.skel-search{height:50px;margin-top:18px;border-radius:var(--radius-full)}
+.skel-home .hcards{margin-top:10px}
+.skel-card{pointer-events:none}
+
+/* ---------- buttons: loading ----------
+   Same size, the label kept for width but hidden, a ring in the text
+   colour in its place. */
+.btn.is-loading{position:relative;pointer-events:none}
+.btn.is-loading .btn-label{display:inline-flex;align-items:center;gap:8px;visibility:hidden}
+.btn.is-loading::after{
+  content:"";position:absolute;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+  border:2px solid currentColor;border-right-color:transparent;animation:btnSpin .7s linear infinite;
+}
+@keyframes btnSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.btn.is-loading::after{animation-duration:1.6s}}
+.scan .btn.is-loading + .scan-busy{margin-top:12px}

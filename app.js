@@ -1915,13 +1915,31 @@ function renderGate(title, message, footHTML) {
   '</div></div>';
 }
 
+/* While the library loads: the home screen's shape in shimmering blocks —
+   the header, the method tabs, a Recent card, search and a few recipe
+   cards — so the page that arrives lands where its outline already was. */
 function renderLoading() {
-  view.innerHTML = '<div class="gate"><div class="gate-card loading-card">' + STEAM_SVG +
-    '<h1>' + esc(t('Brewing your library…')) + '</h1></div></div>';
+  function card() {
+    return '<div class="hcard skel-card" aria-hidden="true"><div class="hc-top">' +
+      '<span class="skel" style="width:42px;height:42px;border-radius:13px"></span>' +
+      '<span class="skel-lines"><span class="skel" style="width:58%;height:14px"></span>' +
+      '<span class="skel" style="width:38%;height:11px"></span></span></div>' +
+      '<div class="hc-strip"><span class="skel" style="width:100%;height:28px"></span></div></div>';
+  }
+  view.innerHTML = '<div class="home skel-home" role="status" aria-busy="true">' +
+    '<span class="sr-only">' + esc(t('Brewing your library…')) + '</span>' +
+    '<div class="home-head" aria-hidden="true"><div class="skel-lines">' +
+      '<span class="skel" style="width:120px;height:12px"></span>' +
+      '<span class="skel" style="width:190px;height:26px"></span></div>' +
+      '<span class="skel" style="width:44px;height:44px;border-radius:50%"></span></div>' +
+    '<span class="skel skel-tabs" aria-hidden="true"></span>' +
+    '<span class="skel skel-sec" aria-hidden="true"></span>' +
+    '<div class="skel skel-slide" aria-hidden="true"></div>' +
+    '<span class="skel skel-search" aria-hidden="true"></span>' +
+    '<span class="skel skel-sec" aria-hidden="true"></span>' +
+    '<div class="hrows hcards">' + card() + card() + card() + '</div>' +
+  '</div>';
 }
-// Three wisps rising, used while the library loads.
-var STEAM_SVG = '<svg class="steam" viewBox="0 0 24 24" aria-hidden="true">' +
-  '<path d="M8 19c-2-3 2-5 0-8s2-5 0-7"/><path d="M12 20c-2-3 2-5 0-8s2-5 0-7"/><path d="M16 19c-2-3 2-5 0-8s2-5 0-7"/></svg>';
 
 /* The one screen a first-time visitor sees, so it gets a picture and a
    reason rather than a bean and a button. Its own layout, not renderGate:
@@ -1982,6 +2000,7 @@ var phoneWidth = window.matchMedia('(max-width:640px)');
 window.addEventListener('popstate', function (ev) { if (ev.hasUAVisualTransition) uaSwipeAt = Date.now(); });
 
 function routeKey() {
+  if (authPhase === 'loading') return 'loading';
   if (authPhase !== 'ready') return 'gate';
   var hash = location.hash || '#/';
   if (hash.indexOf('#/r/') === 0 || hash.indexOf('#/admin') === 0) return hash;
@@ -1989,6 +2008,8 @@ function routeKey() {
 }
 
 function navKind(from, to) {
+  // The loading skeleton is replaced in place: it already has the page's shape.
+  if (from === 'loading') return '';
   if (from === 'gate' || to === 'gate') return 'fade';
   if (to.indexOf('#/r/') === 0) return 'push';
   if (from.indexOf('#/r/') === 0) return 'pop';
@@ -2024,7 +2045,7 @@ function render() {
 function renderPage(arriving) {
   updateNav();
 
-  if (authPhase === 'loading') { renderLoading(); return; }
+  if (authPhase === 'loading' || (authPhase === 'ready' && !state)) { renderLoading(); return; }
   if (authPhase === 'signedOut') { renderSignIn(); return; }
   // Signed in: back to the account's own appearance.
   applyTheme();
@@ -8515,7 +8536,11 @@ function scanBlockHTML(state) {
   var inner;
   if (state && state.busy) {
     var frac = Math.max(0, Math.min(1, state.progress || 0));
-    inner = '<div class="scan-busy"><div class="scan-bar">' +
+    // The button stays where it was, holding a spinner in place of its
+    // label, with the progress under it.
+    inner = '<button class="btn btn-ghost btn-sm is-loading" aria-busy="true" aria-disabled="true" tabindex="-1">' +
+        '<span class="btn-label">' + ICON.camera + esc(t('Scan label')) + '</span></button>' +
+      '<div class="scan-busy"><div class="scan-bar">' +
       '<i style="transform:scaleX(' + frac.toFixed(3) + ')"></i></div>' +
       '<p>' + esc(state.label || t('Reading the label…')) + '</p></div>';
   } else if (state && state.error) {
@@ -9997,6 +10022,9 @@ function boot() {
     return;
   }
 
+  // The skeleton, while Firebase says who is signed in.
+  render();
+
   window.Brew.onAuthChange(function (user) {
     if (unsubscribeLibrary) { unsubscribeLibrary(); unsubscribeLibrary = null; }
 
@@ -10021,6 +10049,9 @@ function boot() {
       adminRole = role;
       if (location.hash === '#/account' || onAdminPage()) render();
     });
+    // The skeleton again while this account's library arrives (state is
+    // still empty), unless a library is already on screen.
+    if (!state) render();
     window.Brew.loadLibrary(user.uid).then(function (data) {
       var needsSeed = !data || (data.pristine && data.seedVersion !== SEED_VERSION);
       var ready = needsSeed ? initialLibraryFor(user) : Promise.resolve(data);

@@ -1330,7 +1330,7 @@ select.inp{
         <tr><td class="ds-cap">Tertiary</td><td><button class="btn btn-quiet"><span class="btn-label">Clear</span></button></td><td><button class="btn btn-quiet is-hover" tabindex="-1"><span class="btn-label">Clear</span></button></td><td><button class="btn btn-quiet is-active" tabindex="-1"><span class="btn-label">Clear</span></button></td><td><button class="btn btn-quiet is-focus" tabindex="-1"><span class="btn-label">Clear</span></button></td><td><button class="btn btn-quiet" disabled><span class="btn-label">Clear</span></button></td><td>—</td></tr>
         <tr><td class="ds-cap">Destructive</td><td><button class="btn btn-danger"><span class="btn-label">Delete</span></button></td><td><button class="btn btn-danger is-hover" tabindex="-1"><span class="btn-label">Delete</span></button></td><td><button class="btn btn-danger is-active" tabindex="-1"><span class="btn-label">Delete</span></button></td><td><button class="btn btn-danger is-focus" tabindex="-1"><span class="btn-label">Delete</span></button></td><td><button class="btn btn-danger" disabled><span class="btn-label">Delete</span></button></td><td>—</td></tr>
       </tbody></table></div>
-      <p class="ds-cap" style="margin-top:10px"><span class="ds-pill is-proposed">Proposed</span> Loading: the app has no spinner button yet (it changes the label, as in “Reading the label…”). If one is needed, keep the width and swap the label for a ring in the button's text colour, with <code>aria-busy="true"</code>.</p>
+      <p class="ds-cap" style="margin-top:10px"><span class="ds-pill is-live">In the app</span> Loading (the Scan label button while it reads): the button keeps its width, the label hides and a ring in the button's text colour takes its place, with <code>aria-busy="true"</code>. Progress and a status line go under it.</p>
       <div class="ds-stage" style="margin-top:12px"><div class="ds-row"><button class="btn btn-primary" id="loadDemo"><span class="btn-label">Scan the label</span></button><span class="ds-cap">Click to see the loading state for two seconds.</span></div></div>
     </div>
 
@@ -1639,9 +1639,8 @@ select.inp{
       </div></div>
     </div>
 
-    <div class="ds-block"><h3>Loading</h3><p><span class="ds-pill is-live">In the app</span> First load shows the steaming cup, not a spinner. <span class="ds-pill is-proposed">Proposed</span> Skeletons for lists, shaped like the recipe card.</p>
-      <div class="ds-stage"><div class="ds-grid-2" style="align-items:center">
-        <div class="ds-col" style="align-items:center;gap:6px"><svg class="steam" viewBox="0 0 56 56" role="img" aria-label="Loading"><path d="M20 22c-3-4 3-6 0-10"/><path d="M28 22c-3-4 3-6 0-10"/><path d="M36 22c-3-4 3-6 0-10"/><path d="M12 28h32v6a14 14 0 0 1-14 14h-4a14 14 0 0 1-14-14z" style="animation:none"/><path d="M44 30h3a5 5 0 0 1 0 10h-4" style="animation:none"/></svg><span class="ds-cap">Brewing your library…</span></div>
+    <div class="ds-block"><h3>Loading</h3><p><span class="ds-pill is-live">In the app</span> While the library loads, Home is drawn as skeletons in its own shape (header, method tabs, a Recent card, search, recipe cards), then swapped for the real page in place. The block is <code>role="status"</code> with a hidden “Brewing your library…”.</p>
+      <div class="ds-stage is-app"><div class="ds-grid-2" style="align-items:center">
         <div class="hcard" aria-hidden="true" style="pointer-events:none"><div class="hc-top"><span class="skel" style="width:42px;height:42px;border-radius:13px"></span><span class="ds-col" style="flex:1;gap:8px"><span class="skel" style="height:14px;width:60%"></span><span class="skel" style="height:11px;width:40%"></span></span></div><div class="hc-strip"><span class="skel" style="height:28px;width:100%"></span></div></div>
       </div></div>
     </div>
@@ -1800,12 +1799,12 @@ select.inp{
       <tr><td>App nav</td><td><code>.appnav .nav-item .nav-add .nav-cup .nav-lens</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
       <tr><td>Menu, breadcrumbs, carousel dots</td><td><code>.menu .crumbs .carousel-dots</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
       <tr><td>Toast, notes, chips, status pills, progress</td><td><code>.toast .rd-note .rd-chip .slide-method .rd-lock .bdg-status .scan-bar .tm-gauge</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
-      <tr><td>Empty state, loading cup</td><td><code>.es .es-title .es-copy .es-actions .loading-card .steam</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
+      <tr><td>Empty state</td><td><code>.es .es-title .es-copy .es-actions</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
       <tr><td>Dialog, form page, popover</td><td><code>.overlay .dialog .page .sheet-foot.glass .bdg-pop</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
       <tr><td>Cards, rows, avatars, specs</td><td><code>.hcard .slide .hrow .acc-row .home-av .acc-av .rd-specs</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
       <tr><td>Recipe patterns</td><td><code>.bag-label .rd-dose .rd-tiles .rd-steps .timer-* .bdg</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
       <tr><td>Inline field errors and success</td><td><code>.inp[aria-invalid] .msg-error .msg-success</code></td><td><span class="ds-pill is-proposed">Proposed</span></td></tr>
-      <tr><td>Loading button, skeleton</td><td><code>.btn.is-loading .skel</code></td><td><span class="ds-pill is-proposed">Proposed</span></td></tr>
+      <tr><td>Loading button, skeleton</td><td><code>.btn.is-loading .skel .skel-home</code></td><td><span class="ds-pill is-live">In the app</span></td></tr>
       <tr><td>Switch, slider, native radio, date</td><td><code>.switch .range .radio input[type=date].inp</code></td><td><span class="ds-pill is-proposed">Proposed</span></td></tr>
       <tr><td>Tooltip, state notes, data table</td><td><code>.tip .note.is-success|is-warning|is-error .data-table</code></td><td><span class="ds-pill is-proposed">Proposed</span></td></tr>
     </tbody></table></div>
