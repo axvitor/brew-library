@@ -8538,16 +8538,16 @@ function scanBlockHTML(state) {
     var frac = Math.max(0, Math.min(1, state.progress || 0));
     // The button stays where it was, holding a spinner in place of its
     // label, with the progress under it.
-    inner = '<button class="btn btn-ghost btn-sm is-loading" aria-busy="true" aria-disabled="true" tabindex="-1">' +
+    inner = '<button class="btn btn-primary is-loading" aria-busy="true" aria-disabled="true" tabindex="-1">' +
         '<span class="btn-label">' + ICON.camera + esc(t('Scan label')) + '</span></button>' +
       '<div class="scan-busy"><div class="scan-bar">' +
       '<i style="transform:scaleX(' + frac.toFixed(3) + ')"></i></div>' +
       '<p>' + esc(state.label || t('Reading the label…')) + '</p></div>';
   } else if (state && state.error) {
     inner = '<p class="scan-err">' + esc(state.error) + '</p>' +
-      '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + esc(t('Try again')) + '</button>';
+      '<button class="btn btn-primary" data-action="scan-label"><span class="btn-label">' + ICON.camera + esc(t('Try again')) + '</span></button>';
   } else {
-    inner = '<button class="btn btn-ghost btn-sm" data-action="scan-label">' + ICON.camera + esc(t('Scan label')) + '</button>' +
+    inner = '<button class="btn btn-primary" data-action="scan-label"><span class="btn-label">' + ICON.camera + esc(t('Scan label')) + '</span></button>' +
       '<p>' + esc(t('Fill the frame with the label itself, not the whole bag — the panel listing origin, process and notes. Small print needs a close, straight, evenly lit shot. Nothing leaves your device.')) + '</p>';
   }
   return '<div class="scan">' + inner + '</div>';

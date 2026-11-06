@@ -3562,7 +3562,8 @@ body:has(.gate-screen){padding-bottom:0}
    Same size, the label kept for width but hidden, a ring in the text
    colour in its place. */
 .btn.is-loading{position:relative;pointer-events:none}
-.btn.is-loading .btn-label{display:inline-flex;align-items:center;gap:8px;visibility:hidden}
+.btn .btn-label{display:inline-flex;align-items:center;gap:8px}
+.btn.is-loading .btn-label{visibility:hidden}
 .btn.is-loading::after{
   content:"";position:absolute;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
   border:2px solid currentColor;border-right-color:transparent;animation:btnSpin .7s linear infinite;
