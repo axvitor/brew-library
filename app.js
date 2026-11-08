@@ -1994,6 +1994,8 @@ function renderFirebaseError() {
 var NAV_TABS = ['home', 'library', 'ranking', 'account'];
 var shownRoute = null, navPending = false, navToken = 0, uaSwipeAt = 0;
 var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+var IOS_WEBKIT = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var phoneWidth = window.matchMedia('(max-width:640px)');
 
 // Safari's edge swipe back already slides the page; don't slide it twice.
@@ -2029,7 +2031,11 @@ function render() {
   var kind = from ? navKind(from, to) : '';
   var update = function () { navPending = false; renderPage(kind !== 'pop'); };
   if (!kind || reduceMotion.matches || document.hidden || Date.now() - uaSwipeAt < 1000) { update(); return; }
-  if (!document.startViewTransition) {
+  // iOS (Safari's engine, which every iPhone browser uses) snapshots the
+  // glass capsule without its blur, and swapping between the picture and
+  // the live capsule flashes. Moving between tabs there fades the page
+  // alone and leaves the capsule live; a recipe still slides in and out.
+  if (!document.startViewTransition || (IOS_WEBKIT && kind !== 'push' && kind !== 'pop')) {
     update();
     view.classList.remove('view-fade'); void view.offsetWidth; view.classList.add('view-fade');
     return;

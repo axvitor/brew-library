@@ -1908,16 +1908,12 @@ html[data-nav="fade"]::view-transition-new(root){animation-duration:300ms;animat
 ::view-transition-old(appnav){display:none}
 ::view-transition-new(appnav){animation:none;mix-blend-mode:normal}
 ::view-transition-old(detailbar),::view-transition-new(detailbar){mix-blend-mode:normal}
-/* iOS (Safari's engine, which Chrome on iPhone uses too) pictures a
-   backdrop-filter element without its blur, which left a hard bright edge
-   at one corner during the move. For the few hundred milliseconds of a
-   transition the capsule is drawn solid there instead. */
+/* iOS: page changes between tabs skip the view transition (see render
+   in app.js). Coming back from a recipe still slides, and there the
+   capsule's picture is left out — it has no blur on iOS and its swap for
+   the live capsule flashed — so the capsule appears as the slide ends. */
 @supports (-webkit-touch-callout:none){
-  @media(max-width:860px){
-    html[data-nav] .appnav{-webkit-backdrop-filter:none;backdrop-filter:none;background:#252321}
-    html[data-nav] .appnav::before,html[data-nav] .appnav::after{display:none}
-    html[data-theme="light"][data-nav] .appnav{background:#ECE9E3}
-  }
+  ::view-transition-new(appnav){display:none}
 }
 
 /* The Start brewing bar travels with its recipe, in and out. */
