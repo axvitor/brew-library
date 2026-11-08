@@ -1901,6 +1901,25 @@ html[data-nav="tab-back"]::view-transition-new(root){animation-name:navDriftFrom
 html[data-nav="fade"]::view-transition-old(root){animation-duration:200ms;animation-name:navFadeOut}
 html[data-nav="fade"]::view-transition-new(root){animation-duration:300ms;animation-name:fadeIn}
 
+/* The capsule holds still across a page change: only its new state is
+   shown, with no cross-fade. The default fade blends the old and new
+   pictures with plus-lighter, and on glass that adds the two together —
+   the whole capsule flashed bright for a moment. */
+::view-transition-old(appnav){display:none}
+::view-transition-new(appnav){animation:none;mix-blend-mode:normal}
+::view-transition-old(detailbar),::view-transition-new(detailbar){mix-blend-mode:normal}
+/* iOS (Safari's engine, which Chrome on iPhone uses too) pictures a
+   backdrop-filter element without its blur, which left a hard bright edge
+   at one corner during the move. For the few hundred milliseconds of a
+   transition the capsule is drawn solid there instead. */
+@supports (-webkit-touch-callout:none){
+  @media(max-width:860px){
+    html[data-nav] .appnav{-webkit-backdrop-filter:none;backdrop-filter:none;background:#252321}
+    html[data-nav] .appnav::before,html[data-nav] .appnav::after{display:none}
+    html[data-theme="light"][data-nav] .appnav{background:#ECE9E3}
+  }
+}
+
 /* The Start brewing bar travels with its recipe, in and out. */
 html[data-nav="push"]::view-transition-new(detailbar){animation:navFromRight 380ms cubic-bezier(.22,.8,.24,1) both}
 html[data-nav="pop"]::view-transition-old(detailbar){animation:navToRight 380ms cubic-bezier(.22,.8,.24,1) both}
