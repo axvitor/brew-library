@@ -2035,7 +2035,8 @@ function render() {
   // glass capsule without its blur, and swapping between the picture and
   // the live capsule flashes. Moving between tabs there fades the page
   // alone and leaves the capsule live; a recipe still slides in and out.
-  if (!document.startViewTransition || (IOS_WEBKIT && kind !== 'push' && kind !== 'pop')) {
+  if (IOS_WEBKIT && view.animate && kind !== 'push' && kind !== 'pop') { swapPage(kind, update); return; }
+  if (!document.startViewTransition) {
     update();
     view.classList.remove('view-fade'); void view.offsetWidth; view.classList.add('view-fade');
     return;
@@ -2045,6 +2046,35 @@ function render() {
   navPending = true;
   var vt = document.startViewTransition(update);
   vt.finished.finally(function () { if (token === navToken) root.removeAttribute('data-nav'); });
+}
+
+/* The tab change on iOS, drawn by hand on the live page instead of a
+   view transition: the old page fades out, then the new one drifts in
+   24px from the side of the tab picked, as the view transition does
+   elsewhere. Only the page's own content moves; the capsule stays live.
+   A tap mid-way finishes the swap at once and starts its own. */
+var swapToken = 0;
+function swapPage(kind, update) {
+  var token = ++swapToken, page = view.firstElementChild;
+  navPending = true;
+  var done = false;
+  function arrive() {
+    if (done || token !== swapToken) return;
+    done = true;
+    update();
+    var next = view.firstElementChild;
+    if (!next) return;
+    var dx = kind === 'tab-back' ? -24 : kind === 'tab-fwd' ? 24 : 0;
+    next.animate([{ opacity: 0, transform: 'translateX(' + dx + 'px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 320, easing: 'cubic-bezier(.22,.8,.24,1)' });
+  }
+  if (!page) { arrive(); return; }
+  var out = page.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, easing: 'ease-out', fill: 'forwards' });
+  out.onfinish = arrive;
+  out.oncancel = arrive;
+  // The page arrives on time even where the fade is held back (a paused
+  // or throttled page never reports the animation finished).
+  setTimeout(arrive, 180);
 }
 
 // arriving: the page is new on screen, so home plays its entrance.
