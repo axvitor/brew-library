@@ -408,8 +408,6 @@ svg.ico-fill{fill:currentColor;stroke:none}
     box-shadow:0 4px 12px rgba(174,82,44,.32);
     transition:var(--transition-control);
   }
-  .nav-add:active .nav-add-mark{background:var(--roast-700)}
-  .nav-add:active .nav-add-mark{transform:scale(var(--press-scale))}
   .nav-add span{white-space:nowrap}
   /* The bar floats over the page, so the page has to end above it.
      --nav-h is measured in app.js; the fallback covers first paint. */
