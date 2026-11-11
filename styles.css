@@ -1188,9 +1188,8 @@ svg.ico-fill{fill:currentColor;stroke:none}
   position:fixed;inset:0;z-index:100;
   display:flex;justify-content:center;
   background:var(--bg-app);
-  animation:pagein var(--dur-base) var(--ease-out) both;
+  /* Slides in and out from app.js (slidePages), like a pushed page. */
 }
-@keyframes pagein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 /* Pages below the top one stay in the DOM — a form's element is where its
    typed values are read back from — but must not be seen or reachable. */
 .page.is-behind{display:none}

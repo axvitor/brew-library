@@ -5968,6 +5968,38 @@ window.addEventListener('popstate', function (ev) {
   historyDepth = stack.length;
 });
 
+/* Form pages move like pages, not sheets: a new one slides in from the
+   right while what it covers eases left and dims, and a closing one slides
+   back out the same way — the push and pop a recipe gets. The page
+   underneath stays shown until the new one has fully covered it. */
+var shownStackLen = 0;
+var PAGE_SLIDE = { duration: 380, easing: 'cubic-bezier(.22,.8,.24,1)' };
+function slidePages(prevLen, leaving) {
+  if (reduceMotion.matches || !modalRoot.animate) return;
+  var top = stack[stack.length - 1];
+  var topPage = top && top.el && top.el.classList.contains('page') ? top.el : null;
+  var under = function (i) {
+    for (var j = i; j >= 0; j--) if (stack[j].el && stack[j].el.classList.contains('page')) return stack[j].el;
+    return view;
+  };
+  if (stack.length > prevLen && topPage) {
+    var below = under(stack.length - 2);
+    below.classList.remove('is-behind');
+    topPage.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], PAGE_SLIDE);
+    var a = below.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(-28%)', opacity: .55 }], PAGE_SLIDE);
+    a.onfinish = function () { if (below !== view && below.isConnected && topPage.isConnected) below.classList.add('is-behind'); };
+  } else if (leaving) {
+    // Outside modalRoot, so a repaint of the stack mid-slide can't drop it.
+    leaving.setAttribute('inert', '');
+    document.body.appendChild(leaving);
+    var back = under(stack.length - 1);
+    back.animate([{ transform: 'translateX(-28%)', opacity: .55 }, { transform: 'none', opacity: 1 }], PAGE_SLIDE);
+    var out = leaving.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], PAGE_SLIDE);
+    out.onfinish = out.oncancel = function () { leaving.remove(); };
+    setTimeout(function () { if (leaving.isConnected) leaving.remove(); }, PAGE_SLIDE.duration + 120);
+  }
+}
+
 function renderModals() {
   // Every re-render throws the sheets away and builds fresh ones, which resets
   // their scroll to the top. Adding or removing a step near the bottom of a
@@ -5977,6 +6009,10 @@ function renderModals() {
     var body = m.el && m.el.querySelector('.sheet-body');
     return body ? body.scrollTop : 0;
   });
+  // A page that just closed is kept for its slide out (see slidePages).
+  var prevLen = shownStackLen, gone = modalRoot.lastElementChild;
+  var leaving = stack.length < prevLen && gone && gone.classList.contains('page') ? gone : null;
+  shownStackLen = stack.length;
 
   modalRoot.innerHTML = '';
   // Titles gather as the stack renders, so each page's breadcrumb can name
@@ -6019,6 +6055,7 @@ function renderModals() {
     for (var j = i + 1; j < pages.length; j++) if (pages[j]) coveredByPage = true;
     el.classList.toggle('is-behind', coveredByPage);
   });
+  slidePages(prevLen, leaving);
 
   document.body.style.overflow = stack.length ? 'hidden' : '';
   /* The page covers the app, so the app must leave the tab order with it.
